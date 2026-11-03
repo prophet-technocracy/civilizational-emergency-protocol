@@ -1,0 +1,26 @@
+name: Documentation or project bug
+description: Report an error in project documentation, specifications or repository workflow.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: location
+    attributes:
+      label: Where is the problem?
+      description: Link to the file or section.
+    validations:
+      required: true
+  - type: textarea
+    id: issue
+    attributes:
+      label: What is wrong?
+      description: Explain what you expected and what happened.
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested correction
+      description: If you have one, describe a fix.
+    validations:
+      required: false
