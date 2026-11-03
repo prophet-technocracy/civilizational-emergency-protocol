@@ -1,0 +1,33 @@
+name: Proposal or improvement
+description: Suggest a feature, research question or project improvement.
+title: "[Proposal]: "
+labels: ["proposal"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity
+      description: What need are you trying to address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed approach
+      description: Describe the idea and alternatives.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and assumptions
+      description: Add sources and identify uncertainty.
+    validations:
+      required: false
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks and safeguards
+      description: Consider privacy, security, rights, accessibility and misuse.
+    validations:
+      required: true
