@@ -26,3 +26,8 @@ A mission is not authorised to represent a population or exercise public power m
 ## Current mission status
 
 No mission is approved or operational by virtue of this template. Country-specific proposals, including any Iran-focused work, must remain open to public scrutiny and must not assume a predetermined political or constitutional outcome.
+
+### Iran civic infrastructure (discovery proposal)
+
+- [Discovery and Execution Report](../docs/iran/DISCOVERY-AND-EXECUTION-REPORT.md) — preliminary source and dataset audit, safe MVP recommendation, limitations, and blockers.
+- [Iran Mini App task board](../agents/iran-mini-app/TASKS.md) — proposed, gated work plan. The report and task board do not authorize implementation or represent an affected population.
