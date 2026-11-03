@@ -13,7 +13,7 @@
   "scripts": {
     "dev": "concurrently -k -n api,web -c blue,green \"npm:dev --workspace=@cep/api\" \"npm:dev --workspace=@cep/web\"",
     "build": "npm run build --workspace=@cep/web",
-    "test": "npm run test --workspace=@cep/api",
+    "test": "npm run test --workspaces --if-present",
     "check": "npm test && npm run build"
   },
   "devDependencies": {

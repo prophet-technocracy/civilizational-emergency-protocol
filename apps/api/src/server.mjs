@@ -18,6 +18,7 @@ export function createServer() {
     const pathname = new URL(request.url ?? "/", "http://local.invalid").pathname;
 
     if (method !== "GET") {
+      response.setHeader("Allow", "GET");
       sendJson(response, 405, { error: "method_not_allowed" });
       return;
     }

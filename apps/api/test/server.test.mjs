@@ -38,6 +38,7 @@ test("demo endpoint is explicitly synthetic and contains no person records", asy
 test("API routes reject non-GET requests", async () => {
   const response = await fetch(`${baseUrl}/api/v1/demo`, { method: "POST" });
   assert.equal(response.status, 405);
+  assert.equal(response.headers.get("allow"), "GET");
   assert.deepEqual(await response.json(), { error: "method_not_allowed" });
 });
 
