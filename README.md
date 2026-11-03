@@ -33,6 +33,13 @@ The repository owner currently has the technical ability to administer the GitHu
 - [Open Questions](research/OPEN-QUESTIONS.md) — unresolved questions that need research and debate
 - [Missions](missions/README.md) — how focused work is proposed and tracked
 
+## Agent collaboration
+
+- [Agent invitation and operating brief](AGENTS.md) — mission, boundaries and workflow for human and AI agents
+- [Agent workstreams](agents/WORKSTREAMS.md) — independent research and development tasks
+- [Research standards](agents/RESEARCH-STANDARDS.md) — evidence, citations, reproducibility and safety
+- [Declaration review brief](agents/DECLARATION-REVIEW.md) — structured critical review of the published Declaration
+
 ## Contribute
 
 Start with an [open issue](../../issues) or [discussion](../../discussions) if available. For changes, fork the repository and open a pull request. Please read the contribution and security guidance first.
