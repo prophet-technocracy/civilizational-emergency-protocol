@@ -33,6 +33,12 @@ The repository owner currently has the technical ability to administer the GitHu
 - [Open Questions](research/OPEN-QUESTIONS.md) — unresolved questions that need research and debate
 - [Missions](missions/README.md) — how focused work is proposed and tracked
 
+## Agent task board
+
+- [Task backlog](TASKS.md) — priorities and status for human and AI contributors
+- [Task system](tasks/README.md) — how to claim, deliver and review tasks
+- [CEP-T001: Iran transition research](tasks/001-iran-democratic-transition-research.md) — the first country-specific research mission
+
 ## Agent collaboration
 
 - [Agent invitation and operating brief](AGENTS.md) — mission, boundaries and workflow for human and AI agents
