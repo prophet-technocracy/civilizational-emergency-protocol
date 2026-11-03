@@ -1,7 +1,7 @@
 # Iran Civic Infrastructure and Mini App — Task Board
 
 **Status:** Proposed work plan; not an approved mission, mandate, or endorsement of either source document.
-**Last updated:** 2026-11-03.
+**Last updated:** 2026-11-04.
 **Starting point:** [`Discovery and Execution Report`](../../docs/iran/DISCOVERY-AND-EXECUTION-REPORT.md).
 
 Do not start implementation tasks until their dependencies and safety gates are met. A task's completion means repository review, not public consent or institutional authorization. No task authorizes collection of sensitive political or personal data.
@@ -25,7 +25,7 @@ Do not start implementation tasks until their dependencies and safety gates are 
 | CEP-IRAN-007 | Create a threat model, data-flow inventory, and deployment safety gate | Security / privacy | P0 | 001, draft MVP scope | `docs/iran/THREAT-MODEL.md` | Proposed | Security reviewer |
 | CEP-IRAN-008 | Define Persian-first accessible read-only MVP requirements and explicit non-goals | Product / accessibility | P1 | 001, 004, 006, 007 | `docs/iran/MVP-SCOPE.md` | Proposed | Product + accessibility reviewers |
 | CEP-IRAN-009 | Specify source-linked content schema and content lifecycle | Architecture / data governance | P1 | 002, 004, 005, 008 | `docs/iran/CONTENT-MODEL.md` | Proposed | Software architect + editor |
-| CEP-IRAN-010 | Prototype static Persian RTL/English navigation with synthetic content only | UX / engineering | P1 | 007, 008, 009; review gate passed | Small static prototype + tests | Blocked until gates pass | Frontend engineer + accessibility reviewer |
+| CEP-IRAN-010 | Local synthetic-only backend/frontend scaffold | UX / engineering | P1 | 007, 008, 009 for production; local-only scaffold may proceed | Read-only API + RTL web shell + tests | In progress (local only) | Frontend/backend contributors + accessibility reviewer |
 | CEP-IRAN-011 | Assess historical archive coverage and human correction workflow | Historical research / governance | P2 | 005, 009 | Coverage and editorial proposal | Proposed | Historian + editor |
 | CEP-IRAN-012 | Research whether a safe, non-identifying correction channel is viable | Participation / safety | P2 | 007, 008, community review | Decision memo; may recommend not building | Privacy + moderation reviewers |
 | CEP-IRAN-013 | Research Principle 20 feasibility, consent, deletion, and legal dependencies | Digital legacy / rights | P3 | 001; independent legal and affected-community review | Feasibility memo only; no product implementation | Proposed | Digital-rights researcher |
@@ -111,13 +111,14 @@ Do not start implementation tasks until their dependencies and safety gates are 
 **Acceptance criteria:** every published factual claim resolves to a source passage or is labelled unverified; source versions and translations are distinct; history is auditable; stable subject identifiers are random, not name-derived; raw imports are reversible; no private-person entity or account table is introduced in the MVP.
 **Dependencies:** 002, 004, 005, 008.
 
-### CEP-IRAN-010 — Static read-only demonstrator (P1)
+### CEP-IRAN-010 — Local synthetic-only backend/frontend scaffold (P1)
 
-**Question:** Can people use a low-risk Persian-first interface to navigate sourced information?
-**Scope:** Static frontend and synthetic content only until all data/safety gates pass; no API, login, user tracking, or submission backend.
-**Deliverable:** small prototype and accessibility/RTL tests.
-**Acceptance criteria:** all content has clear source/status labels; synthetic content is visibly marked; no living-person data or unapproved PDF text is bundled; Persian RTL, keyboard navigation, reduced motion, mobile layout, and low-bandwidth behavior are checked; security review and human product approval precede public deployment.
-**Dependencies:** 007, 008, 009.
+**Question:** Can a minimal read-only API and Persian-first interface be developed without importing sensitive data or presenting unverified political claims?
+**Scope:** Local development only. The backend may expose health and explicitly synthetic demo content over GET routes; the frontend may render that content in RTL with visible status, loading, and error states. No API writes, database, authentication, user tracking, real-person records, source-document excerpts, or deployment.
+**Deliverable:** `apps/api`, `apps/web`, root development scripts, API tests, and `docs/iran/IMPLEMENTATION-PLAN.md`.
+**Acceptance criteria:** `npm run dev` starts both services; `npm test` covers response shape, read-only methods, and not-found behavior; `npm run build` succeeds; browser requests use same-origin relative URLs; the UI visibly labels all data as synthetic; accessibility basics and mobile layout are checked; public deployment remains blocked on Tasks 007–009 and human review.
+**Dependencies:** 007, 008, 009 for any production release. Local synthetic scaffolding may proceed before those gates because it collects no user data and includes no source records.
+**Status:** In progress (local only).
 
 ### CEP-IRAN-011 — Coverage and correction research (P2)
 

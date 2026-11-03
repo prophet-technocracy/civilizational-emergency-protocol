@@ -33,6 +33,19 @@ The repository owner currently has the technical ability to administer the GitHu
 - [Open Questions](research/OPEN-QUESTIONS.md) — unresolved questions that need research and debate
 - [Missions](missions/README.md) — how focused work is proposed and tracked
 
+## Iran civic infrastructure prototype
+
+A local-only, read-only web/API scaffold is under development. It currently uses synthetic placeholders only; it is not an official service and contains no source-verified Iran transition data. See the [implementation phases](docs/iran/IMPLEMENTATION-PLAN.md), [discovery report](docs/iran/DISCOVERY-AND-EXECUTION-REPORT.md), and [task board](agents/iran-mini-app/TASKS.md).
+
+To run the local development prototype (Node.js 22.12 or newer):
+
+```sh
+npm install
+npm run dev
+```
+
+The web app is served by Vite on port 5173 and proxies read-only `/api` requests to the local Node API on port 3001. The prototype does not collect user information and is not production-ready.
+
 ## Agent task board
 
 - [Task backlog](TASKS.md) — priorities and status for human and AI contributors
