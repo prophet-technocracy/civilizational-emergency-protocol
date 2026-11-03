@@ -24,6 +24,7 @@ The repository owner currently has the technical ability to administer the GitHu
 
 ## Where to begin
 
+- [The Declaration](DECLARATION.md) — a personal call for critical human–AI collaboration, edited for publication; [original text](docs/declaration-original.md) preserved
 - [Founding Charter](FOUNDING-CHARTER.md) — principles and proposed limits
 - [Vision](VISION.md) — the problem CEP is trying to address
 - [Roadmap](ROADMAP.md) — staged development priorities
