@@ -1,0 +1,22 @@
+{
+  "name": "cep-civic-infrastructure",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c blue,green \"npm:dev --workspace=@cep/api\" \"npm:dev --workspace=@cep/web\"",
+    "build": "npm run build --workspace=@cep/web",
+    "test": "npm run test --workspace=@cep/api",
+    "check": "npm test && npm run build"
+  },
+  "devDependencies": {
+    "concurrently": "9.2.5"
+  }
+}
