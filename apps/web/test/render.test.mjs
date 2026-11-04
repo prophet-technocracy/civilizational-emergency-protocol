@@ -455,3 +455,15 @@ test("unverified service entries are shown as text, not as clickable links", () 
     restore();
   }
 });
+
+test("digital legacy shows epistemic badges and a real disclosure control", () => {
+  const { html, restore } = renderWithoutFetch("#/digital-legacy");
+  try {
+    // Clause rows used to print the raw epistemic key and a text triangle.
+    assert.doesNotMatch(html, />\s*source-reported\s*</);
+    assert.match(html, /class="badge/);
+    assert.match(html, /class="clause__chevron"/);
+  } finally {
+    restore();
+  }
+});

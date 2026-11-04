@@ -2559,6 +2559,16 @@ html[dir="rtl"] .graph__label {
   font-size: 0.7rem;
 }
 
+.clause__chevron {
+  display: flex;
+  color: var(--ink-500);
+  transition: transform 0.18s ease;
+}
+
+.clause__chevron[data-open="true"] {
+  transform: rotate(180deg);
+}
+
 .clause__status {
   font-family: var(--font-mono);
   font-size: 0.68rem;

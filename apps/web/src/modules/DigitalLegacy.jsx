@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useApi } from "../lib/api.js";
 import { t, formatNumber } from "../i18n.js";
-import { SectionHeader, Card, StateBlock, Badge, Callout, Empty, FieldList, Disclosure } from "../components/ui.jsx";
+import { SectionHeader, Card, StateBlock, Badge, Callout, Empty, FieldList, Disclosure, EpistemicBadge } from "../components/ui.jsx";
+import { Icon } from "../components/icons.jsx";
 
 export default function DigitalLegacy({ lang, dict, navigate }) {
   const { status, payload, reload } = useApi("/api/v1/digital-legacy");
@@ -36,7 +37,14 @@ export default function DigitalLegacy({ lang, dict, navigate }) {
         <p>{t(scopeNotice, lang)}</p>
         <FieldList
           rows={[
-            { label: t({ fa: "مسیر بایگانی تاریخی", en: "Historical archive route" }, lang), value: archiveSeparation.archiveModuleApi },
+            {
+              label: t({ fa: "مسیر بایگانی تاریخی", en: "Historical archive route" }, lang),
+              value: (
+                <span className="mono" dir="ltr">
+                  {archiveSeparation.archiveModuleApi}
+                </span>
+              )
+            },
             { label: t({ fa: "بایگانی فقط فوت‌شدگان؟", en: "Archive deceased-only?" }, lang), value: archiveSeparation.archiveIsDeceasedOnly ? dict.yes : dict.no },
             { label: t({ fa: "پروندهٔ هستی مفهوم زنده است؟", en: "Existence dossier a living concept?" }, lang), value: archiveSeparation.digitalLegacyIsLivingConcept ? dict.yes : dict.no },
             { label: t({ fa: "در هیچ نقطه‌ای ادغام شده‌اند؟", en: "Merged at any point?" }, lang), value: archiveSeparation.mergedAtAnyPoint ? dict.yes : `${dict.no} — ${t({ fa: "هرگز", en: "never" }, lang)}` }
@@ -89,8 +97,10 @@ export default function DigitalLegacy({ lang, dict, navigate }) {
                 >
                   <span className="clause__num">{formatNumber(clause.clauseNumber, lang)}</span>
                   <span className="clause__title">{t(clause.title, lang)}</span>
-                  <span className="clause__status">{t(clause.epistemicStatus, lang)}</span>
-                  <span aria-hidden="true">{isOpen ? "▴" : "▾"}</span>
+                  <EpistemicBadge status={clause.epistemicStatus} lang={lang} />
+                  <span className="clause__chevron" aria-hidden="true" data-open={isOpen ? "true" : "false"}>
+                    <Icon name="chevronDown" size={15} />
+                  </span>
                 </button>
                 {isOpen ? (
                   <div className="clause__body">
