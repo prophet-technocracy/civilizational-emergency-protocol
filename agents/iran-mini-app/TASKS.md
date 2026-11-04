@@ -29,6 +29,7 @@ Do not start implementation tasks until their dependencies and safety gates are 
 | CEP-IRAN-011 | Assess historical archive coverage and human correction workflow | Historical research / governance | P2 | 005, 009 | Coverage and editorial proposal | Proposed | Historian + editor |
 | CEP-IRAN-012 | Research whether a safe, non-identifying correction channel is viable | Participation / safety | P2 | 007, 008, community review | Decision memo; may recommend not building | Privacy + moderation reviewers |
 | CEP-IRAN-013 | Research Principle 20 feasibility, consent, deletion, and legal dependencies | Digital legacy / rights | P3 | 001; independent legal and affected-community review | Feasibility memo only; no product implementation | Proposed | Digital-rights researcher |
+| [CEP-IRAN-014](../../tasks/014-public-service-directory.md) | Define a safe public service directory from published links; no API enumeration | Product / safety / privacy | P2 | Official public sources; human curator; any technical testing requires separate written authorization | `docs/iran/PUBLIC-SERVICE-DIRECTORY-PLAN.md` | Review (plan only; no sites contacted) | Product researcher + privacy/security reviewer |
 
 ## Task briefs and acceptance criteria
 

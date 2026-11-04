@@ -33,3 +33,4 @@ No mission is approved or operational by virtue of this template. Country-specif
 
 - [Discovery and Execution Report](../docs/iran/DISCOVERY-AND-EXECUTION-REPORT.md) — preliminary source and dataset audit, safe MVP recommendation, limitations, and blockers.
 - [Iran Mini App task board](../agents/iran-mini-app/TASKS.md) — proposed, gated work plan. The report and task board do not authorize implementation or represent an affected population.
+- [Public service directory plan](../docs/iran/PUBLIC-SERVICE-DIRECTORY-PLAN.md) — a safe, source-based alternative to live government API enumeration; no listed domain has been verified.
