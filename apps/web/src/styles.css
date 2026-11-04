@@ -2360,6 +2360,21 @@ html[dir="rtl"] .graph__label {
   gap: 0.7rem;
 }
 
+.project__objectives {
+  max-width: 78ch;
+}
+
+/* Meter cells carry an aria-label on the wrapper, but the visual bar itself
+   must stay large enough to read at a glance on a wide card. */
+.meter {
+  gap: 4px;
+}
+
+.meter__cell {
+  width: 26px;
+  height: 9px;
+}
+
 .progress-row {
   display: flex;
   justify-content: space-between;

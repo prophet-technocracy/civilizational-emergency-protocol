@@ -89,7 +89,7 @@ export default function Projects({ lang, dict }) {
                 </div>
               }
             >
-              <p>{t(project.objectives, lang)}</p>
+              <p className="project__objectives">{t(project.objectives, lang)}</p>
               <div className="progress-row">
                 <span>
                   {t({ fa: "پیشرفت نقاط عطف", en: "Milestone progress" }, lang)}: {formatNumber(complete, lang)} /{" "}
@@ -100,14 +100,14 @@ export default function Projects({ lang, dict }) {
 
               {isOpen ? (
                 <div className="project__detail">
-                  <h4 className="minor-heading">{t({ fa: "تحویل‌شدنی‌ها", en: "Deliverables" }, lang)}</h4>
+                  <h3 className="minor-heading">{t({ fa: "تحویل‌شدنی‌ها", en: "Deliverables" }, lang)}</h3>
                   <ul className="tight-list">
                     {project.deliverables.map((item, index) => (
                       <li key={index}>{t(item, lang)}</li>
                     ))}
                   </ul>
 
-                  <h4 className="minor-heading">{t({ fa: "نقاط عطف و شواهد", en: "Milestones and evidence" }, lang)}</h4>
+                  <h3 className="minor-heading">{t({ fa: "نقاط عطف و شواهد", en: "Milestones and evidence" }, lang)}</h3>
                   <ul className="milestone-list">
                     {project.milestones.map((milestone) => (
                       <li key={milestone.id}>
@@ -123,7 +123,7 @@ export default function Projects({ lang, dict }) {
                     ))}
                   </ul>
 
-                  <h4 className="minor-heading">{t({ fa: "شواهد تکمیل", en: "Evidence of completion" }, lang)}</h4>
+                  <h3 className="minor-heading">{t({ fa: "شواهد تکمیل", en: "Evidence of completion" }, lang)}</h3>
                   <p>{t(project.evidenceOfCompletion, lang)}</p>
 
                   <FieldList
