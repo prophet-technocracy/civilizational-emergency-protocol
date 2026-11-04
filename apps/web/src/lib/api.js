@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { validateEnvelope } from "../demo-contract.mjs";
 
 const cache = new Map();
 
@@ -27,6 +28,11 @@ export function useApi(path) {
       })
       .then((payload) => {
         if (!alive) return;
+        // A payload that violates the demo envelope (wrong mode, missing
+        // bilingual notice, or any living-person / personal-data field) is
+        // treated as a failed request instead of being rendered.
+        const { valid, errors } = validateEnvelope(payload);
+        if (!valid) throw new Error(`contract: ${errors.join("; ")}`);
         cache.set(path, payload);
         setState({ status: "ready", payload });
       })
