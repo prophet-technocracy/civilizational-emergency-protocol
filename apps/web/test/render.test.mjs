@@ -28,6 +28,7 @@ let labelFor;
 let ENUM_LABELS;
 let formatDate;
 let formatRatio;
+let Toast;
 
 const server = createServer();
 let baseUrl;
@@ -39,7 +40,8 @@ before(async () => {
       contents: [
         'export { default as App, readRouteFromHash } from "./src/App.jsx";',
         'export { primeApiCache } from "./src/lib/api.js";',
-        'export { UI, MODULES, t, formatNumber, labelFor, ENUM_LABELS, formatDate, formatRatio } from "./src/i18n.js";'
+        'export { UI, MODULES, t, formatNumber, labelFor, ENUM_LABELS, formatDate, formatRatio } from "./src/i18n.js";',
+        'export { Toast } from "./src/components/ui.jsx";'
       ].join("\n"),
       resolveDir: WEB_ROOT,
       loader: "js"
@@ -65,6 +67,7 @@ before(async () => {
   ENUM_LABELS = bundle.ENUM_LABELS;
   formatDate = bundle.formatDate;
   formatRatio = bundle.formatRatio;
+  Toast = bundle.Toast;
 
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   baseUrl = `http://127.0.0.1:${server.address().port}`;
@@ -494,4 +497,77 @@ test("text-link buttons keep a 24px hit area (WCAG 2.5.8)", () => {
   const block = css.slice(css.indexOf(".link-btn {"), css.indexOf("}", css.indexOf(".link-btn {")));
   assert.match(block, /min-height:\s*24px/);
   assert.match(block, /display:\s*inline-flex/);
+});
+
+test("the skip link targets a focusable main region, and the nav toggle announces its state", () => {
+  const { html, restore } = renderWithoutFetch();
+  try {
+    const skip = html.match(/<a[^>]*class="skip-link"[^>]*href="([^"]+)"/);
+    assert.ok(skip, "skip link missing");
+    const target = skip[1].replace("#", "");
+    assert.ok(html.includes(`id="${target}"`), "skip link points at an id that does not exist");
+    const main = html.match(new RegExp(`<main[^>]*id="${target}"[^>]*>`));
+    assert.ok(main, "the skip target is not <main>");
+    assert.match(main[0], /tabindex="-1"/, "programmatic focus target must be focusable");
+
+    const toggle = html.match(/<button[^>]*class="icon-btn nav-toggle"[^>]*>/);
+    assert.ok(toggle, "nav toggle missing");
+    assert.match(toggle[0], /aria-expanded="false"/);
+    assert.match(toggle[0], /aria-controls="primary-navigation"/);
+    assert.ok(html.includes('id="primary-navigation"'), "toggle controls an id that does not exist");
+    assert.doesNotMatch(toggle[0], /inert/, "the toggle must stay usable in every state");
+  } finally {
+    restore();
+  }
+});
+
+test("the module navigation is reachable on a wide screen and only inert when it is a closed drawer", () => {
+  const { html, restore } = renderWithoutFetch();
+  try {
+    const nav = html.match(/<nav[^>]*id="primary-navigation"[^>]*>/);
+    assert.ok(nav, "primary navigation missing");
+    // Server-rendered markup assumes the wide layout, where the sidebar is a
+    // permanent landmark: it must never ship inert.
+    assert.doesNotMatch(nav[0], /inert/);
+    assert.match(nav[0], /aria-label="[^"]+"/);
+  } finally {
+    restore();
+  }
+});
+
+test("toasts render a labelled close control in both languages", () => {
+  // These used to crash: the close button read a `dict` that did not exist in
+  // the component scope, so the first toast blanked the view.
+  for (const lang of ["fa", "en"]) {
+    const html = renderToString(createElement(Toast, { message: "نمونه", lang, onClose() {} }));
+    assert.match(html, /role="status"/);
+    assert.match(html, /aria-label="[^"]+"/);
+    assert.doesNotMatch(html, /aria-label="undefined"/);
+  }
+  const fallback = renderToString(createElement(Toast, { message: "نمونه", onClose() {} }));
+  assert.match(fallback, /aria-label="[^"]+"/);
+});
+
+test("every relationship-map node keeps its whole name in the visible label", () => {
+  // wrapLabel used to cap at two lines and silently drop the remaining words,
+  // so "راهنمای خدمات عمومی (این سامانه)" rendered without "(این سامانه)" and
+  // the accessible name no longer matched the visible label.
+  const { html, restore } = renderWithoutFetch("#/institutions");
+  try {
+    const nodes = html.match(/<g class="graph__node[^"]*"[^>]*>[\s\S]*?<\/g>/g) ?? [];
+    const institutions = fixtures.get("/api/v1/institutions").data.institutions;
+    assert.equal(nodes.length, institutions.length, "one group per institution expected");
+    for (const node of nodes) {
+      const visible = node
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      const match = institutions.find((item) => visible.startsWith(t(item.name, "fa")));
+      assert.ok(match, `no institution matches the rendered label: ${visible.slice(0, 60)}`);
+      assert.equal(visible, `${t(match.name, "fa")} ${labelFor(match.category, "fa")}`.replace(/\s+/g, " ").trim());
+      assert.doesNotMatch(visible, /…/, "labels must not be truncated mid-name");
+    }
+  } finally {
+    restore();
+  }
 });

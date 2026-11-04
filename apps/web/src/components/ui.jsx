@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef } from "react";
+import { useFocusTrap } from "../lib/focus.js";
 import { EPISTEMIC, UI, t, formatNumber } from "../i18n.js";
 import { Icon } from "./icons.jsx";
 
@@ -146,31 +147,23 @@ export function Disclosure({ summary, children, defaultOpen = false, meta }) {
 
 export function Drawer({ open, onClose, title, subtitle, lang, children }) {
   const closeRef = useRef(null);
+  const titleId = useId();
   const dict = UI[lang];
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const onKey = (event) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    const timer = setTimeout(() => closeRef.current?.focus(), 30);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      clearTimeout(timer);
-    };
-  }, [open, onClose]);
+  // Escape, Tab cycling and returning focus to the button that opened the
+  // drawer are handled by the shared trap, so the overlay cannot strand a
+  // keyboard user behind the scrim.
+  const panelRef = useFocusTrap({ active: open, onEscape: onClose, initialFocus: closeRef });
 
   if (!open) return null;
 
   return (
-    <div className="drawer-layer" role="dialog" aria-modal="true" aria-label={title}>
+    <div className="drawer-layer" role="dialog" aria-modal="true" aria-labelledby={titleId}>
       <button type="button" className="drawer-scrim" aria-label={dict.close} onClick={onClose} tabIndex={-1} />
-      <aside className="drawer">
+      <aside className="drawer" ref={panelRef}>
         <div className="drawer__head">
           <div>
             <p className="eyebrow">{dict.provenance}</p>
-            <h2>{title}</h2>
+            <h2 id={titleId}>{title}</h2>
             {subtitle ? <p className="card__subtitle">{subtitle}</p> : null}
           </div>
           <button type="button" className="icon-btn" onClick={onClose} ref={closeRef} aria-label={dict.close}>
@@ -250,7 +243,9 @@ export function ProvenanceBody({ record, lang, onInspectClaim }) {
   );
 }
 
-export function Toast({ message, tone = "info", onClose }) {
+export function Toast({ message, tone = "info", onClose, lang = "fa" }) {
+  const dict = UI[lang];
+
   useEffect(() => {
     if (!message) return undefined;
     const timer = setTimeout(onClose, 5200);
