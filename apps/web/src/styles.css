@@ -1219,7 +1219,16 @@ input[type="range"] {
 }
 
 .table-wrap {
+  /* min-width:0 lets the wrapper shrink inside grid/flex parents; without it a
+     620px table forces the whole page to scroll sideways on phones. */
   overflow-x: auto;
+  min-width: 0;
+  max-width: 100%;
+  /* Chromium counts a right-to-left scroll container's *left* overflow as part
+     of the page's scrollable overflow, so a 620px table inside a 324px wrapper
+     let the whole document scroll sideways on phones even though the wrapper
+     clipped it. `contain: paint` keeps that overflow inside the wrapper. */
+  contain: paint;
 }
 
 .data-table {
@@ -2029,9 +2038,35 @@ html[dir="rtl"] .graph__label {
 
 .band-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  /* Two, not four: five bands in a four-column grid put the fifth alone in a
+     second row next to a three-column void. At two columns the rows pair up
+     (2 + 2) and the final band takes the whole width of its own row, so the
+     grid has no holes at any width. */
+  grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr));
+  align-items: start;
   gap: 0.7rem;
   margin-block-end: 1rem;
+}
+
+.band:last-child {
+  grid-column: 1 / -1;
+}
+
+.band__sections {
+  display: grid;
+  gap: 0.4rem;
+}
+
+@media (min-width: 860px) {
+  .band:last-child .band__sections {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 1.4rem;
+    align-items: start;
+  }
+
+  .band:last-child .band__sections .band__not {
+    max-width: 46ch;
+  }
 }
 
 .band {

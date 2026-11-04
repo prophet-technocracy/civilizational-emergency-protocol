@@ -101,17 +101,25 @@ export default function Verification({ lang, dict }) {
               </div>
             </div>
             <p className="band__question">{t(item.question, lang)}</p>
-            <h3 className="minor-heading">{t({ fa: "حداقل مدرک لازم", en: "Minimum evidence" }, lang)}</h3>
-            <p>{t(item.minimumEvidence, lang)}</p>
-            <h3 className="minor-heading">{t({ fa: "کنش‌های مجاز نمونه", en: "Sample permitted actions" }, lang)}</h3>
-            <ul className="tight-list">
-              {item.permittedActions.map((action, i) => (
-                <li key={i}>{t(action, lang)}</li>
-              ))}
-            </ul>
-            <h3 className="minor-heading">{t({ fa: "آنچه این سطح اثبات نمی‌کند", en: "What this band does not prove" }, lang)}</h3>
-            <p className="band__not">{t(item.notImplied, lang)}</p>
-            <p className="muted">{t(item.realImplementation, lang)}</p>
+            <div className="band__sections">
+              <section className="band__section">
+                <h3 className="minor-heading">{t({ fa: "حداقل مدرک لازم", en: "Minimum evidence" }, lang)}</h3>
+                <p>{t(item.minimumEvidence, lang)}</p>
+              </section>
+              <section className="band__section">
+                <h3 className="minor-heading">{t({ fa: "کنش‌های مجاز نمونه", en: "Sample permitted actions" }, lang)}</h3>
+                <ul className="tight-list">
+                  {item.permittedActions.map((action, i) => (
+                    <li key={i}>{t(action, lang)}</li>
+                  ))}
+                </ul>
+              </section>
+              <section className="band__section">
+                <h3 className="minor-heading">{t({ fa: "آنچه این سطح اثبات نمی‌کند", en: "What this band does not prove" }, lang)}</h3>
+                <p className="band__not">{t(item.notImplied, lang)}</p>
+                <p className="muted">{t(item.realImplementation, lang)}</p>
+              </section>
+            </div>
           </article>
         ))}
       </div>
