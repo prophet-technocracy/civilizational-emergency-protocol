@@ -8,13 +8,15 @@
   },
   "workspaces": [
     "apps/api",
-    "apps/web"
+    "apps/web",
+    "packages/*"
   ],
   "scripts": {
     "dev": "concurrently -k -n api,web -c blue,green \"npm:dev --workspace=@cep/api\" \"npm:dev --workspace=@cep/web\"",
     "build": "npm run build --workspace=@cep/web",
     "test": "npm run test --workspaces --if-present",
-    "check": "npm test && npm run build"
+    "validate:csv": "node scripts/validation/validate-historical-csv.mjs data/synthetic/synthetic-deceased-archive-sample.csv",
+    "check": "npm test && npm run validate:csv && npm run build"
   },
   "devDependencies": {
     "concurrently": "9.2.5"
