@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useApi } from "../lib/api.js";
 import { t, formatNumber } from "../i18n.js";
-import { SectionHeader, Card, StateBlock, Badge, Callout, Empty, Toggle, FieldList, Disclosure } from "../components/ui.jsx";
+import { SectionHeader, Card, StateBlock, Badge, Callout, Empty, FieldList, Disclosure } from "../components/ui.jsx";
 
 export default function DigitalLegacy({ lang, dict, navigate }) {
   const { status, payload, reload } = useApi("/api/v1/digital-legacy");

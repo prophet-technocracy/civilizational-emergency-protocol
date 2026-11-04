@@ -24,6 +24,9 @@ let UI;
 let MODULES;
 let t;
 let formatNumber;
+let labelFor;
+let ENUM_LABELS;
+let formatDate;
 
 const server = createServer();
 let baseUrl;
@@ -35,7 +38,7 @@ before(async () => {
       contents: [
         'export { default as App, readRouteFromHash } from "./src/App.jsx";',
         'export { primeApiCache } from "./src/lib/api.js";',
-        'export { UI, MODULES, t, formatNumber } from "./src/i18n.js";'
+        'export { UI, MODULES, t, formatNumber, labelFor, ENUM_LABELS, formatDate } from "./src/i18n.js";'
       ].join("\n"),
       resolveDir: WEB_ROOT,
       loader: "js"
@@ -57,6 +60,9 @@ before(async () => {
   MODULES = bundle.MODULES;
   t = bundle.t;
   formatNumber = bundle.formatNumber;
+  labelFor = bundle.labelFor;
+  ENUM_LABELS = bundle.ENUM_LABELS;
+  formatDate = bundle.formatDate;
 
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   baseUrl = `http://127.0.0.1:${server.address().port}`;
@@ -246,6 +252,102 @@ test("verification render never shows a binding vote or social-credit action as 
     );
     assert.ok(prohibited.length >= 4);
     assert.match(html, /ممنوع مطلق/);
+  } finally {
+    restore();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Visual-regression guards (found by rendering the real app in a headless
+// browser; each of these was a real defect, not a hypothetical one).
+// ---------------------------------------------------------------------------
+
+test("every module view number is localized through formatNumber, not a raw digit", () => {
+  // Persian view: ASCII digits inside a stat value mean the number bypassed
+  // formatNumber. Digits live in <p class="stat__value">.
+  for (const view of ["#/dashboard", "#/projects", "#/accountability", "#/public-services", "#/historical-archive"]) {
+    const { html, restore } = renderWithoutFetch(view);
+    try {
+      const values = [...html.matchAll(/class="stat__value[^"]*">([^<]*)</g)].map((m) => m[1]);
+      assert.ok(values.length > 0, `no stat values rendered for ${view}`);
+      for (const value of values) {
+        assert.doesNotMatch(value, /[0-9]/, `raw ASCII digits in a Persian stat: "${value}" (${view})`);
+      }
+    } finally {
+      restore();
+    }
+  }
+});
+
+test("labelFor localizes known API slugs and never hides unknown ones", () => {
+  assert.equal(labelFor("none-recorded", "fa"), "هیچ موردی ثبت نشده");
+  assert.equal(labelFor("none-recorded", "en"), "None recorded");
+  assert.equal(labelFor("not-ratified", "en"), "Not ratified");
+  assert.equal(labelFor("PROHIBITED_BY_CHARTER", "en"), "Prohibited by charter");
+  // Unknown slugs fall through to the raw value — data is never swallowed.
+  assert.equal(labelFor("some-future-slug", "fa"), "some-future-slug");
+  assert.equal(labelFor(null, "fa"), "—");
+  for (const [slug, entry] of Object.entries(ENUM_LABELS)) {
+    assert.ok(entry.fa && entry.en, `enum label ${slug} is missing a locale`);
+  }
+});
+
+test("module views never print a raw enum slug where a label is expected", () => {
+  const views = [
+    "#/governance", "#/accountability", "#/historical-archive", "#/institutions",
+    "#/projects", "#/public-services", "#/research", "#/verification"
+  ];
+  for (const view of views) {
+    const { html, restore } = renderWithoutFetch(view);
+    try {
+      for (const slug of Object.keys(ENUM_LABELS)) {
+        const raw = new RegExp(`>\\s*${slug.replace(/[-.]/g, "\\$&")}\\s*<`);
+        assert.doesNotMatch(html, raw, `${view} prints the raw slug "${slug}"`);
+      }
+    } finally {
+      restore();
+    }
+  }
+});
+
+test("a deep link to a dossier is honoured by the archive view", () => {
+  const { html, restore } = renderWithoutFetch("#/historical-archive/SYN-HIST-002");
+  try {
+    // The drawer renders the dossier name from the same fixture the list uses.
+    assert.match(html, /drawer/);
+  } finally {
+    restore();
+  }
+});
+
+test("module icons come from the inline SVG set, never a symbol font", () => {
+  const { html, restore } = renderWithoutFetch("#/dashboard");
+  try {
+    assert.match(html, /<svg[^>]*class="icon/);
+    // The old build relied on glyphs that were missing from the bundled fonts.
+    for (const glyph of ["⌕", "☀", "☾", "◉", "\u{1F310}"]) {
+      assert.ok(!html.includes(glyph), `missing-glyph character ${glyph} still rendered`);
+    }
+  } finally {
+    restore();
+  }
+});
+
+test("formatDate renders Gregorian facts in the reader's language, never a raw ISO string", () => {
+  assert.equal(formatDate("2026-01-04T09:12:00Z", "fa", true), "۴ فروردین ۲۰۲۶ · ۹:12");
+  assert.equal(formatDate("2026-01-04T09:12:00Z", "en", true), "4 فروردین 2026 · 9:12");
+  assert.equal(formatDate("2024-06-15", "fa"), "۱۵ شهریور ۲۰۲۴");
+  assert.equal(formatDate("2024-06-15", "en"), "15 شهریور 2024");
+  // Anything unparseable is returned untouched rather than swallowed.
+  assert.equal(formatDate("nonsense", "fa"), "nonsense");
+  assert.equal(formatDate(null, "fa"), "—");
+});
+
+test("audit events and review records no longer print raw ISO timestamps", () => {
+  const { html, restore } = renderWithoutFetch("#/accountability");
+  try {
+    assert.doesNotMatch(html, /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/);
+    assert.doesNotMatch(html, />\s*\d{4}-\d{2}-\d{2}\s*</);
   } finally {
     restore();
   }

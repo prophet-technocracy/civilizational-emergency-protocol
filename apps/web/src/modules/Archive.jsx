@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useApi, useDebounced } from "../lib/api.js";
-import { t, formatNumber, FLAG_TYPES, REVIEW_STATUS, labelFor } from "../i18n.js";
+import { t, formatNumber, FLAG_TYPES, REVIEW_STATUS, labelFor, formatDate } from "../i18n.js";
 import { SectionHeader, Card, StateBlock, EpistemicBadge, Badge, Callout, Empty, FieldList, Drawer, Stat, Disclosure, Toast } from "../components/ui.jsx";
 
 function buildArchiveQuery({ q, era, field, region }) {
@@ -13,12 +13,13 @@ function buildArchiveQuery({ q, era, field, region }) {
   return query ? `/api/v1/archive?${query}` : "/api/v1/archive";
 }
 
-export default function Archive({ lang, dict, openProvenance, navigate }) {
+export default function Archive({ lang, dict, openProvenance, navigate, initialRecordId = null }) {
   const [q, setQ] = useState("");
   const [era, setEra] = useState("all");
   const [field, setField] = useState("all");
   const [region, setRegion] = useState("all");
-  const [detailId, setDetailId] = useState(null);
+  // A deep link (search result, shared URL) opens the dossier drawer directly.
+  const [detailId, setDetailId] = useState(initialRecordId);
   const [flagNote, setFlagNote] = useState("");
   const [toast, setToast] = useState("");
 
@@ -29,6 +30,10 @@ export default function Archive({ lang, dict, openProvenance, navigate }) {
   );
   const { status, payload, reload } = useApi(listPath);
   const detailState = useApi(detailId ? `/api/v1/archive/${detailId}` : null);
+
+  useEffect(() => {
+    setDetailId(initialRecordId ?? null);
+  }, [initialRecordId]);
 
   const applied = payload?.data.filters.applied;
 
@@ -197,7 +202,7 @@ export default function Archive({ lang, dict, openProvenance, navigate }) {
                       rows: [
                         { label: dict.source, value: t({ fa: "منابع ساختگی فهرست‌شده در پرونده", en: "Synthetic sources listed in the dossier" }, lang) },
                         { label: dict.reviewer, value: t(REVIEW_STATUS[dossier.editorialReview.status] ?? { fa: dossier.editorialReview.status, en: dossier.editorialReview.status }, lang) },
-                        { label: dict.publicationDate, value: dossier.editorialReview.lastReviewDate }
+                        { label: dict.publicationDate, value: formatDate(dossier.editorialReview.lastReviewDate, lang) }
                       ],
                       epistemicStatus: dossier.epistemicStatus,
                       contradictions: []
@@ -289,6 +294,7 @@ export default function Archive({ lang, dict, openProvenance, navigate }) {
         onClose={() => {
           setDetailId(null);
           setFlagNote("");
+          if (initialRecordId && navigate) navigate("historical-archive");
         }}
         title={detailState.status === "ready" ? t(detailState.payload.data.dossier.name, lang) : dict.loading}
         subtitle={detailId ?? ""}
@@ -462,7 +468,7 @@ function DossierDetail({ dossier, lang, dict, openProvenance, navigate, onClose,
                   <span className="timeline__dot" aria-hidden="true" />
                   <div>
                     <p className="timeline__title">
-                      {revision.version} · {revision.date}
+                      {labelFor(revision.version, lang)} · {formatDate(revision.date, lang)}
                     </p>
                     <p className="timeline__body">{t(revision.change, lang)}</p>
                     <p className="muted">{t(revision.author, lang)}</p>

@@ -141,7 +141,7 @@ export default function PublicServices({ lang, dict }) {
       >
         <FieldList
           rows={[
-            { label: t({ fa: "نوع یکپارچگی", en: "Integration type" }, lang), value: directoryState.integrationType },
+            { label: t({ fa: "نوع یکپارچگی", en: "Integration type" }, lang), value: labelFor(directoryState.integrationType, lang) },
             { label: t({ fa: "شمارش API زنده انجام شد؟", en: "Live API enumeration performed?" }, lang), value: directoryState.liveApiEnumerationPerformed ? dict.yes : dict.no },
             { label: t({ fa: "ضبط HAR انجام شد؟", en: "HAR capture performed?" }, lang), value: directoryState.harCapturePerformed ? dict.yes : dict.no },
             { label: t({ fa: "جاسازی iframe استفاده شد؟", en: "Iframe embedding used?" }, lang), value: directoryState.iframeEmbeddingUsed ? dict.yes : dict.no },

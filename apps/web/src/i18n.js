@@ -284,6 +284,7 @@ export const ENUM_LABELS = {
   "source-reported": { fa: "گزارش‌شده در منبع", en: "Source-reported" },
   "synthetic-only": { fa: "فقط ساختگی", en: "Synthetic only" },
   "disputed": { fa: "مورد اختلاف", en: "Disputed" },
+  "unindexed": { fa: "فهرست‌نشده", en: "Unindexed" },
   "partially-answered": { fa: "تا حدی پاسخ‌داده‌شده", en: "Partially answered" },
   "approved": { fa: "تأییدشده", en: "Approved" },
   "approved-with-conditions": { fa: "تأیید مشروط", en: "Approved with conditions" },
@@ -327,6 +328,33 @@ export const ENUM_LABELS = {
 export function labelFor(value, lang) {
   if (value === null || value === undefined || value === "") return "—";
   return ENUM_LABELS[value] ? t(ENUM_LABELS[value], lang) : String(value);
+}
+
+const PERSIAN_MONTHS = [
+  "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
+  "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"
+];
+
+/**
+ * Formats an ISO date (or ISO date-time) for readers.
+ * fa → Gregorian date in Persian month names; en → ISO day. No timezone
+ * shifts, no Intl data dependency, and unknown input is returned untouched
+ * so a malformed fixture never disappears from the interface.
+ */
+export function formatDate(value, lang = "fa", withTime = false) {
+  if (!value || typeof value !== "string") return value ?? "—";
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?/);
+  if (!match) return value;
+  const [, year, month, day, hour, minute] = match;
+  const monthIndex = Number(month) - 1;
+  const dayNumber = Number(day);
+  if (!PERSIAN_MONTHS[monthIndex] || Number.isNaN(dayNumber)) return value;
+  // Minutes stay Latin (`:04`), matching how clocks are set on Iranian devices.
+  const clock = withTime && hour ? ` · ${formatNumber(Number(hour), lang)}:${minute}` : "";
+  if (lang === "fa") {
+    return `${formatNumber(dayNumber, lang)} ${PERSIAN_MONTHS[monthIndex]} ${formatNumber(Number(year), lang)}${clock}`;
+  }
+  return `${dayNumber} ${PERSIAN_MONTHS[monthIndex]} ${year}${clock}`;
 }
 
 export const FLAG_TYPES = {

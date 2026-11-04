@@ -263,7 +263,7 @@ export default function Verification({ lang, dict }) {
                     <strong>{t(policy.title, lang)}</strong>
                     <p className="mono muted">{policy.actionId}</p>
                   </td>
-                  <td className="mono">{policy.resource}</td>
+                  <td>{labelFor(policy.resource, lang)}</td>
                   <td>{policy.isConstitutionallyProhibited ? "—" : formatNumber(policy.minimumBand, lang)}</td>
                   <td>{policy.requiredProofs.join(", ") || dict.none}</td>
                   <td>{t(policy.expiryPolicy, lang)}</td>

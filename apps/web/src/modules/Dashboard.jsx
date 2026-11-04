@@ -1,5 +1,5 @@
 import { useApi } from "../lib/api.js";
-import { t, formatNumber, UI, MODULES, EPISTEMIC } from "../i18n.js";
+import { t, formatNumber, UI, MODULES, EPISTEMIC, formatDate } from "../i18n.js";
 import { SectionHeader, Card, Stat, BarRow, EpistemicBadge, StateBlock, Callout, Badge, Empty, Disclosure } from "../components/ui.jsx";
 import { Icon } from "../components/icons.jsx";
 
@@ -157,7 +157,7 @@ export default function Dashboard({ lang, dict, navigate, openProvenance }) {
                 <div>
                   <p className="timeline__title">{t(event.changeSummary, lang)}</p>
                   <p className="timeline__meta">
-                    {event.timestamp.slice(0, 10)} · {t(event.responsibleProcessOrRole, lang)} · {event.newVersion}
+                    {formatDate(event.timestamp, lang)} · {t(event.responsibleProcessOrRole, lang)} · {event.newVersion}
                   </p>
                 </div>
               </li>

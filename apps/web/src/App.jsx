@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { UI, MODULES, DEPARTMENTS, EPISTEMIC, t, formatNumber } from "./i18n.js";
 import { useDebounced, readStored, writeStored } from "./lib/api.js";
-import { Drawer, ProvenanceBody, Badge, Toast } from "./components/ui.jsx";
+import { Drawer, ProvenanceBody, Badge } from "./components/ui.jsx";
 import { Icon } from "./components/icons.jsx";
 import Dashboard from "./modules/Dashboard.jsx";
 import Governance from "./modules/Governance.jsx";
@@ -53,7 +53,6 @@ export default function App() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState(null);
   const [provenance, setProvenance] = useState(null);
-  const [toast, setToast] = useState("");
   const searchInputRef = useRef(null);
   const debouncedSearch = useDebounced(searchTerm, 220);
 
@@ -323,7 +322,6 @@ export default function App() {
         {provenance ? <ProvenanceBody record={provenance} lang={lang} /> : null}
       </Drawer>
 
-      <Toast message={toast} onClose={() => setToast("")} />
     </div>
   );
 }

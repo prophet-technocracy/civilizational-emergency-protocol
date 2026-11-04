@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useApi } from "../lib/api.js";
-import { t, formatNumber, labelFor } from "../i18n.js";
+import { t, formatNumber, labelFor, formatDate } from "../i18n.js";
 import { SectionHeader, Card, StateBlock, Badge, Callout, Empty, Stat, FieldList } from "../components/ui.jsx";
 
 const REVIEW_OUTCOME_TONE = {
@@ -68,9 +68,9 @@ export default function Accountability({ lang, dict }) {
                 <li key={event.id} className="event">
                   <div className="event__head">
                     <span className="mono event__id">{event.id}</span>
-                    <Badge tone="info">{event.actionType}</Badge>
+                    <Badge tone="info">{labelFor(event.actionType, lang)}</Badge>
                     <Badge tone={event.approvalStatus.includes("approved") ? "good" : "warn"}>{labelFor(event.approvalStatus, lang)}</Badge>
-                    <span className="event__time">{event.timestamp.replace("T", " ").slice(0, 16)}</span>
+                    <span className="event__time">{formatDate(event.timestamp, lang, true)}</span>
                   </div>
                   <p className="event__summary">{t(event.changeSummary, lang)}</p>
                   <p className="event__meta mono">{event.targetEntity}</p>
@@ -148,7 +148,7 @@ export default function Accountability({ lang, dict }) {
                   <strong>{record.targetId}</strong> · {record.targetType}
                 </p>
                 <p className="muted">
-                  {t(record.reviewerRole, lang)} · {record.reviewType} · {record.reviewedAt}
+                  {t(record.reviewerRole, lang)} · {labelFor(record.reviewType, lang)} · {formatDate(record.reviewedAt, lang)}
                 </p>
                 <p>{t(record.conditionsOrDissent, lang)}</p>
               </li>

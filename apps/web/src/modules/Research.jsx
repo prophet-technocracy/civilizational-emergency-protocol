@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useApi } from "../lib/api.js";
-import { t, formatNumber, EPISTEMIC, labelFor } from "../i18n.js";
+import { t, formatNumber, EPISTEMIC, labelFor, formatDate } from "../i18n.js";
 import { SectionHeader, Card, StateBlock, EpistemicBadge, Badge, Callout, Empty, Stat, BarRow, Disclosure, Drawer } from "../components/ui.jsx";
 
 const CLASSIFICATION_LABELS = {
@@ -142,7 +142,8 @@ export default function Research({ lang, dict, openProvenance }) {
                 <p className="claim__text">{t(claim.claim, lang)}</p>
                 <p className="claim__meta">
                   {dict.source}: <span className="mono">{claim.sourceDocumentId}</span> · {dict.sourceVersion}:{" "}
-                  <span className="mono">{claim.sourceVersion}</span> · {dict.section}: {claim.pageOrSection}
+                  <span className="mono">{labelFor(claim.sourceVersion, lang)}</span> · {dict.section}:{" "}
+                  {labelFor(claim.pageOrSection, lang)}
                 </p>
                 <div className="claim__actions">
                   <button type="button" className="btn btn--ghost" onClick={() => setClaimId(claim.id)}>
@@ -177,12 +178,12 @@ export default function Research({ lang, dict, openProvenance }) {
                     <strong>{t(source.title, lang)}</strong>
                     <p className="muted">{t(source.authorOrIssuer, lang)}</p>
                   </td>
-                  <td className="mono">{source.version}</td>
+                  <td className="mono">{labelFor(source.version, lang)}</td>
                   <td>
                     <EpistemicBadge status={source.verificationStatus} lang={lang} />
                   </td>
                   <td>
-                    <Badge tone={source.reuseDecision.includes("publishable-full") ? "good" : "warn"}>{source.reuseDecision}</Badge>
+                    <Badge tone={source.reuseDecision.includes("publishable-full") ? "good" : "warn"}>{labelFor(source.reuseDecision, lang)}</Badge>
                   </td>
                   <td>{formatNumber(source.usedByClaims.length, lang)}</td>
                 </tr>
@@ -277,7 +278,7 @@ export default function Research({ lang, dict, openProvenance }) {
                 [dict.source, `${selectedClaim.sourceDocumentId} — ${selectedSource ? t(selectedSource.title, lang) : ""}`],
                 [dict.sourceVersion, selectedClaim.sourceVersion],
                 [dict.section, selectedClaim.pageOrSection],
-                [dict.publicationDate, selectedClaim.publicationDate],
+                [dict.publicationDate, formatDate(selectedClaim.publicationDate, lang)],
                 [dict.reviewer, selectedClaim.reviewerStatus],
                 [dict.confidence, t(selectedClaim.confidence, lang)]
               ]}
@@ -289,7 +290,7 @@ export default function Research({ lang, dict, openProvenance }) {
                   <span className="timeline__dot" aria-hidden="true" />
                   <div>
                     <p className="timeline__title">
-                      {revision.version} · {revision.date}
+                      {labelFor(revision.version, lang)} · {formatDate(revision.date, lang)}
                     </p>
                     <p className="timeline__body">{t(revision.change, lang)}</p>
                   </div>
