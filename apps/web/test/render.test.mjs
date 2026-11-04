@@ -486,3 +486,12 @@ test("counted ratios never render backwards in the RTL layout", () => {
     restore();
   }
 });
+
+test("text-link buttons keep a 24px hit area (WCAG 2.5.8)", () => {
+  // A measured layout sweep found every .link-btn was 21–22px tall. Height is
+  // the only thing the sweep could not express in SSR, so it is pinned here.
+  const css = readFileSync(join(WEB_ROOT, "src/styles.css"), "utf8");
+  const block = css.slice(css.indexOf(".link-btn {"), css.indexOf("}", css.indexOf(".link-btn {")));
+  assert.match(block, /min-height:\s*24px/);
+  assert.match(block, /display:\s*inline-flex/);
+});

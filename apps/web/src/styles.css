@@ -851,6 +851,11 @@ html[lang="en"] .stat__value--num {
 }
 
 .link-btn {
+  /* 24px tall hit area (WCAG 2.5.8) without changing the text baseline: the
+     extra height is vertical padding, and the underline still hugs the glyphs. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
   background: none;
   border: 0;
   padding: 0;
