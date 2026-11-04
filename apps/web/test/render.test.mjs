@@ -27,6 +27,7 @@ let formatNumber;
 let labelFor;
 let ENUM_LABELS;
 let formatDate;
+let formatRatio;
 
 const server = createServer();
 let baseUrl;
@@ -38,7 +39,7 @@ before(async () => {
       contents: [
         'export { default as App, readRouteFromHash } from "./src/App.jsx";',
         'export { primeApiCache } from "./src/lib/api.js";',
-        'export { UI, MODULES, t, formatNumber, labelFor, ENUM_LABELS, formatDate } from "./src/i18n.js";'
+        'export { UI, MODULES, t, formatNumber, labelFor, ENUM_LABELS, formatDate, formatRatio } from "./src/i18n.js";'
       ].join("\n"),
       resolveDir: WEB_ROOT,
       loader: "js"
@@ -63,6 +64,7 @@ before(async () => {
   labelFor = bundle.labelFor;
   ENUM_LABELS = bundle.ENUM_LABELS;
   formatDate = bundle.formatDate;
+  formatRatio = bundle.formatRatio;
 
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   baseUrl = `http://127.0.0.1:${server.address().port}`;
@@ -463,6 +465,23 @@ test("digital legacy shows epistemic badges and a real disclosure control", () =
     assert.doesNotMatch(html, />\s*source-reported\s*</);
     assert.match(html, /class="badge/);
     assert.match(html, /class="clause__chevron"/);
+  } finally {
+    restore();
+  }
+});
+
+test("counted ratios never render backwards in the RTL layout", () => {
+  // Persian digits are bidi class AN, so "7 / 10" would print as "10 / 7" in
+  // the right-to-left layout. The label-based form is order-safe in both
+  // languages and matches the meter beside it.
+  assert.equal(formatRatio(7, 10, "fa"), "۷ از ۱۰");
+  assert.equal(formatRatio(7, 10, "en"), "7 of 10");
+  assert.equal(formatRatio(0, 0), "۰ از ۰");
+
+  const { html, restore } = renderWithoutFetch("#/projects");
+  try {
+    assert.match(html, /۷ از ۱۰|\d+ از \d+/);
+    assert.doesNotMatch(html, /[۰-۹]\s*\/\s*[۰-۹]/);
   } finally {
     restore();
   }

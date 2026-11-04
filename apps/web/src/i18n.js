@@ -359,6 +359,21 @@ export function formatDate(value, lang = "fa", withTime = false) {
   return `${dayNumber} ${PERSIAN_MONTHS[monthIndex]} ${year}${clock}`;
 }
 
+/**
+ * Formats "part of whole" counts (e.g. "7 of 10" / "۷ از ۱۰").
+ *
+ * A slash is the wrong separator for this: Persian and Arabic-Indic digits
+ * carry bidi class AN, and a neutral character between two AN runs resolves to
+ * right-to-left, so `7 / 10` prints visually as `10 / 7` in the RTL layout —
+ * the ratio silently reads backwards. A word separator ("از" / "of") is a
+ * strong right-to-left run, so it keeps the pair in reading order in both
+ * scripts without needing markup or invisible isolate characters.
+ */
+export function formatRatio(part, whole, lang = "fa") {
+  const joiner = lang === "fa" ? " از " : " of ";
+  return `${formatNumber(part, lang)}${joiner}${formatNumber(whole, lang)}`;
+}
+
 export const FLAG_TYPES = {
   "missing-information": { fa: "کمبود اطلاعات", en: "Missing information" },
   "contradictory-information": { fa: "اطلاعات متناقض", en: "Contradictory information" }

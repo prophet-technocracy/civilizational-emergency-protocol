@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useApi } from "../lib/api.js";
-import { t, formatNumber, MILESTONE_STATUS, labelFor } from "../i18n.js";
+import { t, formatNumber, formatRatio, MILESTONE_STATUS, labelFor } from "../i18n.js";
 import { SectionHeader, Card, StateBlock, Badge, Callout, Empty, Stat, Meter, FieldList } from "../components/ui.jsx";
 
 const REVIEW_TONE = {
@@ -49,7 +49,7 @@ export default function Projects({ lang, dict }) {
 
       <div className="grid grid--inline">
         <Stat label={t({ fa: "پروژه‌ها", en: "Projects" }, lang)} value={formatNumber(projects.length, lang)} lang={lang} />
-        <Stat label={t({ fa: "نقاط عطف کامل", en: "Milestones complete" }, lang)} value={`${formatNumber(totals.complete, lang)} / ${formatNumber(totals.milestones, lang)}`} tone="good" lang={lang} />
+        <Stat label={t({ fa: "نقاط عطف کامل", en: "Milestones complete" }, lang)} value={formatRatio(totals.complete, totals.milestones, lang)} tone="good" lang={lang} />
         <Stat label={t({ fa: "نقاط عطف مسدود", en: "Milestones blocked" }, lang)} value={formatNumber(totals.blocked, lang)} tone="danger" lang={lang} />
         <Stat label={t({ fa: "حق حکمرانی اعطاشده", en: "Governance rights granted" }, lang)} value={formatNumber(0, lang)} tone="good" lang={lang} />
       </div>
@@ -92,8 +92,7 @@ export default function Projects({ lang, dict }) {
               <p className="project__objectives">{t(project.objectives, lang)}</p>
               <div className="progress-row">
                 <span>
-                  {t({ fa: "پیشرفت نقاط عطف", en: "Milestone progress" }, lang)}: {formatNumber(complete, lang)} /{" "}
-                  {formatNumber(project.milestones.length, lang)}
+                  {t({ fa: "پیشرفت نقاط عطف", en: "Milestone progress" }, lang)}: {formatRatio(complete, project.milestones.length, lang)}
                 </span>
                 <Meter value={complete} max={project.milestones.length} label={t({ fa: "نقاط عطف کامل", en: "Milestones complete" }, lang)} />
               </div>
