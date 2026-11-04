@@ -64,7 +64,7 @@ The web app is served by Vite on port 5173 (Persian RTL by default, English LTR 
 Verification:
 
 ```sh
-npm test         # 119 tests: API contract/security, response-envelope contract,
+npm test         # 120 tests: API contract/security, response-envelope contract,
                  # domain models, schemas, localization, SSR render + a11y guards
 npm run validate:csv   # 77-column historical-dossier gate validator
 npm run build    # production bundle check

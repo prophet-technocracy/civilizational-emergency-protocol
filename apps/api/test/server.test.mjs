@@ -178,6 +178,20 @@ test("archive exposes only deceased synthetic dossiers", async () => {
   assert.equal(data.schema.requiredColumns, 77);
 });
 
+test("dossier dates keep each year glued to its calendar", async () => {
+  // These strings sit in a narrow card and wrap. A space between the year and
+  // "خورشیدی"/"میلادی" leaves the unit orphaned on the next line ("... / 1924"
+  // ending a line), so the pair is joined with a non-breaking space.
+  const { data } = await (await fetch(`${baseUrl}/api/v1/archive`)).json();
+  const displays = data.results.flatMap((dossier) => [dossier.birth, dossier.death]);
+  assert.ok(displays.length > 0);
+  for (const display of displays) {
+    assert.doesNotMatch(display.fa, /[۰-۹] (خورشیدی|میلادی)/);
+    assert.doesNotMatch(display.en, /\d (SH|CE)/);
+    assert.match(display.fa, /\u00a0(خورشیدی|میلادی)/);
+  }
+});
+
 test("archive supports bilingual search across Persian and English names", async () => {
   const fa = await (await fetch(`${baseUrl}/api/v1/archive?q=${encodeURIComponent("کاشانی")}`)).json();
   assert.ok(fa.data.results.length >= 1);

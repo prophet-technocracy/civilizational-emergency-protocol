@@ -67,8 +67,8 @@ export const archiveDossiers = Object.freeze([
     discipline: { id: "constitutionalism", label: { fa: "مشروطه‌خواهی و حقوق", en: "Constitutionalism & Law" } },
     secondaryDisciplines: [{ id: "social-reform", label: { fa: "اصلاح اجتماعی و آموزش", en: "Social Reform & Education" } }],
     region: { id: "central-plateau", label: { fa: "فلات مرکزی", en: "Central Plateau" } },
-    birth: { display: { fa: "۱۲۴۷ خورشیدی / ۱۸۶۸ میلادی (تخمینی)", en: "1247 SH / 1868 CE (approximate)" }, place: { fa: "کاشان (فرضی)", en: "Kashan (illustrative)" }, precision: "year-approximate" },
-    death: { display: { fa: "۱۳۰۳ خورشیدی / ۱۹۲۴ میلادی (تخمینی)", en: "1303 SH / 1924 CE (approximate)" }, place: { fa: "تهران (فرضی)", en: "Tehran (illustrative)" }, precision: "year-approximate" },
+    birth: { display: { fa: "۱۲۴۷ خورشیدی / ۱۸۶۸ میلادی (تخمینی)", en: "1247 SH / 1868 CE (approximate)" }, place: { fa: "کاشان (فرضی)", en: "Kashan (illustrative)" }, precision: "year-approximate" },
+    death: { display: { fa: "۱۳۰۳ خورشیدی / ۱۹۲۴ میلادی (تخمینی)", en: "1303 SH / 1924 CE (approximate)" }, place: { fa: "تهران (فرضی)", en: "Tehran (illustrative)" }, precision: "year-approximate" },
     occupations: [{ fa: "نویسندهٔ حقوقی", en: "Legal essayist" }, { fa: "بنیان‌گذار مدرسه (فرضی)", en: "School founder (illustrative)" }],
     biography: {
       fa: "شخصیتی کاملاً ساختگی که برای آزمون بایگانی ساخته شده است. در این روایت خیالی، او رساله‌ای دربارهٔ تفکیک قوا و آیین‌نامهٔ انجمن‌های محلی نوشت و مدرسه‌ای فرضی بنیان گذاشت. هیچ‌یک از این جزئیات به فرد واقعی اشاره ندارد.",
@@ -129,8 +129,8 @@ export const archiveDossiers = Object.freeze([
     discipline: { id: "mathematics", label: { fa: "ریاضیات و نجوم", en: "Mathematics & Astronomy" } },
     secondaryDisciplines: [{ id: "philosophy", label: { fa: "فلسفه و الهیات", en: "Philosophy & Theology" } }],
     region: { id: "khorasan", label: { fa: "خراسان", en: "Khorasan" } },
-    birth: { display: { fa: "۴۲۱ خورشیدی / ۱۰۴۲ میلادی (تخمینی)", en: "421 SH / 1042 CE (approximate)" }, place: { fa: "نیشابور (فرضی)", en: "Nishapur (illustrative)" }, precision: "decade-approximate" },
-    death: { display: { fa: "۴۹۴ خورشیدی / ۱۱۱۵ میلادی (تخمینی)", en: "494 SH / 1115 CE (approximate)" }, place: { fa: "مرو (فرضی)", en: "Merv (illustrative)" }, precision: "decade-approximate" },
+    birth: { display: { fa: "۴۲۱ خورشیدی / ۱۰۴۲ میلادی (تخمینی)", en: "421 SH / 1042 CE (approximate)" }, place: { fa: "نیشابور (فرضی)", en: "Nishapur (illustrative)" }, precision: "decade-approximate" },
+    death: { display: { fa: "۴۹۴ خورشیدی / ۱۱۱۵ میلادی (تخمینی)", en: "494 SH / 1115 CE (approximate)" }, place: { fa: "مرو (فرضی)", en: "Merv (illustrative)" }, precision: "decade-approximate" },
     occupations: [{ fa: "منجم", en: "Astronomer" }, { fa: "هندسه‌دان", en: "Geometer" }],
     biography: {
       fa: "شخصیتی کاملاً ساختگی. در این روایت خیالی او در رصدخانه‌ای فرضی کار می‌کرد و جدول‌های مثلثاتی تدوین کرد. هیچ بخشی از این روایت مستند به فرد واقعی نیست.",
@@ -183,8 +183,8 @@ export const archiveDossiers = Object.freeze([
     discipline: { id: "medicine", label: { fa: "پزشکی و بهداشت عمومی", en: "Medicine & Public Health" } },
     secondaryDisciplines: [{ id: "engineering", label: { fa: "مهندسی و آب", en: "Engineering & Water" } }],
     region: { id: "azerbaijan", label: { fa: "آذربایجان", en: "Azerbaijan" } },
-    birth: { display: { fa: "۱۲۷۴ خورشیدی / ۱۸۹۵ میلادی", en: "1274 SH / 1895 CE" }, place: { fa: "تبریز (فرضی)", en: "Tabriz (illustrative)" }, precision: "exact-year" },
-    death: { display: { fa: "۱۳۴۸ خورشیدی / ۱۹۶۹ میلادی", en: "1348 SH / 1969 CE" }, place: { fa: "شیراز (فرضی)", en: "Shiraz (illustrative)" }, precision: "exact-year" },
+    birth: { display: { fa: "۱۲۷۴ خورشیدی / ۱۸۹۵ میلادی", en: "1274 SH / 1895 CE" }, place: { fa: "تبریز (فرضی)", en: "Tabriz (illustrative)" }, precision: "exact-year" },
+    death: { display: { fa: "۱۳۴۸ خورشیدی / ۱۹۶۹ میلادی", en: "1348 SH / 1969 CE" }, place: { fa: "شیراز (فرضی)", en: "Shiraz (illustrative)" }, precision: "exact-year" },
     occupations: [{ fa: "پزشک", en: "Physician" }, { fa: "طراح بهداشت روستایی", en: "Rural health planner" }],
     biography: {
       fa: "شخصیتی کاملاً ساختگی. در این روایت خیالی او شبکه‌ای برای بهداشت آب و ثبت علل مرگ‌ومیر طراحی کرد. هیچ ارتباطی با فرد واقعی ندارد.",
@@ -239,8 +239,8 @@ export const archiveDossiers = Object.freeze([
     discipline: { id: "literature", label: { fa: "ادبیات و زبان", en: "Literature & Language" } },
     secondaryDisciplines: [{ id: "social-reform", label: { fa: "اصلاح اجتماعی و آموزش", en: "Social Reform & Education" } }],
     region: { id: "gilan-mazandaran", label: { fa: "گیلان و مازندران", en: "Gilan & Mazandaran" } },
-    birth: { display: { fa: "۱۲۵۹ خورشیدی / ۱۸۸۰ میلادی (تخمینی)", en: "1259 SH / 1880 CE (approximate)" }, place: { fa: "رشت (فرضی)", en: "Rasht (illustrative)" }, precision: "year-approximate" },
-    death: { display: { fa: "۱۳۲۰ خورشیدی / ۱۹۴۱ میلادی (تخمینی)", en: "1320 SH / 1941 CE (approximate)" }, place: { fa: "تهران (فرضی)", en: "Tehran (illustrative)" }, precision: "year-approximate" },
+    birth: { display: { fa: "۱۲۵۹ خورشیدی / ۱۸۸۰ میلادی (تخمینی)", en: "1259 SH / 1880 CE (approximate)" }, place: { fa: "رشت (فرضی)", en: "Rasht (illustrative)" }, precision: "year-approximate" },
+    death: { display: { fa: "۱۳۲۰ خورشیدی / ۱۹۴۱ میلادی (تخمینی)", en: "1320 SH / 1941 CE (approximate)" }, place: { fa: "تهران (فرضی)", en: "Tehran (illustrative)" }, precision: "year-approximate" },
     occupations: [{ fa: "شاعر", en: "Poet" }, { fa: "روزنامه‌نگار (فرضی)", en: "Journalist (illustrative)" }],
     biography: {
       fa: "شخصیتی کاملاً ساختگی برای آزمون دستهٔ ادبیات و فیلتر منطقهٔ گیلان. هیچ اثر یا زندگی واقعی در این پرونده توصیف نمی‌شود.",
