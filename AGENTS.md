@@ -27,7 +27,7 @@ An agent must not:
 - present expertise, algorithms, AI systems, token holdings, donations, or contribution volume as a substitute for public consent;
 - collect or expose sensitive political or personal data;
 - conduct political persuasion, covert mobilisation, surveillance, doxxing, intimidation, or targeting;
-- merge its own work or bypass human review.
+- self-approve its own work, bypass required human or community review, bypass repository protections, or merge without explicit authorization from an authorized human maintainer after all applicable reviews and required checks pass. Once those conditions are met, an agent may execute a merge only when that maintainer explicitly instructs it to do so. Agents never decide that their own work is accepted; if reviewer authority, required checks, or community-review obligations are unclear, stop and ask.
 
 ## Required workflow
 

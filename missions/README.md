@@ -4,6 +4,8 @@ A mission is a bounded piece of work with a clear public-interest purpose, accou
 
 ## Mission proposal template
 
+Use the [Country-Mission Assessment and Safety Template](COUNTRY-MISSION-TEMPLATE.md) as a starting point for country-specific proposals. It is a draft checklist, not a safety certification or authorization. High-risk work still requires independent and affected-community review.
+
 Every mission proposal should state:
 
 1. **ID and title**
