@@ -435,3 +435,23 @@ test("colour tokens used for text keep WCAG AA contrast in both themes", () => {
     }
   }
 });
+
+test("unverified service entries are shown as text, not as clickable links", () => {
+  const services = fixtures.get("/api/v1/public-services").data.services;
+  const unverified = services.filter((service) => !service.urlVerified);
+  assert.ok(unverified.length > 0, "fixture must contain unverified entries");
+
+  const { html, restore } = renderWithoutFetch("#/public-services");
+  try {
+    for (const service of unverified) {
+      assert.ok(html.includes(service.url), `${service.id} url is not displayed at all`);
+      assert.ok(
+        !html.includes(`href="${service.url}"`),
+        `${service.id} still renders an outbound link for an unverified entry`
+      );
+    }
+    assert.match(html, /پیوند فعال نشده|the link stays inactive/);
+  } finally {
+    restore();
+  }
+});

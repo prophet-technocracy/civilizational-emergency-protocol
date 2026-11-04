@@ -2325,6 +2325,25 @@ html[dir="rtl"] .graph__label {
   word-break: break-all;
 }
 
+.service__url-unverified {
+  margin: 0.5rem 0 0;
+  padding: 0.45rem 0.6rem;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--paper-2);
+  font-size: 0.78rem;
+  line-height: 1.7;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: baseline;
+}
+
+.service__url-unverified .mono {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
 .service__actions {
   display: flex;
   gap: 0.35rem;

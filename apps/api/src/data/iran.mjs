@@ -440,6 +440,7 @@ export const publicServices = Object.freeze([
       en: "A public portal for some administrative services. Sample entry; domain ownership and accuracy are unverified."
     },
     url: "https://my.gov.ir",
+    urlVerified: false,
     urlStatus: "unverified",
     lastChecked: null,
     integrationClaim: false,
@@ -459,6 +460,7 @@ export const publicServices = Object.freeze([
       en: "Sample entry for tax services. No live probing or API testing was performed."
     },
     url: "https://tax.gov.ir",
+    urlVerified: false,
     urlStatus: "unverified",
     lastChecked: null,
     integrationClaim: false,
@@ -475,6 +477,7 @@ export const publicServices = Object.freeze([
       en: "Sample entry for insurance services. Current system status is unknown."
     },
     url: "https://eservices.tamin.ir",
+    urlVerified: false,
     urlStatus: "unverified",
     lastChecked: null,
     integrationClaim: false,
@@ -491,6 +494,7 @@ export const publicServices = Object.freeze([
       en: "Sample entry for agricultural statistics. No data was extracted or republished."
     },
     url: "https://amak.mrud.ir",
+    urlVerified: false,
     urlStatus: "unverified",
     lastChecked: null,
     integrationClaim: false,

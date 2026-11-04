@@ -102,7 +102,7 @@ export default function PublicServices({ lang, dict }) {
                   <Badge tone={service.urlStatus === "unverified" ? "warn" : "info"}>{labelFor(service.urlStatus, lang)}</Badge>
                 </div>
                 <p>{t(service.description, lang)}</p>
-                <p className="mono service__url">{service.url}</p>
+                <p className="mono service__url" dir="ltr">{service.url}</p>
                 <div className="chip-row">
                   <Badge tone="neutral">{t(CATEGORY_LABELS[service.category] ?? { fa: service.category, en: service.category }, lang)}</Badge>
                   <Badge tone="good">
@@ -121,10 +121,28 @@ export default function PublicServices({ lang, dict }) {
                   {t({ fa: "آخرین بررسی:", en: "Last checked:" }, lang)} {service.lastChecked ?? t({ fa: "هرگز — هیچ بررسی زنده‌ای انجام نشده", en: "Never — no live check performed" }, lang)}
                 </p>
                 <div className="service__actions">
-                  <a className="btn btn--ghost" href={service.url} target="_blank" rel="noopener noreferrer nofollow">
-                    {t({ fa: "گشودن پیوند خارجی", en: "Open external link" }, lang)}
-                    <span className="sr-only"> ({t({ fa: "در زبانهٔ تازه، در صورت اطمینان از اصالت", en: "in a new tab, if you trust the authenticity" }, lang)})</span>
-                  </a>
+                  {service.urlVerified ? (
+                    <a className="btn btn--ghost" href={service.url} target="_blank" rel="noopener noreferrer nofollow">
+                      {t({ fa: "گشودن پیوند خارجی", en: "Open external link" }, lang)}
+                      <span className="sr-only"> ({t({ fa: "در زبانهٔ تازه، در صورت اطمینان از اصالت", en: "in a new tab, if you trust the authenticity" }, lang)})</span>
+                    </a>
+                  ) : (
+                    // Unverified entries are shown as text, not as a clickable
+                    // endorsement: a prototype must not hand a visitor a link
+                    // whose authenticity nobody has confirmed.
+                    <p className="service__url-unverified">
+                      <span className="mono">{service.url}</span>{" "}
+                      <span className="muted">
+                        {t(
+                          {
+                            fa: "— نمایش متنی؛ پیوند فعال نشده تا اصالت دامنه تأیید شود",
+                            en: "— shown as text; the link stays inactive until the domain is confirmed"
+                          },
+                          lang
+                        )}
+                      </span>
+                    </p>
+                  )}
                   <button type="button" className="btn btn--ghost" onClick={() => copyUrl(service)}>
                     {t({ fa: "رونوشت نشانی", en: "Copy address" }, lang)}
                   </button>
