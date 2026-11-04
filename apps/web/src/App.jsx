@@ -1,20 +1,5 @@
 import { useEffect, useState } from "react";
-
-function isDemoPayload(value) {
-  return (
-    value &&
-    value.mode === "synthetic-demo" &&
-    typeof value.notice === "string" &&
-    Array.isArray(value.modules) &&
-    value.modules.every(
-      (module) =>
-        typeof module.id === "string" &&
-        typeof module.title === "string" &&
-        typeof module.description === "string" &&
-        module.status === "planned"
-    )
-  );
-}
+import { readDemoResponse } from "./demo-contract.mjs";
 
 export default function App() {
   const [payload, setPayload] = useState(null);
@@ -29,10 +14,7 @@ export default function App() {
           headers: { Accept: "application/json" },
           signal: controller.signal
         });
-        if (!response.ok) throw new Error("API response was not successful");
-
-        const result = await response.json();
-        if (!isDemoPayload(result)) throw new Error("Unexpected demo payload");
+        const result = await readDemoResponse(response);
         setPayload(result);
         setState("ready");
       } catch (error) {
@@ -45,7 +27,8 @@ export default function App() {
   }, []);
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" id="top">
+      <a className="skip-link" href="#main-content">رفتن به محتوای اصلی</a>
       <header className="topbar">
         <a className="brand" href="#top" aria-label="صفحهٔ اصلی نمونهٔ CEP">
           <span className="brand-mark" aria-hidden="true">چ</span>
@@ -58,7 +41,7 @@ export default function App() {
         <span className="preview-pill"><span className="pulse" /> پیش‌نمایش محلی</span>
       </header>
 
-      <main id="top">
+      <main id="main-content">
         <section className="hero" aria-labelledby="hero-title">
           <div className="hero-copy">
             <p className="eyebrow"><span className="eyebrow-line" /> نمونهٔ فنی، نه خدمت عمومی</p>

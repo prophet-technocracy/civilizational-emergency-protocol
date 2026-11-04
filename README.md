@@ -44,7 +44,7 @@ npm install
 npm run dev
 ```
 
-The web app is served by Vite on port 5173 and proxies read-only `/api` requests to the local Node API on port 3001. The prototype does not collect user information and is not production-ready.
+The web app is served by Vite on port 5173 and proxies read-only `/api` requests to the local Node API on port 3001. The prototype does not collect user information and is not production-ready. Run `npm test` for API and frontend contract tests, and `npm run build` for a production bundle check.
 
 ## Agent task board
 
