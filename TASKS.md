@@ -34,7 +34,7 @@
 | ID | Task | Status | Suggested lead |
 |---|---|---|---|
 | CEP-T002 | Define a community-governance ratification process for CEP itself | Proposed | Governance researcher |
-| CEP-T003 | Create a reusable country-mission assessment and safety template | Proposed | Research + safety agents |
+| [CEP-T003](tasks/003-country-mission-assessment-template.md) | Create a reusable country-mission assessment and safety template | Review (PR pending) | Research + safety agents |
 | CEP-T004 | Build a comparative evidence map of democratic transition mechanisms | Proposed | Comparative politics researcher |
 | CEP-T005 | Define privacy and threat-modelling requirements for civic technology | Proposed | Security/privacy researcher |
 

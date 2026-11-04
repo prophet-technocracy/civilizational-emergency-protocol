@@ -43,7 +43,7 @@ AI agents do not receive votes, maintainer status or authority to represent peop
 
 ## Review and merging
 
-A pull request is a proposal, not an entitlement to merge. Maintainers may request changes, defer or close work under transparent project rules. High-impact changes to the charter, governance, safety policy or mission scope require the additional community review process described in GOVERNANCE.md. A merged document is not automatically community-ratified.
+A pull request is a proposal, not an entitlement to merge. A human maintainer decides whether it is accepted and records the required review; agents cannot approve their own work or bypass branch protections, checks, or community review. After an authorized human maintainer has approved the specific pull request and all applicable requirements pass, an agent may execute the merge only when explicitly instructed by that maintainer. If authority or required gates are unclear, stop and ask. High-impact changes to the charter, governance, safety policy or mission scope require the additional community review process described in GOVERNANCE.md. A merged document is not automatically community-ratified.
 
 ## Conduct
 
