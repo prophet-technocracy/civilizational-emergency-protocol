@@ -78,7 +78,7 @@ Interface checks that run inside `npm test` (no browser required):
 - heading order, accessible names on every control, and WCAG AA contrast for the ink/teal tokens in both light and dark themes,
 - counted ratios rendered in reading order, and text-link buttons kept at a 24 px hit area.
 
-The same twelve views were additionally audited in a real headless Chromium with axe-core (WCAG 2.1 A/AA + best practice) in light and dark mode; the result is zero violations. A layout sweep of all twelve views in both languages and both themes found no horizontal scrolling, no offscreen elements and no clipped text. Contrast failures and undersized hit areas found that way are now part of the render tests so they cannot return.
+The same twelve views were additionally audited in a real headless Chromium with axe-core (WCAG 2.1 A/AA + best practice) in light and dark mode; the result is zero violations. A layout sweep of all twelve views in both languages, both themes and three viewport widths (1440 / 768 / 390 px) found no horizontal scrolling, no offscreen elements and no clipped text. Contrast failures and undersized hit areas found that way are now part of the render tests so they cannot return.
 
 See [docs/architecture/](docs/architecture/) for the architecture, module map, data flow and decisions, and [docs/security/THREAT-MODEL-AND-AUDIT.md](docs/security/THREAT-MODEL-AND-AUDIT.md) for the independent audit. Public deployment remains **gated** pending human review.
 
