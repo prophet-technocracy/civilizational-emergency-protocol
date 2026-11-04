@@ -33,9 +33,24 @@ The repository owner currently has the technical ability to administer the GitHu
 - [Open Questions](research/OPEN-QUESTIONS.md) — unresolved questions that need research and debate
 - [Missions](missions/README.md) — how focused work is proposed and tracked
 
-## Iran civic infrastructure prototype
+## Iran civic infrastructure prototype — twelve-module demonstrator
 
-A local-only, read-only web/API scaffold is under development. It currently uses synthetic placeholders only; it is not an official service and contains no source-verified Iran transition data. See the [implementation phases](docs/iran/IMPLEMENTATION-PLAN.md), [discovery report](docs/iran/DISCOVERY-AND-EXECUTION-REPORT.md), and [task board](agents/iran-mini-app/TASKS.md).
+A local-only, read-only civic infrastructure prototype ("Civilizational Operating System") with **twelve navigable modules**. Every record is a **synthetic fixture, an explicit proposal, or a labelled reference**: the prototype is not an official service, holds **zero living-person data**, and contains no source-verified Iran transition data. See the [implementation phases](docs/iran/IMPLEMENTATION-PLAN.md), [discovery report](docs/iran/DISCOVERY-AND-EXECUTION-REPORT.md), [system architecture](docs/architecture/SYSTEM-ARCHITECTURE.md), and [task board](agents/iran-mini-app/TASKS.md).
+
+| # | Module | What it demonstrates |
+|---|---|---|
+| 01 | پیشخوان تمدنی / Civilization Dashboard | Counts derived from this prototype's own fixtures, system status, epistemic distribution |
+| 02 | حکمرانی و منشور / Governance & Constitution | Ten proposed principles, five layers, amendment register, non-ratified status statement |
+| 03 | معماری گذار ایران / Iran Transition Architecture | 180-day emergency phase **separated** from the 2–3 year horizon; per-stage uncertainty and dependencies |
+| 04 | کارپوشهٔ نهادها / Institutional Directory | Proposed institutions + interactive SVG dependency/oversight map, sunset clauses |
+| 05 | بایگانی تاریخی / Historical Archive | Deceased-only synthetic dossiers, bilingual search, citations, conflicting accounts, revision history, 77-column gate report |
+| 06 | کتابخانهٔ پژوهش و شواهد / Research & Evidence Library | Source registry, claim provenance chain, contradiction explorer, unresolved questions |
+| 07 | تضمین دسترسی پنج‌سطحی / Five-Band Assurance | Action-scoped authorization simulator; bands authorize actions, never rank people |
+| 08 | پاسخگویی و شفافیت / Accountability | Append-oriented log, conflicts of interest, independent review records (no false immutability claim) |
+| 09 | راهنمای خدمات عمومی / Public Service Directory | Public entry links only; unverified labels; no API enumeration or integration claims |
+| 10 | پروژه‌های نفع عمومی / Public-Good Projects | Objectives, milestones, completion evidence; zero governance privileges |
+| 11 | آزمایشگاه طراحی نهادی / Institutional Design Lab | Hypothetical comparison of four institutional models + safeguard trade-off exploration |
+| 12 | میراث دیجیتال و اصل ۲۰ / Digital Legacy & Principle 20 | Seven-clause exploratory concept, isolated from the archive; voice/likeness/posthumous agency absolutely prohibited |
 
 To run the local development prototype (Node.js 22.12 or newer):
 
@@ -44,10 +59,33 @@ npm install
 npm run dev
 ```
 
-The web app is served by Vite on port 5173 and proxies read-only `/api` requests to the local Node API on port 3001. The prototype does not collect user information and is not production-ready. Run `npm test` for API and frontend contract tests, and `npm run build` for a production bundle check.
+The web app is served by Vite on port 5173 (Persian RTL by default, English LTR switchable) and proxies read-only `/api` requests to the local Node API on port 3001. The prototype collects no user information: no accounts, cookies, analytics, or logs of any kind.
+
+Verification:
+
+```sh
+npm test         # 120 tests: API contract/security, response-envelope contract,
+                 # domain models, schemas, localization, SSR render + a11y guards
+npm run validate:csv   # 77-column historical-dossier gate validator
+npm run build    # production bundle check
+npm run check    # all three, in order
+```
+
+Interface checks that run inside `npm test` (no browser required):
+
+- server-side rendering of all twelve views with `fetch` disabled,
+- the response-envelope contract (`mode`, `schemaVersion`, `generatedAt`, bilingual epistemic notice) enforced on every `/api/v1` payload, including a deep scan that rejects personal-data keys and any `living` record,
+- heading order, accessible names on every control, and WCAG AA contrast for the ink/teal tokens in both light and dark themes,
+- counted ratios rendered in reading order, and text-link buttons kept at a 24 px hit area.
+
+The same twelve views were additionally audited in a real headless Chromium with axe-core (WCAG 2.1 A/AA + best practice) in light and dark mode; the result is zero violations. A layout sweep of all twelve views in both languages, both themes and three viewport widths (1440 / 768 / 390 px) found no horizontal scrolling, no offscreen elements and no clipped text. Contrast failures and undersized hit areas found that way are now part of the render tests so they cannot return.
+
+See [docs/architecture/](docs/architecture/) for the architecture, module map, data flow and decisions, and [docs/security/THREAT-MODEL-AND-AUDIT.md](docs/security/THREAT-MODEL-AND-AUDIT.md) for the independent audit. Public deployment remains **gated** pending human review.
 
 ## Agent task board
 
+- [Master engineering task board](agents/MASTER-TASK-BOARD.md) — the twelve-module prototype plan, dependency graph, owners and review status
+- [Engineering departments](agents/departments/README.md) — the eight departments (A–H) with charters, scope and acceptance criteria
 - [Task backlog](TASKS.md) — priorities and status for human and AI contributors
 - [Task system](tasks/README.md) — how to claim, deliver and review tasks
 - [CEP-T001: Iran transition research](tasks/001-iran-democratic-transition-research.md) — the first country-specific research mission

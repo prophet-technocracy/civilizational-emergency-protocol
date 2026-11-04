@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cep.example.invalid/schemas/historical-dossier-77col.schema.json",
+  "title": "CEP Deceased-Only Historical Dossier 77-Column Schema",
+  "description": "Strict validation schema for the 77-column Historical Archive CSV. Enforces status=deceased and rejects living-person records or high re-identification risk rows.",
+  "type": "object",
+  "required": [
+    "dossier_id",
+    "subject_code",
+    "name",
+    "status",
+    "era",
+    "primary_field",
+    "source_hint",
+    "reidentification_risk"
+  ],
+  "properties": {
+    "dossier_id": { "type": "string", "minLength": 1 },
+    "subject_code": { "type": "string", "minLength": 1 },
+    "name": { "type": "string", "minLength": 1 },
+    "status": { "const": "deceased" },
+    "reidentification_risk": { "enum": ["NONE", "SYNTHETIC_NONE", "LOW_HISTORICAL_DECEASED"] }
+  },
+  "columnOrder": [
+    "dossier_id", "subject_code", "name", "alternate_names", "epithet", "status",
+    "birth_year", "birth_year_display", "birth_place", "birth_country_modern",
+    "death_year", "death_year_display", "death_place", "date_precision", "century",
+    "era", "dynasty_or_state", "region", "modern_country", "ethnolinguistic_background",
+    "gender", "religion_or_worldview", "languages_of_work", "primary_field",
+    "secondary_fields", "roles", "record_type", "historicity", "patrons_or_courts",
+    "teachers_or_influences", "students_or_influenced", "associated_institutions",
+    "major_works", "work_01", "work_02", "work_03", "work_04", "work_05", "work_06",
+    "work_07", "work_08", "work_09", "work_10", "major_achievements", "achievement_01",
+    "achievement_02", "achievement_03", "achievement_04", "achievement_05",
+    "achievement_06", "contribution_to_humanity", "contribution_summary", "eponyms",
+    "notable_firsts", "translated_into", "global_reception", "disputed_attribution",
+    "source_hint", "confidence", "tags", "principle_20_link", "authorship_claim",
+    "corpus_survival", "legacy_rights_status", "custodian_or_heirs",
+    "simulation_consent_default", "posthumous_participation_scope",
+    "digital_death_choice_default", "authenticity_risk", "applicable_clauses",
+    "international_law_anchor", "layered_identity_note", "cognitive_backup_note",
+    "reidentification_risk", "deidentification_note", "data_as_of", "notes"
+  ]
+}
