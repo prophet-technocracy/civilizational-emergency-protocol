@@ -48,6 +48,7 @@ export function t(value, lang) {
 
 export const UI = {
   fa: {
+    actions: "عملیات",
     dir: "rtl",
     skip: "پرش به محتوای اصلی",
     brand: "سامانهٔ عامل مدنی",
@@ -123,6 +124,7 @@ export const UI = {
     notice: "توجه"
   },
   en: {
+    actions: "Actions",
     dir: "ltr",
     skip: "Skip to main content",
     brand: "Civilizational Operating System",

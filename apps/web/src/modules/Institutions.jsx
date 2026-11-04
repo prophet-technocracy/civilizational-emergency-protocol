@@ -222,7 +222,9 @@ export default function Institutions({ lang, dict, openProvenance }) {
                   <th scope="col">{t({ fa: "دسته", en: "Category" }, lang)}</th>
                   <th scope="col">{t({ fa: "وضعیت معرفتی", en: "Epistemic status" }, lang)}</th>
                   <th scope="col">{t({ fa: "شرط خاتمه", en: "Sunset" }, lang)}</th>
-                  <th scope="col" />
+                  <th scope="col">
+                    <span className="sr-only">{dict.actions}</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>

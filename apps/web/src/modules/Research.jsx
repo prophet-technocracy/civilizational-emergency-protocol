@@ -203,9 +203,9 @@ export default function Research({ lang, dict, openProvenance }) {
           <div className="conflict-stack">
             {contradictionPairs.map((pair) => (
               <div key={pair.claimId} className="conflict">
-                <h4>
+                <h3 className="conflict__title">
                   <span className="mono">{pair.claimId}</span> — {t(pair.claim, lang)}
-                </h4>
+                </h3>
                 {pair.contradictions.map((item, index) => (
                   <p key={index} className="conflict__status">
                     <Badge tone="danger">{item.with}</Badge> {t(item.note, lang)}
@@ -283,7 +283,7 @@ export default function Research({ lang, dict, openProvenance }) {
                 [dict.confidence, t(selectedClaim.confidence, lang)]
               ]}
             />
-            <h4 className="minor-heading">{dict.revisionHistory}</h4>
+            <h3 className="minor-heading">{dict.revisionHistory}</h3>
             <ol className="timeline timeline--compact">
               {selectedClaim.revisionHistory.map((revision, index) => (
                 <li key={index}>
@@ -297,7 +297,7 @@ export default function Research({ lang, dict, openProvenance }) {
                 </li>
               ))}
             </ol>
-            <h4 className="minor-heading">{dict.contradictions}</h4>
+            <h3 className="minor-heading">{dict.contradictions}</h3>
             {selectedClaim.knownContradictions.length === 0 ? (
               <p className="muted">{dict.noContradictions}</p>
             ) : (

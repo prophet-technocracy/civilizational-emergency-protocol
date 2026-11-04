@@ -4,7 +4,7 @@
 // The JSX sources are bundled on the fly with esbuild (a Vite dependency) so
 // node:test can import them without a browser or a dev server.
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { after, before, test } from "node:test";
 import { createElement } from "react";
@@ -350,5 +350,88 @@ test("audit events and review records no longer print raw ISO timestamps", () =>
     assert.doesNotMatch(html, />\s*\d{4}-\d{2}-\d{2}\s*</);
   } finally {
     restore();
+  }
+});
+
+test("headings inside module views keep a valid order", () => {
+  // axe flagged h1 -> h4 jumps; static checks catch the same class of bug
+  // without a browser. Every view renders exactly one <h1>.
+  const views = [
+    "#/dashboard", "#/governance", "#/transition", "#/institutions", "#/historical-archive",
+    "#/research", "#/verification", "#/accountability", "#/public-services", "#/projects",
+    "#/simulations", "#/digital-legacy"
+  ];
+  for (const view of views) {
+    const { html, restore } = renderWithoutFetch(view);
+    try {
+      const levels = [...html.matchAll(/<h([1-6])[\s>]/g)].map((m) => Number(m[1]));
+      assert.equal(levels.filter((level) => level === 1).length, 1, `${view} must have exactly one h1`);
+      assert.equal(levels[0], 1, `${view} must start at h1, got h${levels[0]}`);
+      let previous = 1;
+      for (const level of levels.slice(1)) {
+        assert.ok(level <= previous + 1, `${view} jumps from h${previous} to h${level}`);
+        previous = level;
+      }
+    } finally {
+      restore();
+    }
+  }
+});
+
+test("table headers have accessible text", () => {
+  for (const view of ["#/institutions", "#/governance", "#/accountability", "#/digital-legacy"]) {
+    const { html, restore } = renderWithoutFetch(view);
+    try {
+      for (const match of html.matchAll(/<th[^>]*>([\s\S]*?)<\/th>/g)) {
+        const inner = match[1].replace(/<[^>]+>/g, "").trim();
+        const hasHiddenLabel = /class="sr-only"/.test(match[1]);
+        assert.ok(inner.length > 0 || hasHiddenLabel, `${view} has an empty <th>`);
+      }
+      assert.doesNotMatch(html, /<th[^>]*>\s*<\/th>/, `${view} has a self-closing empty header`);
+    } finally {
+      restore();
+    }
+  }
+});
+
+test("colour tokens used for text keep WCAG AA contrast in both themes", () => {
+  // Mirrors the axe run: the ink/teal tokens the views use for text must clear
+  // 4.5:1 against the light paper and the dark paper.
+  const css = readFileSync(join(WEB_ROOT, "src/styles.css"), "utf8");
+  const readVar = (block, name) => {
+    const match = block.match(new RegExp(`${name}:\\s*(#[0-9a-fA-F]{6})`));
+    return match ? match[1] : null;
+  };
+  const split = css.indexOf('html[data-theme="dark"]');
+  const lightBlock = css.slice(css.indexOf(":root {"), split);
+  const darkBlock = css.slice(split, css.indexOf("}", split) + 1);
+
+  const luminance = (hex) => {
+    const channels = [1, 3, 5].map((offset) => parseInt(hex.slice(offset, offset + 2), 16) / 255);
+    const linear = channels.map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+  };
+  const ratio = (a, b) => {
+    const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+    return (hi + 0.05) / (lo + 0.05);
+  };
+
+  for (const [theme, block, paper] of [
+    ["light", lightBlock, ["--paper-1", "--paper-2"]],
+    ["dark", darkBlock, ["--paper-0", "--paper-1", "--paper-2"]]
+  ]) {
+    for (const surface of paper) {
+      const background = readVar(block, surface);
+      assert.ok(background, `${theme} is missing ${surface}`);
+      for (const token of ["--ink-900", "--ink-700", "--ink-500", "--ink-300", "--teal-text"]) {
+        const colour = readVar(block, token);
+        if (!colour) continue;
+        const value = ratio(colour, background);
+        assert.ok(
+          value >= 4.5,
+          `${theme}: ${token} (${colour}) on ${surface} (${background}) is ${value.toFixed(2)}:1`
+        );
+      }
+    }
   }
 });

@@ -120,19 +120,19 @@ export default function Simulations({ lang, dict }) {
                   </div>
                 ))}
               </dl>
-              <h4 className="minor-heading">{t({ fa: "مزیت‌های ساختاری", en: "Structural strengths" }, lang)}</h4>
+              <h3 className="minor-heading">{t({ fa: "مزیت‌های ساختاری", en: "Structural strengths" }, lang)}</h3>
               <ul className="tight-list">
                 {model.strengths.map((item, index) => (
                   <li key={index}>{t(item, lang)}</li>
                 ))}
               </ul>
-              <h4 className="minor-heading">{t({ fa: "خطرهای شناخته‌شده", en: "Known risks" }, lang)}</h4>
+              <h3 className="minor-heading">{t({ fa: "خطرهای شناخته‌شده", en: "Known risks" }, lang)}</h3>
               <ul className="tight-list">
                 {model.risks.map((item, index) => (
                   <li key={index}>{t(item, lang)}</li>
                 ))}
               </ul>
-              <h4 className="minor-heading">{t({ fa: "حفاظ‌های لازم", en: "Required safeguards" }, lang)}</h4>
+              <h3 className="minor-heading">{t({ fa: "حفاظ‌های لازم", en: "Required safeguards" }, lang)}</h3>
               <ul className="tight-list">
                 {model.safeguardsNeeded.map((item, index) => (
                   <li key={index}>{t(item, lang)}</li>

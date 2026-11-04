@@ -94,22 +94,22 @@ export default function Verification({ lang, dict }) {
             <div className="band__head">
               <span className="band__num">{formatNumber(item.bandNumber, lang)}</span>
               <div>
-                <h3>{t(item.name, lang)}</h3>
+                <h2 className="band__title">{t(item.name, lang)}</h2>
                 <Badge tone={item.isSimulated ? "warn" : "good"}>
                   {item.isSimulated ? t({ fa: "شبیه‌سازی", en: "Simulated" }, lang) : t({ fa: "پیاده‌سازی‌شده (همین سامانه)", en: "Implemented (this system)" }, lang)}
                 </Badge>
               </div>
             </div>
             <p className="band__question">{t(item.question, lang)}</p>
-            <h4 className="minor-heading">{t({ fa: "حداقل مدرک لازم", en: "Minimum evidence" }, lang)}</h4>
+            <h3 className="minor-heading">{t({ fa: "حداقل مدرک لازم", en: "Minimum evidence" }, lang)}</h3>
             <p>{t(item.minimumEvidence, lang)}</p>
-            <h4 className="minor-heading">{t({ fa: "کنش‌های مجاز نمونه", en: "Sample permitted actions" }, lang)}</h4>
+            <h3 className="minor-heading">{t({ fa: "کنش‌های مجاز نمونه", en: "Sample permitted actions" }, lang)}</h3>
             <ul className="tight-list">
               {item.permittedActions.map((action, i) => (
                 <li key={i}>{t(action, lang)}</li>
               ))}
             </ul>
-            <h4 className="minor-heading">{t({ fa: "آنچه این سطح اثبات نمی‌کند", en: "What this band does not prove" }, lang)}</h4>
+            <h3 className="minor-heading">{t({ fa: "آنچه این سطح اثبات نمی‌کند", en: "What this band does not prove" }, lang)}</h3>
             <p className="band__not">{t(item.notImplied, lang)}</p>
             <p className="muted">{t(item.realImplementation, lang)}</p>
           </article>
@@ -288,7 +288,7 @@ export default function Verification({ lang, dict }) {
         <div className="reject-grid">
           {rejectedProofs.map((item) => (
             <article key={item.id} className="reject">
-              <h4>{t(item.label, lang)}</h4>
+              <h3 className="conflict__title">{t(item.label, lang)}</h3>
               <p>{t(item.whyRejected, lang)}</p>
               <Badge tone="danger">{labelFor(item.category, lang)}</Badge>
             </article>
