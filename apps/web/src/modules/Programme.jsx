@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useApi } from "../lib/api.js";
 import { t, formatNumber, formatDate } from "../i18n.js";
 import { localeStrings } from "../locales/index.js";
+import { principleHref } from "../lib/routes.js";
 import { SectionHeader, Card, Callout, StateBlock, Badge, Stat, Empty } from "../components/ui.jsx";
 import { LightDot } from "../components/lights.jsx";
 
@@ -49,9 +50,7 @@ function ProjectCard({ project, copy, lang, stateLabel }) {
     <article className={`prj prj--${project.state}`} aria-labelledby={`prj-${project.id}`}>
       <header className="prj__head">
         <div>
-          <p className="prj__id mono muted">
-            {project.id} · {project.principleId}
-          </p>
+          <p className="prj__id mono muted">{project.id}</p>
           <h3 id={`prj-${project.id}`} className="prj__title">
             {t(project.title, lang)}
           </h3>
@@ -59,9 +58,13 @@ function ProjectCard({ project, copy, lang, stateLabel }) {
         <Badge tone={STATE_TONE[project.state] ?? "neutral"}>{stateLabel}</Badge>
       </header>
 
+      {/* One link, one announcement: the id and the title are the same
+          destination, so they are the same anchor (issue #38). */}
       <p className="prj__principle small">
         <LightDot light={project.principle.light} label={copy.principleLight} />
-        <span className="mono">{project.principleId}</span> · {t(project.principle.title, lang)}
+        <a className="link-button" href={principleHref(project.principleId)}>
+          <span className="mono">{project.principleId}</span> · {t(project.principle.title, lang)}
+        </a>
       </p>
       <p className="prj__scope">{t(project.scope, lang)}</p>
       <p className="prj__deliverable small">

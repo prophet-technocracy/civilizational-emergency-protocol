@@ -5653,3 +5653,14 @@ html[data-theme="dark"] .work-card__icon {
   color: var(--danger);
   font-weight: 600;
 }
+
+/* The row a project sent you to: a rule and a tint, not a jump of the layout. */
+.principles-table tr.is-targeted {
+  background: color-mix(in oklab, var(--warn) 12%, transparent);
+  box-shadow: inset 3px 0 0 var(--warn);
+}
+
+.principles-table__target {
+  display: block;
+  margin-block-start: 0.2rem;
+}

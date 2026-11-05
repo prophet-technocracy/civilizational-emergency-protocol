@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useApi } from "../lib/api.js";
 import { t, formatNumber } from "../i18n.js";
 import { localeStrings } from "../locales/index.js";
 import { SectionHeader, Card, StateBlock, Badge, Callout, Empty, Stat } from "../components/ui.jsx";
 import { LightDot } from "../components/lights.jsx";
+import { principleAnchor, principleHref, PROGRAMME_VIEW, hrefFor } from "../lib/routes.js";
+import { prefersReducedMotion } from "../lib/focus.js";
 
 // The four statuses map onto badge tones; anything unknown stays neutral rather
 // than inventing a colour the reader would have to guess at.
@@ -11,10 +13,29 @@ const TONE = { covered: "good", partial: "warn", gap: "info", outside: "neutral"
 
 const STATUS_ORDER = ["covered", "partial", "gap", "outside"];
 
-export default function Principles({ lang }) {
+export default function Principles({ lang, route }) {
   const copy = localeStrings(lang).principles;
   const { status, payload, reload } = useApi("/api/v1/principles");
+  // The queue that targets these principles: cached, and allowed to fail
+  // quietly — a missing programme must not take the mother file down.
+  const programme = useApi("/api/v1/programme");
   const [filter, setFilter] = useState("all");
+  const targetId = route?.recordId ?? null;
+  const targetedBy = useMemo(() => {
+    const map = new Map();
+    for (const project of programme.payload?.data?.projects ?? []) {
+      if (!map.has(project.principleId)) map.set(project.principleId, []);
+      map.get(project.principleId).push(project.id);
+    }
+    return map;
+  }, [programme.payload]);
+
+  // A deep link from a project lands on the row it is working on.
+  useEffect(() => {
+    if (!targetId || status !== "ready") return;
+    const row = document.getElementById(principleAnchor(targetId));
+    row?.scrollIntoView?.({ block: "center", behavior: prefersReducedMotion() ? "auto" : "smooth" });
+  }, [targetId, status]);
 
   if (status !== "ready") {
     return (
@@ -32,6 +53,10 @@ export default function Principles({ lang }) {
   const lightCopy = (id) => copy.lightName[id] ?? id;
 
   const shown = filter === "all" ? null : filter;
+  // A deep link to a principle that is not in this file must say so rather than
+  // quietly showing the top of the page.
+  const targetMissing =
+    Boolean(targetId) && !chapters.some((chapter) => chapter.principles.some((principle) => principle.id === targetId));
   const visibleChapters = chapters
     .map((chapter) => ({
       ...chapter,
@@ -47,6 +72,12 @@ export default function Principles({ lang }) {
         lede={copy.lede}
         actions={<Badge tone="warn">{copy.draftBadge}</Badge>}
       />
+
+      {targetMissing ? (
+        <Callout tone="warn" title={copy.targetMissingTitle ?? copy.draftTitle}>
+          <p>{copy.targetMissing}</p>
+        </Callout>
+      ) : null}
 
       <Callout tone="warn" title={copy.draftTitle}>
         <p>{t(motherFile.sourceNote, lang)}</p>
@@ -176,7 +207,11 @@ export default function Principles({ lang }) {
                 </thead>
                 <tbody>
                   {chapter.rows.map((principle) => (
-                    <tr key={principle.id}>
+                    <tr
+                      key={principle.id}
+                      id={principleAnchor(principle.id)}
+                      className={targetId === principle.id ? "is-targeted" : undefined}
+                    >
                       <td>
                         <span className="principles-status">
                           <LightDot light={principle.light} label={`${copy.lightColumn}: ${lightCopy(principle.light)}`} />
@@ -188,6 +223,21 @@ export default function Principles({ lang }) {
                           <span className="mono muted">{t(principle.label, lang)}</span> · {t(principle.title, lang)}
                         </span>
                         <span className="small muted principles-table__note">{t(principle.note, lang)}</span>
+                        {targetedBy.get(principle.id)?.length ? (
+                          <span className="small principles-table__target">
+                            {copy.targetedBy}:{" "}
+                            {targetedBy.get(principle.id).map((projectId, index) => (
+                              <span key={projectId}>
+                                {index > 0 ? " · " : ""}
+                                <a className="link-button mono" href={hrefFor(PROGRAMME_VIEW)}>
+                                  {projectId}
+                                </a>
+                              </span>
+                            ))}
+                          </span>
+                        ) : targetId === principle.id ? (
+                          <span className="small muted principles-table__target">{copy.targetedByNone}</span>
+                        ) : null}
                         {/* On a phone the surface moves under the note instead of
                             taking a column of its own. */}
                         <span className="small principles-inline-surface">

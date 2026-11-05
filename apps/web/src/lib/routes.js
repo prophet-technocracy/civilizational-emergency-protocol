@@ -91,7 +91,13 @@ export function readRouteFromHash(hash) {
     return recordId ? { view: NOT_FOUND_VIEW, recordId: null } : { view: BANK_VIEW, recordId: null };
   }
   if (viewId === PRINCIPLES_VIEW) {
-    return { view: PRINCIPLES_VIEW, recordId: null };
+    // A principle is addressable (`#/principles/Z-01`) so a project can point at
+    // the row it is working on (issue #38).
+    if (!recordId) return { view: PRINCIPLES_VIEW, recordId: null };
+    const principleId = decodeURIComponent(recordId);
+    return /^[A-Za-z]{1,2}-[0-9]{1,3}$/.test(principleId)
+      ? { view: PRINCIPLES_VIEW, recordId: principleId }
+      : { view: NOT_FOUND_VIEW, recordId: null };
   }
   if (viewId === HUB_VIEW) {
     return { view: HUB_VIEW, recordId: null };
@@ -178,7 +184,15 @@ export function routeMeta(route, lang) {
     return page(strings.bank.navLabel, [home, { label: strings.bank.navLabel }]);
   }
   if (view === PRINCIPLES_VIEW) {
-    return page(strings.principles.navLabel, [home, { label: strings.principles.navLabel }]);
+    if (!route.recordId) {
+      return page(strings.principles.navLabel, [home, { label: strings.principles.navLabel }]);
+    }
+    const label = `${strings.principles.navLabel} · ${route.recordId}`;
+    return page(label, [
+      home,
+      { label: strings.principles.navLabel, href: hrefFor(PRINCIPLES_VIEW) },
+      { label: route.recordId }
+    ]);
   }
   if (view === PROGRAMME_VIEW) {
     return page(strings.programme.navLabel, [home, { label: strings.programme.navLabel }]);
@@ -189,4 +203,14 @@ export function routeMeta(route, lang) {
   const module = moduleFor(route);
   const label = `${num(String(module.number).padStart(2, "0"))} · ${t(module.title, lang)}`;
   return page(label, [home, { label }]);
+}
+
+/** The in-app address of one principle row (issue #38). */
+export function principleHref(principleId) {
+  return hrefFor(PRINCIPLES_VIEW, principleId);
+}
+
+/** The DOM id a principle row is anchored by. */
+export function principleAnchor(principleId) {
+  return `principle-${principleId}`;
 }

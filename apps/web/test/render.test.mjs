@@ -202,6 +202,10 @@ test("route parsing defaults to the five-level chooser and accepts record ids", 
   assert.deepEqual(readRouteFromHash("#/programme/PRG-SYN-001"), { view: "not-found", recordId: null });
   assert.deepEqual(readRouteFromHash("#/bank/anything"), { view: "not-found", recordId: null });
   assert.deepEqual(readRouteFromHash("#/bank"), { view: "bank", recordId: null });
+  // A principle is addressable so a project can point at the row it targets.
+  assert.deepEqual(readRouteFromHash("#/principles/Z-01"), { view: "principles", recordId: "Z-01" });
+  assert.deepEqual(readRouteFromHash("#/principles/P-013"), { view: "principles", recordId: "P-013" });
+  assert.deepEqual(readRouteFromHash("#/principles/NOPE"), { view: "not-found", recordId: null });
 });
 
 test("every route is named once, and a level names itself in the title and the crumbs", () => {
@@ -1525,5 +1529,43 @@ test("the bank states the amount it actually read, before the form is submitted"
     assert.match(source, /parseDecimalInput/);
   } finally {
     restore();
+  }
+});
+
+test("a project and the principle it targets link to each other, once each", () => {
+  const programme = fixtures.get("/api/v1/programme").data;
+  const project = programme.projects[0];
+
+  // Programme -> principle: the id and the title are one link, not two.
+  const fromProgramme = renderWithoutFetch("#/programme");
+  try {
+    assert.match(
+      fromProgramme.html,
+      new RegExp(`<a class="link-button" href="#/principles/${project.principleId}">`),
+      "the principle id must link to its row"
+    );
+    const links = fromProgramme.html.match(new RegExp(`href="#/principles/${project.principleId}"`, "g")) ?? [];
+    assert.equal(links.length, 1, "one link per project, so a screen reader announces it once");
+  } finally {
+    fromProgramme.restore();
+  }
+
+  // Principle -> programme: the row says which project is working on it.
+  const fromPrinciple = renderWithoutFetch(`#/principles/${project.principleId}`);
+  try {
+    assert.match(fromPrinciple.html, new RegExp(`id="principle-${project.principleId}"`), "the row is anchorable");
+    assert.match(fromPrinciple.html, /class="is-targeted"/, "the row a deep link names is marked");
+    assert.match(fromPrinciple.html, /در دستور کار/, "the row says it is targeted");
+    assert.ok(fromPrinciple.html.includes(project.id), "the row names the project id");
+  } finally {
+    fromPrinciple.restore();
+  }
+
+  // An address for a principle this file does not have says so.
+  const missing = renderWithoutFetch("#/principles/Q-99");
+  try {
+    assert.match(missing.html, /این اصل در این سند نیست/);
+  } finally {
+    missing.restore();
   }
 });
