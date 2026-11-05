@@ -15,6 +15,7 @@
     "dev": "concurrently -k -n api,web -c blue,green \"npm:dev --workspace=@cep/api\" \"npm:dev --workspace=@cep/web\"",
     "build": "npm run build --workspace=@cep/web",
     "test": "npm run test --workspaces --if-present",
+    "docs:principles": "node scripts/docs/generate-principles-coverage.mjs",
     "validate:csv": "node scripts/validation/validate-historical-csv.mjs data/synthetic/synthetic-deceased-archive-sample.csv",
     "check": "npm test && npm run validate:csv && npm run build"
   },

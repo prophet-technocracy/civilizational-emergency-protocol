@@ -843,3 +843,64 @@ test("the synthetic ledger totals are derived from its own rows", async () => {
   assert.ok(queued);
   assert.ok(queued.reason.fa && queued.reason.en);
 });
+
+test("the mother file is mapped principle by principle, with a status that carries a reason", async () => {
+  const response = await fetch(`${baseUrl}/api/v1/principles`);
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  const { motherFile, statuses, chapters, summary, principles, method } = payload.data;
+
+  assert.equal(payload.data.question.fa.length > 10, true);
+  // The draft posture travels with the payload, not only with the page.
+  assert.match(motherFile.sourceNote.fa, /پیش‌نویس/);
+  assert.match(motherFile.sourceNote.en, /draft/);
+
+  // The four statuses are defined once, in order, and every one is used.
+  assert.deepEqual(statuses.map((entry) => entry.id), ["covered", "partial", "gap", "outside"]);
+  for (const status of statuses) {
+    assert.ok(status.label.fa && status.label.en, `${status.id} has no label`);
+    assert.ok(status.note.fa.length > 20 && status.note.en.length > 20, `${status.id} has no definition`);
+  }
+
+  // Every chapter of the mother file is represented, and the counts are derivable.
+  assert.equal(chapters.length, 11);
+  const total = chapters.reduce((sum, chapter) => sum + chapter.principles.length, 0);
+  assert.equal(total, summary.total);
+  assert.equal(total, motherFile.principles);
+  assert.ok(total >= 100, "the map must cover the whole covenant, not a sample");
+  assert.equal(Object.values(summary.counts).reduce((sum, value) => sum + value, 0), total);
+  for (const chapter of chapters) {
+    assert.equal(Object.values(chapter.counts).reduce((sum, value) => sum + value, 0), chapter.principles.length);
+  }
+
+  // Ids are unique, and every principle is bilingual and says what was done.
+  const ids = new Set();
+  for (const principle of principles) {
+    assert.equal(ids.has(principle.id), false, `duplicate principle id ${principle.id}`);
+    ids.add(principle.id);
+    assert.ok(principle.title.fa && principle.title.en, `${principle.id} has no title`);
+    assert.ok(principle.note.fa.length > 20 && principle.note.en.length > 20, `${principle.id} has no note`);
+    assert.ok(statuses.some((status) => status.id === principle.coverage), `${principle.id} has an unknown status`);
+  }
+
+  // A surface must be a surface the API actually publishes.
+  const modules = (await (await fetch(`${baseUrl}/api/v1/modules`)).json()).data.modules.map((module) => module.route);
+  const knownRoutes = new Set([...modules, "levels", "bank"]);
+  for (const principle of principles) {
+    if (!principle.surface) continue;
+    // A null route means the whole interface (language, accessibility, no
+    // tracking); anything else has to be a route this API publishes.
+    if (principle.surface.route !== null) {
+      assert.ok(knownRoutes.has(principle.surface.route), `${principle.id} points at unknown route ${principle.surface.route}`);
+    }
+    assert.ok(principle.surface.label.fa && principle.surface.label.en, `${principle.id} has an unlabelled surface`);
+  }
+
+  // The claim rule: "covered" is only allowed with a surface, and never for a
+  // principle that needs courts, forces or budgets to mean anything.
+  for (const principle of principles.filter((row) => row.coverage === "covered")) {
+    assert.ok(principle.surface, `${principle.id} is covered without a surface`);
+  }
+  assert.ok(summary.demonstrated > 0 && summary.beyondSoftware > 0, "a map with no coverage or no limits is not a map");
+  assert.ok(method.fa.length > 40 && method.en.length > 40);
+});

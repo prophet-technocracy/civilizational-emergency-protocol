@@ -129,6 +129,26 @@ export const GLOSSARY = Object.freeze([
     }
   },
   {
+    id: "mother-file",
+    fa: "سند مادر",
+    en: "Mother file",
+    avoid: ["فایل مادر", "سند اصلی"],
+    note: {
+      fa: "«فن‌سالاری اصلاح‌شده» یک پیش‌نویس است؛ «سند اصلی» خواندنش یعنی ادعای تصویب.",
+      en: "«Revised Technocracy» is a draft; calling it the «original» implies ratification."
+    }
+  },
+  {
+    id: "coverage",
+    fa: "پوشش",
+    en: "Coverage",
+    avoid: ["کاوریج", "پوشش‌دهی"],
+    note: {
+      fa: "پوشش در این پروژه یعنی یک سطح کارکننده یا یک ردیف داده؛ نه انطباق حقوقی با سند.",
+      en: "Coverage here means a working surface or an existing record, not legal compliance."
+    }
+  },
+  {
     id: "personal-cap",
     fa: "سقف شخصی",
     en: "Personal cap",
