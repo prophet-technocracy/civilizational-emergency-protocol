@@ -16,6 +16,8 @@ import PublicServices from "./modules/PublicServices.jsx";
 import Projects from "./modules/Projects.jsx";
 import Simulations from "./modules/Simulations.jsx";
 import DigitalLegacy from "./modules/DigitalLegacy.jsx";
+import LevelHome from "./modules/LevelHome.jsx";
+import Level from "./modules/Level.jsx";
 
 const VIEWS = {
   dashboard: Dashboard,
@@ -32,12 +34,28 @@ const VIEWS = {
   "digital-legacy": DigitalLegacy
 };
 
+// The five civic levels are the entry point; the twelve modules remain the
+// library behind them. `#/levels` is the profile chooser, `#/levels/3` one level.
+export const LEVELS_VIEW = "levels";
+
+const LEVEL_HOME_MODULE = {
+  id: LEVELS_VIEW,
+  number: null,
+  icon: "layers",
+  title: { fa: "پنج سطح شهروندی", en: "Five civic levels" },
+  short: { fa: "سطوح", en: "Levels" }
+};
+
 export function readRouteFromHash(hash) {
   const raw = String(hash ?? "").replace(/^#\/?/, "");
   const [viewId, recordId] = raw.split("/");
+  if (viewId === LEVELS_VIEW) {
+    const id = recordId ? decodeURIComponent(recordId) : null;
+    return { view: LEVELS_VIEW, recordId: id && /^[1-5]$/.test(id) ? id : null };
+  }
   const known = MODULES.some((module) => module.id === viewId);
   return {
-    view: known ? viewId : "dashboard",
+    view: known ? viewId : raw === "" ? LEVELS_VIEW : "dashboard",
     recordId: recordId ? decodeURIComponent(recordId) : null
   };
 }
@@ -59,10 +77,14 @@ export default function App() {
   const mainRef = useRef(null);
   const routeMovedRef = useRef(false);
   const [isNarrow, setIsNarrow] = useState(false);
+  const [policyId, setPolicyId] = useState("P-OPEN-DRAFT");
   const debouncedSearch = useDebounced(searchTerm, 220);
 
   const dict = UI[lang];
-  const activeModule = useMemo(() => MODULES.find((module) => module.id === route.view) ?? MODULES[0], [route.view]);
+  const activeModule = useMemo(() => {
+    if (route.view === LEVELS_VIEW) return LEVEL_HOME_MODULE;
+    return MODULES.find((module) => module.id === route.view) ?? MODULES[0];
+  }, [route.view]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -174,6 +196,7 @@ export default function App() {
   const openProvenance = useCallback((record) => setProvenance(record), []);
 
   const ViewComponent = VIEWS[route.view] ?? Dashboard;
+  const isLevels = route.view === LEVELS_VIEW;
   // While a modal layer is open the page behind it is inert for assistive
   // technology as well as for Tab, which is what aria-modal promises.
   const overlayOpen = searchOpen || Boolean(provenance);
@@ -281,7 +304,8 @@ export default function App() {
               </button>
             </li>
             <li aria-current="page">
-              {formatNumber(activeModule.number, lang)} · {t(activeModule.title, lang)}
+              {activeModule.number ? `${formatNumber(activeModule.number, lang)} · ` : ""}
+              {t(activeModule.title, lang)}
             </li>
           </ol>
         </nav>
@@ -295,6 +319,21 @@ export default function App() {
           aria-label={dict.modules}
           inert={isNarrow && !navOpen ? true : undefined}
         >
+          <p className="sidebar__label">{dict.levelsNav}</p>
+          <ul>
+            <li>
+              <a
+                href={`#/${LEVELS_VIEW}`}
+                className={`nav-item nav-item--levels ${route.view === LEVELS_VIEW ? "is-active" : ""}`}
+                aria-current={route.view === LEVELS_VIEW ? "page" : undefined}
+                onClick={() => setNavOpen(false)}
+              >
+                <span className="nav-item__num" aria-hidden="true">۵</span>
+                <span className="nav-item__glyph" aria-hidden="true"><Icon name="layers" size={15} /></span>
+                <span className="nav-item__title">{dict.levelsNav}</span>
+              </a>
+            </li>
+          </ul>
           <p className="sidebar__label">{dict.modules}</p>
           <ul>
             {MODULES.map((module) => {
@@ -326,14 +365,30 @@ export default function App() {
         {navOpen ? <button type="button" className="nav-scrim" aria-label={dict.close} onClick={() => setNavOpen(false)} /> : null}
 
         <main id="main-content" className="content" tabIndex={-1} ref={mainRef}>
-          <ViewComponent
-            key={route.view}
-            lang={lang}
-            dict={dict}
-            navigate={navigate}
-            openProvenance={openProvenance}
-            initialRecordId={route.recordId}
-          />
+          {isLevels ? (
+            route.recordId ? (
+              <Level
+                key={`level-${route.recordId}`}
+                lang={lang}
+                dict={dict}
+                navigate={navigate}
+                levelId={route.recordId}
+                policyId={policyId}
+                onPolicyChange={setPolicyId}
+              />
+            ) : (
+              <LevelHome key="levels" lang={lang} dict={dict} navigate={navigate} />
+            )
+          ) : (
+            <ViewComponent
+              key={route.view}
+              lang={lang}
+              dict={dict}
+              navigate={navigate}
+              openProvenance={openProvenance}
+              initialRecordId={route.recordId}
+            />
+          )}
 
           <footer className="app-footer">
             <p>{dict.footer}</p>

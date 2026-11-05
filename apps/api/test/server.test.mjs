@@ -498,3 +498,148 @@ test("no endpoint exposes a living-person identifier or hash field", async () =>
     assert.doesNotMatch(body, /\b(?:national_id|social_security_number|biometric_template)\b/i);
   }
 });
+
+/* ----------------------- five-level civic operating system ---------------------- */
+
+test("the level registry returns five contexts and no ranking field", async () => {
+  const response = await fetch(`${baseUrl}/api/v1/levels`);
+  const payload = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(payload.mode, "synthetic-demo");
+  assert.equal(payload.data.levels.length, 5);
+  assert.deepEqual(
+    payload.data.levels.map((level) => level.id),
+    [1, 2, 3, 4, 5]
+  );
+  for (const level of payload.data.levels) {
+    assert.ok(level.title.fa && level.title.en);
+    assert.ok(level.purpose.fa && level.purpose.en);
+    assert.equal(level.rank, undefined, "a level must not carry a rank");
+    assert.ok(level.actionCount >= 4);
+  }
+  assert.equal(payload.data.levels.filter((level) => level.holdsBallot).length, 1);
+  assert.ok(payload.data.guards.length >= 5);
+});
+
+test("each level dashboard is genuinely different and uses the shared records", async () => {
+  const dashboards = await Promise.all(
+    [1, 2, 3, 4, 5].map(async (id) => {
+      const response = await fetch(`${baseUrl}/api/v1/levels/${id}`);
+      assert.equal(response.status, 200);
+      const payload = await response.json();
+      assert.equal(payload.mode, "synthetic-demo");
+      return payload.data;
+    })
+  );
+
+  const moduleIds = dashboards.map((dashboard) => dashboard.modules.map((module) => module.id).join(","));
+  assert.equal(new Set(moduleIds).size, 5, "levels must not be copies of one dashboard");
+
+  for (const dashboard of dashboards) {
+    assert.equal(dashboard.guards.length >= 5, true);
+    assert.ok(dashboard.modules.length >= 7, `level ${dashboard.level.id} has too few modules`);
+    assert.equal(dashboard.workflow.proposalId, "PROP-SYN-001");
+  }
+
+  // The same proposal appears at level 1 (public), 3 (citizen) and 5 (committee).
+  for (const index of [0, 2, 4]) {
+    const proposalsModule = dashboards[index].modules.find((module) => module.id === "proposals" || module.id === "queue");
+    assert.ok(proposalsModule, `level ${dashboards[index].level.id} is missing the proposal surface`);
+    const proposal = proposalsModule.items.find((item) => item.id === "PROP-SYN-001");
+    assert.ok(proposal);
+    assert.equal(proposal.qualification.length, 2);
+  }
+});
+
+test("level dashboards refuse an unknown policy and a level outside 1..5", async () => {
+  assert.equal((await fetch(`${baseUrl}/api/v1/levels/3?policy=P-IMAGINARY`)).status, 400);
+  assert.equal((await fetch(`${baseUrl}/api/v1/levels/6`)).status, 404);
+});
+
+test("the influence overview exposes two configurable policies with full formulas", async () => {
+  const response = await fetch(`${baseUrl}/api/v1/influence`);
+  const payload = await response.json();
+  assert.equal(response.status, 200);
+  const { policies, proposals, guards, ballots } = payload.data;
+  assert.equal(policies.length, 2);
+  for (const policy of policies) {
+    assert.equal(policy.status, "proposed-configurable");
+    assert.match(policy.authorizedBy, /^DEC-SYN-/);
+    assert.ok(policy.thresholds.infrastructure > 0);
+    assert.ok(policy.categories.political && policy.categories.endorsement);
+  }
+  assert.equal(guards.length >= 5, true);
+  // A ballot's declared components always sum to its total.
+  for (const ballot of ballots) {
+    const explained = ballot.components.reduce((sum, component) => sum + component.weight, 0);
+    assert.equal(Math.round(explained * 100) / 100, ballot.total);
+    assert.equal(ballot.ballotsCreatedByAdvocacy, 0);
+  }
+  assert.equal(proposals.length, 3);
+  for (const proposal of proposals) {
+    assert.equal(proposal.results.length, 2);
+    assert.ok(proposal.results.every((result) => typeof result.total === "number"));
+  }
+});
+
+test("the same proposal qualifies under one policy and fails the other", async () => {
+  const open = await (await fetch(`${baseUrl}/api/v1/influence/qualify?proposal=PROP-SYN-001&policy=P-OPEN-DRAFT`)).json();
+  const restrictive = await (await fetch(`${baseUrl}/api/v1/influence/qualify?proposal=PROP-SYN-001&policy=P-RESTRICTIVE-DRAFT`)).json();
+  assert.equal(open.data.result.outcome, "qualified");
+  assert.equal(restrictive.data.result.outcome, "below-threshold");
+  assert.ok(restrictive.data.result.excluded.includes("endorsement"));
+  assert.equal(restrictive.data.result.ballotsUnaffected, true);
+});
+
+test("qualification endpoints reject missing or unknown inputs", async () => {
+  assert.equal((await fetch(`${baseUrl}/api/v1/influence/qualify`)).status, 400);
+  assert.equal((await fetch(`${baseUrl}/api/v1/influence/qualify?proposal=PROP-NOPE`)).status, 404);
+  assert.equal((await fetch(`${baseUrl}/api/v1/influence/qualify?proposal=PROP-SYN-001&policy=P-NOPE`)).status, 400);
+});
+
+test("authorization is enforced at the API boundary, not only in the interface", async () => {
+  const denied = await fetch(`${baseUrl}/api/v1/influence/authorize?action=read-own-private-record&level=1`);
+  assert.equal(denied.status, 403);
+  const deniedBody = await denied.json();
+  assert.equal(deniedBody.data.result.allowed, false);
+  assert.equal(deniedBody.data.result.code, "level-not-permitted");
+  assert.ok(deniedBody.data.result.reason.fa.length > 0 && deniedBody.data.result.reason.en.length > 0);
+
+  const ownRecord = await fetch(`${baseUrl}/api/v1/influence/authorize?action=read-own-private-record&level=2&actor=CIT-1&resource=CIT-2`);
+  assert.equal(ownRecord.status, 403);
+  assert.equal((await ownRecord.json()).data.result.code, "resource-not-owned");
+
+  const outsideOrg = await fetch(`${baseUrl}/api/v1/influence/authorize?action=submit-deliverable&level=4&actor=ORG-1&resource=ORG-2`);
+  assert.equal(outsideOrg.status, 403);
+
+  const permitted = await fetch(`${baseUrl}/api/v1/influence/authorize?action=answer-poll&level=3&actor=CIT-1&resource=CIT-1`);
+  assert.equal(permitted.status, 200);
+  const permittedBody = await permitted.json();
+  assert.equal(permittedBody.data.result.allowed, true);
+  assert.equal(permittedBody.data.result.audit.decisionKind, "synthetic-not-binding");
+
+  assert.equal((await fetch(`${baseUrl}/api/v1/influence/authorize?action=answer-poll&level=9`)).status, 400);
+  assert.equal((await fetch(`${baseUrl}/api/v1/influence/authorize?level=3`)).status, 400);
+});
+
+test("no level dashboard contains a living-person record or a personal-data key", async () => {
+  const forbidden = ["national_id", "home_address", "personal_phone", "bank_account", "biometric_template"];
+  for (const level of [1, 2, 3, 4, 5]) {
+    const payload = await (await fetch(`${baseUrl}/api/v1/levels/${level}`)).json();
+    const text = JSON.stringify(payload);
+    for (const key of forbidden) {
+      assert.equal(text.includes(key), false, `level ${level} leaks ${key}`);
+    }
+    assert.equal(/"status":"living"/.test(text), false, `level ${level} carries a living record`);
+  }
+});
+
+test("the posthumous mandate block always prohibits a ballot transfer", async () => {
+  for (const level of [1, 3, 5]) {
+    const payload = await (await fetch(`${baseUrl}/api/v1/levels/${level}`)).json();
+    const { posthumous } = payload.data;
+    assert.equal(posthumous.ballotAttempt.allowed, false);
+    assert.equal(posthumous.ballotAttempt.ballotTransfer, "prohibited");
+    assert.equal(posthumous.memoirAttempt.allowed, true);
+  }
+});

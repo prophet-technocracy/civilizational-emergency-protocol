@@ -9,6 +9,7 @@ import { transitionHorizons, transitionStages, institutions, institutionalRelati
 import { archiveBoundary, archivePeriods, archiveDisciplines, archiveRegions, archiveDossiers, archiveSyntheticSources, editorialWorkflow } from "./data/archive.mjs";
 import { sourceDocuments, evidenceClaims, unresolvedQuestions } from "./data/evidence.mjs";
 import { verificationBands, accessPolicies, rejectedProofCatalogue } from "./data/assurance.mjs";
+import { buildLevelDashboard, buildLevelsIndex, buildInfluenceOverview, buildInfluenceGuards, authorizeAction } from "./data/civic-levels.mjs";
 import { evaluateAssurancePolicy, validateClaimProvenance, calculateTimelineMetrics, validateHistoricalDossierCsv, computeSafeguardProfile } from "@cep/schemas";
 import { matchesBilingualQuery, normalizeSearchText } from "@cep/localization";
 
@@ -572,6 +573,22 @@ function routeTable(params, pathname) {
       };
     }
 
+    case "/api/v1/levels":
+      return {
+        status: 200,
+        body: envelope({
+          ...buildLevelsIndex(),
+          guards: buildInfluenceGuards(),
+          demoNotice: {
+            fa: "پنج سطح، پنج بافت دسترسی و مسئولیت‌اند؛ رتبهٔ برتری افراد نیستند. همهٔ رکوردها ساختگی‌اند و هیچ کنشی الزام‌آور نیست.",
+            en: "The five levels are access and responsibility contexts, not a ranking of people. All records are synthetic and no action is binding."
+          }
+        })
+      };
+
+    case "/api/v1/influence":
+      return { status: 200, body: envelope(buildInfluenceOverview()) };
+
     case "/api/v1/accountability":
       return {
         status: 200,
@@ -741,6 +758,66 @@ export function createServer() {
           schemaVersion: SCHEMA_VERSION
         })
       );
+      return;
+    }
+
+    const query = parsed.params;
+
+    // /api/v1/levels/:id
+    const levelMatch = pathname.match(/^\/api\/v1\/levels\/([1-5])$/);
+    if (levelMatch) {
+      const policyId = query.policy ?? "P-OPEN-DRAFT";
+      if (!["P-OPEN-DRAFT", "P-RESTRICTIVE-DRAFT"].includes(policyId)) {
+        sendJson(response, 400, { error: "unknown_policy", allowed: ["P-OPEN-DRAFT", "P-RESTRICTIVE-DRAFT"] });
+        return;
+      }
+      sendJson(response, 200, envelope(buildLevelDashboard(levelMatch[1], { policyId })));
+      return;
+    }
+
+    // /api/v1/influence/authorize — action-scoped check, enforced here rather
+    // than only in the interface, so a client cannot opt out of the boundary.
+    const authorizeMatch = pathname.match(/^\/api\/v1\/influence\/authorize$/);
+    if (authorizeMatch) {
+      const level = Number(query.level);
+      if (!query.action) {
+        sendJson(response, 400, { error: "missing_action_parameter", hint: "action=<actionId>&level=<1-5>" });
+        return;
+      }
+      if (!Number.isInteger(level) || level < 1 || level > 5) {
+        sendJson(response, 400, { error: "invalid_level", allowed: [1, 2, 3, 4, 5] });
+        return;
+      }
+      const result = authorizeAction({
+        level,
+        actionId: query.action,
+        actor: query.actor ? String(query.actor).slice(0, 64) : null,
+        resource: query.resource ? { ownerId: String(query.resource).slice(0, 64), organizationId: String(query.resource).slice(0, 64), committeeId: String(query.resource).slice(0, 64) } : null
+      });
+      sendJson(response, result.allowed ? 200 : 403, envelope({ request: { level, actionId: query.action }, result }));
+      return;
+    }
+
+    // /api/v1/influence/qualify?proposal=&policy=
+    const qualifyMatch = pathname.match(/^\/api\/v1\/influence\/qualify$/);
+    if (qualifyMatch) {
+      const policyId = query.policy ?? "P-OPEN-DRAFT";
+      if (!["P-OPEN-DRAFT", "P-RESTRICTIVE-DRAFT"].includes(policyId)) {
+        sendJson(response, 400, { error: "unknown_policy", allowed: ["P-OPEN-DRAFT", "P-RESTRICTIVE-DRAFT"] });
+        return;
+      }
+      if (!query.proposal) {
+        sendJson(response, 400, { error: "missing_proposal_parameter" });
+        return;
+      }
+      const overview = buildInfluenceOverview();
+      const proposal = overview.proposals.find((item) => item.id === query.proposal);
+      if (!proposal) {
+        sendJson(response, 404, { error: "proposal_not_found" });
+        return;
+      }
+      const result = proposal.results.find((item) => item.policyId === policyId);
+      sendJson(response, 200, envelope({ proposal: { id: proposal.id, title: proposal.title, domain: proposal.domain, contributions: proposal.contributions }, result }));
       return;
     }
 
