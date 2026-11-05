@@ -107,7 +107,6 @@ export const UI = {
     sourceVerified: "تأییدشده در منبع",
     footer:
       "CEP یک کوشش مدنی است، نه دولت. این نمونه برای بازبینی انسانی و آزمون پذیرش ساخته شده و استقرار عمومی آن مسدود تا دروازه‌های انسانی است.",
-    footerMeta: "شاخهٔ نشست: arena/4c526f6a · نسخهٔ طرح‌واره ۱٫۰٫۰",
     governanceNote: "هیچ رأی، نصاب یا تصویبی برای هیچ بخشی از این سامانه ثبت نشده است.",
     empty: "موردی برای نمایش نیست.",
     copied: "پیوند رونوشت شد",
@@ -178,7 +177,6 @@ export const UI = {
     sourceVerified: "Source-verified",
     footer:
       "CEP is a civic effort, not a government. This prototype exists for human review and acceptance testing; public deployment is gated pending human review.",
-    footerMeta: "Session branch: arena/4c526f6a · schema v1.0.0",
     governanceNote: "No vote, quorum, or ratification is recorded for any part of this system.",
     empty: "Nothing to display.",
     copied: "Link copied",

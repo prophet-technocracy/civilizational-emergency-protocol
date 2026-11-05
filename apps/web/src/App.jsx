@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { UI } from "./i18n.js";
 import { useDebounced, readStored, writeStored } from "./lib/api.js";
 import { readTheme, hasStoredTheme, systemTheme, THEME_COLOR } from "./lib/theme.js";
-import { Drawer, ProvenanceBody, Badge } from "./components/ui.jsx";
+import { Drawer, ProvenanceBody } from "./components/ui.jsx";
 import { useFocusTrap, prefersReducedMotion } from "./lib/focus.js";
 import { localeStrings } from "./locales/index.js";
 import Dashboard from "./modules/Dashboard.jsx";
@@ -30,6 +30,7 @@ import Header from "./components/Header.jsx";
 import Sidebar from "./components/Sidebar.jsx";
 import SearchOverlay from "./components/SearchOverlay.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
+import Footer from "./components/Footer.jsx";
 import {
   LEVELS_VIEW,
   BANK_VIEW,
@@ -312,13 +313,7 @@ export default function App() {
           )}
           </ErrorBoundary>
 
-          <footer className="app-footer">
-            <p>{dict.footer}</p>
-            <p className="app-footer__meta">{dict.footerMeta}</p>
-            <p className="app-footer__meta">
-              <Badge tone="warn">{dict.governanceNote}</Badge>
-            </p>
-          </footer>
+          <Footer lang={lang} dict={dict} />
         </main>
       </div>
 

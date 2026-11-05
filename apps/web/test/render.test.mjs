@@ -4,7 +4,7 @@
 // The JSX sources are bundled on the fly with esbuild (a Vite dependency) so
 // node:test can import them without a browser or a dev server.
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { after, before, test } from "node:test";
 import { createElement } from "react";
@@ -1471,4 +1471,45 @@ test("meters speak their ratio in the reader's digits and words, never with a sl
   const barLabel = bar.match(/aria-label="([^"]+)"/)[1];
   assert.equal(barLabel, "ادعاها: ۳ از ۹");
   assert.doesNotMatch(barLabel, /[0-9]/);
+});
+
+/* ------------------------------- build metadata ----------------------------- */
+
+test("no invented build metadata is left in the web sources", () => {
+  const webRoot = WEB_ROOT;
+  const files = [];
+  const walk = (dir) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) walk(path);
+      else if (/\.(jsx?|mjs)$/.test(entry.name)) files.push(path);
+    }
+  };
+  walk(join(webRoot, "src"));
+  for (const file of files) {
+    const source = readFileSync(file, "utf8");
+    assert.doesNotMatch(source, /v1\.0\.0/, `${file} still hard-codes v1.0.0`);
+    assert.doesNotMatch(source, /4c526f6a|arena\//, `${file} still names a session branch`);
+  }
+
+  // The version and the commit come from package.json and git, at build time.
+  const viteConfig = readFileSync(join(webRoot, "vite.config.js"), "utf8");
+  assert.match(viteConfig, /package\.json/, "the version must be read from package.json");
+  assert.match(viteConfig, /rev-parse.*--short/, "the commit must be read from git");
+  assert.match(viteConfig, /__CEP_VERSION__/);
+  assert.match(viteConfig, /__CEP_COMMIT__/);
+});
+
+test("a build without git says dev instead of inventing a hash", () => {
+  // Under node --test the Vite defines do not exist, which is exactly the
+  // fallback path: no version, `dev` for the commit.
+  const { html, restore } = renderWithoutFetch("#/dashboard");
+  try {
+    const footer = html.slice(html.indexOf("app-footer"));
+    assert.match(footer, /dev/, "the commit fallback is visible");
+    assert.match(footer, /نامعلوم/, "an unknown version says so rather than guessing");
+    assert.doesNotMatch(footer, /arena\/|v1\.0\.0/);
+  } finally {
+    restore();
+  }
 });

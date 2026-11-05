@@ -54,6 +54,34 @@ export function useApi(path) {
   };
 }
 
+// The schema version is a property of the server, not of this file: it is read
+// from an /api/v1/health envelope once per page load (issue #40). Until it
+// answers there is no version to print, and nothing is guessed.
+let schemaVersionPromise = null;
+
+export function useSchemaVersion() {
+  const [version, setVersion] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    if (!schemaVersionPromise) {
+      schemaVersionPromise = fetch("/api/v1/health", {
+        headers: { Accept: "application/json" },
+        credentials: "omit"
+      })
+        .then((response) => (response.ok ? response.json() : null))
+        .then((payload) => payload?.schemaVersion ?? null)
+        .catch(() => null);
+    }
+    schemaVersionPromise.then((value) => {
+      if (alive) setVersion(value);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return version;
+}
+
 export function useDebounced(value, delay = 250) {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {

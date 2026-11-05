@@ -17,6 +17,14 @@ export const shellEn = {
     close: "Close search"
   },
   // The render-error fallback. It says what it knows and what it does not.
+  // The footer's facts. The version, the commit and the schema are identifiers:
+  // they stay in Latin digits even in the Persian interface (glossary rule 3).
+  build: {
+    version: "Version",
+    commit: "commit",
+    schema: "data schema",
+    unknown: "unknown"
+  },
   crash: {
     eyebrow: "Display error",
     title: "This section could not be displayed",

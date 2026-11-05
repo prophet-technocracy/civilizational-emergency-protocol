@@ -1,6 +1,7 @@
 import { MODULES, DEPARTMENTS, t, formatNumber } from "../i18n.js";
 import { localeStrings } from "../locales/index.js";
 import { Icon } from "./icons.jsx";
+import { BUILD } from "../lib/build.js";
 import { LEVELS_VIEW, PRINCIPLES_VIEW, PROGRAMME_VIEW, REFERENDUM_VIEW, PRINCIPLES_MODULE } from "../lib/routes.js";
 
 // The permanent landmark navigation: the work surfaces, then the twelve library
@@ -99,7 +100,7 @@ export default function Sidebar({ lang, dict, route, isNarrow, navOpen, navRef, 
         })}
       </ul>
       <div className="sidebar__foot">
-        <p className="mono">CEP · v1.0.0</p>
+        <p className="mono">CEP{BUILD.version ? ` · v${BUILD.version}` : ""}</p>
         <p>{DEPARTMENTS["DEPT-G"][lang]} · {DEPARTMENTS["DEPT-H"][lang]}</p>
       </div>
     </nav>

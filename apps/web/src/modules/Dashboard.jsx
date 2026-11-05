@@ -1,4 +1,4 @@
-import { useApi } from "../lib/api.js";
+import { useApi, useSchemaVersion } from "../lib/api.js";
 import { t, formatNumber, UI, MODULES, EPISTEMIC, formatDate } from "../i18n.js";
 import { SectionHeader, Card, Stat, BarRow, EpistemicBadge, StateBlock, Callout, Badge, Empty, Disclosure } from "../components/ui.jsx";
 import { Icon } from "../components/icons.jsx";
@@ -11,6 +11,7 @@ const TONE_BY_KEY = {
 
 export default function Dashboard({ lang, dict, navigate, openProvenance }) {
   const { status, payload, reload } = useApi("/api/v1/dashboard");
+  const schemaVersion = useSchemaVersion();
 
   if (status !== "ready") {
     return (
@@ -216,7 +217,7 @@ export default function Dashboard({ lang, dict, navigate, openProvenance }) {
       <div className="page-foot">
         <button type="button" className="link-btn" onClick={() => openProvenance({ id: "dashboard-metrics", label: dict.breadcrumbHome, rows: [
           { label: dict.source, value: t({ fa: "فهرست‌های داخلی این نمونه (apps/api/src/data/*)", en: "This prototype's internal lists (apps/api/src/data/*)" }, lang) },
-          { label: dict.sourceVersion, value: "schema v1.0.0" },
+          { label: dict.sourceVersion, value: schemaVersion ? `schema ${schemaVersion}` : dict.notRecorded },
           { label: dict.section, value: "/api/v1/dashboard" },
           { label: dict.reviewer, value: UI[lang].notRecorded }
         ], epistemicStatus: "synthetic-fixture", confidence: t({ fa: "شمارش مستقیم، نه برآورد", en: "Direct count, not an estimate" }, lang), contradictions: [] })}>
