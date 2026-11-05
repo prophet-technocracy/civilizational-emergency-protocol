@@ -90,6 +90,7 @@ before(async () => {
     "/api/v1/levels",
     "/api/v1/influence",
     "/api/v1/hmmt",
+    "/api/v1/principles",
     ...["1", "2", "3", "4", "5"].flatMap((id) => [
       `/api/v1/levels/${id}?policy=P-OPEN-DRAFT`,
       `/api/v1/levels/${id}?policy=P-RESTRICTIVE-DRAFT`
@@ -872,5 +873,67 @@ test("the ladder never pays for participation and never lets an observer hold un
     assert.equal(l5.capTokens, l2.capTokens, `${policy.id} gives decision-makers more`);
     assert.equal(l5.disclosure, true, `${policy.id} lets a decision-maker hide a holding`);
     assert.ok(l4.capTokens >= l2.capTokens, `${policy.id} caps an entity below a person`);
+  }
+});
+
+test("the mother file is answered principle by principle, and the page says what it cannot do", () => {
+  const { html, restore } = renderWithoutFetch("#/principles");
+  try {
+    const payload = fixtures.get("/api/v1/principles").data;
+    // Every principle of the mother file is on the page, with its own number.
+    for (const chapter of payload.chapters) {
+      assert.ok(html.includes(`principle-chapter-${chapter.id}`), `chapter ${chapter.id} is missing`);
+      for (const principle of chapter.principles) {
+        assert.ok(html.includes(principle.title.fa), `principle ${principle.id} is not rendered`);
+      }
+    }
+    assert.ok(payload.summary.total >= 100, "the mother file has ~100 principles; the map must not sample a few");
+    // The four statuses are named on screen, and the counts add up.
+    for (const status of payload.statuses) {
+      assert.ok(html.includes(status.label.fa), `status ${status.id} has no label on screen`);
+    }
+    const total = Object.values(payload.summary.counts).reduce((sum, value) => sum + value, 0);
+    assert.equal(total, payload.summary.total, "status counts must add up to the principle count");
+    // The posture is stated: a prototype, not compliance with a ratified text.
+    assert.ok(html.includes("سند مادر یک میثاق پیشنهادی است"), "the draft posture is missing");
+    assert.ok(html.includes("انطباق حقوقی"), "the page must say it does not measure legal compliance");
+    // Every surface the table links to is a real route in this app.
+    const known = new Set(["levels", "bank", "principles", ...Object.keys({ dashboard: 1, governance: 1, transition: 1, institutions: 1, "historical-archive": 1, research: 1, verification: 1, accountability: 1, "public-services": 1, projects: 1, simulations: 1, "digital-legacy": 1 })]);
+    for (const chapter of payload.chapters) {
+      for (const principle of chapter.principles) {
+        if (!principle.surface?.route) continue;
+        assert.ok(known.has(principle.surface.route), `${principle.id} points at unknown route ${principle.surface.route}`);
+        assert.ok(html.includes(`href="#/${principle.surface.route}"`), `${principle.id} has no working link`);
+      }
+    }
+    // A "covered" claim is never made by a principle that points at nothing.
+    for (const chapter of payload.chapters) {
+      for (const principle of chapter.principles.filter((row) => row.coverage === "covered")) {
+        assert.ok(principle.surface, `${principle.id} claims coverage without a surface`);
+        assert.ok(principle.note.fa.length > 20, `${principle.id} claims coverage without saying what was done`);
+      }
+    }
+    // Out-of-scope entries must say why they are out of scope, in both languages.
+    for (const chapter of payload.chapters) {
+      for (const principle of chapter.principles.filter((row) => row.coverage === "outside")) {
+        assert.ok(principle.note.fa.length > 20 && principle.note.en.length > 20, `${principle.id} is out of scope without a reason`);
+      }
+    }
+  } finally {
+    restore();
+  }
+});
+
+test("the principles route is addressable and its filters are real controls", () => {
+  assert.deepEqual(readRouteFromHash("#/principles"), { view: "principles", recordId: null });
+  const { html, restore } = renderWithoutFetch("#/principles");
+  try {
+    assert.ok(html.includes('aria-pressed="true"'), "the default filter has to show its pressed state");
+    assert.ok(html.includes('role="group"'), "the filter needs a labelled group");
+    for (const status of fixtures.get("/api/v1/principles").data.statuses) {
+      assert.ok(html.includes(`aria-pressed`), "filters must be toggle buttons");
+    }
+  } finally {
+    restore();
   }
 });

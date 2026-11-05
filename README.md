@@ -36,7 +36,7 @@ The repository owner currently has the technical ability to administer the GitHu
 
 ## Five-level civic operating system
 
-The prototype now opens on a **five-profile chooser** (`#/levels`); `#/bank` is the HMMT monetary design described below. Each profile is a different interface over the same synthetic records — not the same dashboard recoloured. The twelve modules below remain the library behind those profiles.
+The prototype now opens on a **five-profile chooser** (`#/levels`); `#/bank` is the HMMT monetary design described below, and `#/principles` reads the draft national covenant principle by principle against what the prototype actually does. Each profile is a different interface over the same synthetic records — not the same dashboard recoloured. The twelve modules below remain the library behind those profiles.
 
 | # | Level | What it is for | Holds a ballot |
 |---|---|---|---|
@@ -147,6 +147,25 @@ Figures, sources, dates and the unverified list are in
 architecture, governance and threat model are in
 [docs/economics/HMMT-DESIGN.md](docs/economics/HMMT-DESIGN.md).
 
+### The mother file, principle by principle (`#/principles`)
+
+The project's founding text is a draft national covenant («فن‌سالاری اصلاح‌شده», 84 pages: eleven chapters, 113 principles from اصل ۰٫۱ to اصل ۱۰۰). `#/principles` puts every one of them in a row next to the surface that answers it, with one of four statuses:
+
+| Status | Meaning | Count |
+|---|---|---|
+| پوشش کامل / Covered | a working surface in this prototype demonstrates the mechanism, on synthetic data | **۲۱** |
+| پوشش جزئی / Partial | present in data or design, but the prototype cannot enact it | **۴۷** |
+| جای خالی / Gap | software could show it and does not yet — next work, not a claim | **۱۶** |
+| بیرون از دامنه / Beyond software | enforcing it needs law, courts, forces or a real budget | **۲۹** |
+
+The rule that keeps this honest is enforced by tests, not by prose: **Covered is only allowed when the row points at a surface this API publishes**, and every "beyond software" row must state why. The screen says on its face that the mother file is a draft with no recorded vote and that the page measures a prototype's coverage, never legal compliance — the same posture as the rest of the repository.
+
+What that leaves, stated plainly: the strongest coverage is exactly where the prototype owns a mechanism — the civic levels (اصل ۲), assurance and privacy (اصل ۹ and ۱۹), the archive (اصل ۰٫۱۳ and ۴۳), digital legacy (اصل ۲۰) and the HMMT design (اصل ۳۱ and ۳۲). Health, welfare, insurance, pensions, water, waste and air (chapters 7–8) are the thinnest: without a real budget and institution, any screen would be the claim. Courts, police, the armed forces, diplomacy and criminal justice (اصل ۲۷, ۸۴, ۸۶) are recorded as beyond software, because they are.
+
+The full matrix, the sixteen named gaps and the method are in [docs/principles/PRINCIPLES-COVERAGE.md](docs/principles/PRINCIPLES-COVERAGE.md); the data behind both the page and the document is `apps/api/src/data/principles.mjs`, served at `GET /api/v1/principles`.
+
+![The mother file, principle by principle: 113 rows, four statuses, and the surface that answers each one](docs/screenshots/principles-coverage.png)
+
 ### Persian-first localization
 
 Copy lives in `apps/web/src/locales/fa/` and `apps/web/src/locales/en/`; the terminology authority is [`docs/localization/PERSIAN-GLOSSARY.md`](docs/localization/PERSIAN-GLOSSARY.md) with the rules in [`docs/localization/PERSIAN-STYLE-GUIDE.md`](docs/localization/PERSIAN-STYLE-GUIDE.md). `apps/web/test/localization.test.mjs` fails the build on an Arabic `ي`/`ك`, a missing half-space, an untranslated string, a missing English key, or a discouraged synonym. The machine-readable glossary is `packages/localization/glossary.mjs`, so the document and the tests cannot drift apart.
@@ -182,7 +201,7 @@ The web app is served by Vite on port 5173 (Persian RTL by default, English LTR 
 Verification:
 
 ```sh
-npm test         # 254 tests: API contract/security, response-envelope contract,
+npm test         # 257 tests: API contract/security, response-envelope contract,
                  # domain models, schemas, localization, SSR render + a11y guards
 npm run validate:csv   # 77-column historical-dossier gate validator
 npm run build    # production bundle check
@@ -205,7 +224,8 @@ Interface checks that run inside `npm test` (no browser required):
 - a deliberately refused action on levels 4 and 5, so the authority boundary stays testable in the interface,
 - the bank rendering its ceiling, its net backing and its "not legal tender" statement with `fetch` disabled, and never rendering the no-haircut ceiling the gross headline would produce,
 - a label for every bank simulator field, and the API refusing an unknown action or a non-positive amount instead of guessing,
-- the per-level cap ladder: every policy named, all five levels named, the six invariants rendered, and the data-level properties (an observer's cap is zero, levels 2 and 3 are equal, an entity's cap never sits below a person's) asserted for each policy.
+- the per-level cap ladder: every policy named, all five levels named, the six invariants rendered, and the data-level properties (an observer's cap is zero, levels 2 and 3 are equal, an entity's cap never sits below a person's) asserted for each policy,
+- the mother-file coverage map: all 113 principles rendered, the four statuses named, the counts adding up to the principle count, no "covered" row without a surface, and every surface link resolving to a route the app really has.
 
 The same twelve views and `#/bank` were additionally audited in a real headless Chromium with axe-core (WCAG 2.1 A/AA + best practice) in light and dark mode, in both languages, plus the open mobile navigation drawer and the bank at 390 px; the result is zero violations. A keyboard-only walkthrough drives the same build: skip link, focus trap and Escape in the search overlay and the provenance drawer, focus return to the control that opened them, an inert off-canvas navigation when closed, and focus moving to the new view after a route change (15/15 checks). A layout sweep of all twelve views in both languages, both themes and four viewport widths (1440 / 1024 / 768 / 390 px) found no horizontal scrolling, no offscreen elements and no clipped text. Contrast failures and undersized hit areas found that way are now part of the render tests so they cannot return.
 

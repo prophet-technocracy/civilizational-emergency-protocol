@@ -1,13 +1,13 @@
-# Handoff — five levels, the HMMT bank, and the per-level cap ladder
+# Handoff — five levels, the HMMT bank, the cap ladder, and the mother-file coverage map
 
 Replace this note when it goes stale. Scope authority: `README.md`, `docs/**`, `AGENTS.md`, `TASKS.md`.
 
 ## State
 
 - Branch: `arena/a8e95163-civilizational-emergency-proto`, branched from `main` at `a78a1ed` (PR #13 merged).
-- `npm test` → **254 tests, 0 failures** (api 65, web 90 incl. the 5 demo-contract checks, domain-models 68, schemas 24, localization 7).
-- `npm run build` → 504 kB JS (143 kB gzip), 63 kB CSS (12 kB gzip).
-- axe-core over `#/bank` × light/dark × fa/en at 1440 px: **0 violations** (the cap ladder and a refused conversion are on screen). `#/bank` is now part of the route list in `scripts/audit/a11y.mjs`, so it cannot silently regress. Level views re-checked in the previous batch: 0 violations.
+- `npm test` → **257 tests, 0 failures** (api 66, web 92 incl. the 5 demo-contract checks, domain-models 68, schemas 24, localization 7).
+- `npm run build` → 514 kB JS (146 kB gzip), 65 kB CSS (12 kB gzip).
+- axe-core over `#/principles` × light/dark × fa/en at 1440 px and 390 px: **0 violations**, no horizontal page overflow (the coverage table wraps on phones). `#/bank` had the same result in the previous batch; both routes are in `scripts/audit/a11y.mjs`.
 - No open PR. PRs are opened only when asked; never merge them.
 
 ## What exists now
@@ -20,9 +20,10 @@ Replace this note when it goes stale. Scope authority: `README.md`, `docs/**`, `
 | HMMT demo data | `apps/api/src/data/hmmt.mjs` | synthetic entities + deposit/redemption ledger (each row keeps the `capTokens` it was recorded under), supply/backing/reserve views, `buildHmmtCaps`, level-aware simulator |
 | API | `/api/v1/levels`, `/api/v1/levels/:id?policy=`, `/api/v1/influence[/qualify|/authorize]`, `/api/v1/hmmt[/supply|/backing|/reserve|/ledger|/caps|/simulate]` | `/simulate` takes `level`, `policy`, `entity`; unknown values return 400 (`invalid_level`, `unknown_policy`, `unknown_entity`) |
 | Five-profile home + levels | `apps/web/src/modules/LevelHome.jsx`, `Level.jsx`, `levels/panels.jsx` | `#/levels`, `#/levels/1..5` |
+| Mother-file coverage | `apps/api/src/data/principles.mjs`, `apps/web/src/modules/Principles.jsx` | `#/principles`: 113 principles from «فن‌سالاری اصلاح‌شده», four statuses, the surface that answers each, filterable; `GET /api/v1/principles` |
 | HMMT bank | `apps/web/src/modules/Bank.jsx` | `#/bank`: ceiling vs circulating, **cap ladder** (3 policies × 5 levels, stacked under 720 px), haircut chain, proof of reserve, level-aware simulator, ledger, phases, architecture |
 | Locales | `apps/web/src/locales/{fa,en}/{levels,bank}.js` | 201 bank keys per locale; legacy dictionary still in `i18n.js` |
-| Docs | `docs/economics/HMMT-FACT-CHECK.md`, `docs/economics/HMMT-DESIGN.md`, `docs/localization/*` | figures with sources/dates/statuses; architecture and threat model |
+| Docs | `docs/economics/HMMT-FACT-CHECK.md`, `docs/economics/HMMT-DESIGN.md`, `docs/principles/PRINCIPLES-COVERAGE.md`, `docs/localization/*` | figures with sources/dates/statuses; architecture, threat model, and the principle-by-principle coverage matrix |
 | Screenshots | `docs/screenshots/*.png` | five-level home, levels 1/3/5, `hmmt-haircut-chain`, `hmmt-proof-of-reserve`, `hmmt-simulator`, `hmmt-cap-ladder`, `hmmt-cap-ladder-mobile`, `hmmt-level-cap-refusal`, `hmmt-entity-cap-refusal` |
 
 ## Key numbers (do not restate them without the source)
@@ -33,6 +34,15 @@ Replace this note when it goes stale. Scope authority: `README.md`, `docs/**`, `
 - Two ratios stay apart: `reserveRatio` (toman per circulating token) and `assetCoverage` (backing per ceiling token).
 - Unverified figures: central-bank reserves (USD 15 bn modelled, weight 0), marketable state assets incl. real estate (USD 120 bn modelled, weight 0), broad money (no figure used).
 - Cap ladder (`DEC-SYN-0042`, all drafts): `CAP-LADDER-DRAFT` = 0 / 0.05 / 0.05 / 1,000 / 0.05 HMMT; `CAP-ENTITY-SCALED-DRAFT` (**default**) = 0 / 0.05 / 0.05 / min(20 % of audited budget ÷ USD 3.71 m, 1,000, 25 % of ceiling) / 0.05; `CAP-PILOT-STRICT-DRAFT` = 0 / 0.01 / 0.01 / 100 / 0.01. Resolved entity caps in the default policy: ENT-SYN-01 240, 02 480, 03 120, 04 1,000 (hard cap), 05 600, 06 360, 07 160. The 0.05 figure, the 20 % and the 1,000 are **drafts, not findings** (fact-check §7).
+
+## The mother file (coverage map)
+
+`docs/principles/PRINCIPLES-COVERAGE.md` + `#/principles`, data in `apps/api/src/data/principles.mjs`. Source: the user's 84-page draft «فن‌سالاری اصلاح‌شده» (11 chapters, 113 principles: ۰٫۱–۰٫۱۳ and ۱–۱۰۰). Current split: **۲۱ covered, ۴۷ partial, ۱۶ gap, ۲۹ beyond software**. The rule the API test enforces: no principle is "covered" without a surface the API publishes, and every "beyond software" row must give a reason. The sixteen gaps are named in that document with the surface each would land on — that list *is* the backlog for this layer:
+
+1. **Eight principles want data the fixtures do not have** (basic credit اصل ۸/۶۳, employment ۱۶, land registry ۲۸, taxation ۳۳, IP ۳۶, idle-land levy ۳۸, insurance ۶۲, pensions ۶۴). Each is a small fixture + one panel on the module named in the doc.
+2. **Four want a page, not new law** (handover protocol ۰٫۱۱, education path ۴۲, elderly care ۶۷, baseline counsel ۸۳).
+3. **Two want a register** (children's right-to-be-forgotten ۱۷, the oath ۹۹).
+4. **Two want a model** (water ۷۲, asset migration ۹۴ — the second extends the bank's simulate path).
 
 ## Next, in order
 

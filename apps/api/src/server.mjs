@@ -10,6 +10,7 @@ import { archiveBoundary, archivePeriods, archiveDisciplines, archiveRegions, ar
 import { sourceDocuments, evidenceClaims, unresolvedQuestions } from "./data/evidence.mjs";
 import { verificationBands, accessPolicies, rejectedProofCatalogue } from "./data/assurance.mjs";
 import { buildLevelDashboard, buildLevelsIndex, buildInfluenceOverview, buildInfluenceGuards, authorizeAction } from "./data/civic-levels.mjs";
+import { buildPrinciples } from "./data/principles.mjs";
 import { buildHmmtOverview, buildHmmtSupply, buildHmmtBacking, buildHmmtReserve, buildHmmtLedger, buildHmmtCaps, simulateHmmt } from "./data/hmmt.mjs";
 import { evaluateAssurancePolicy, validateClaimProvenance, calculateTimelineMetrics, validateHistoricalDossierCsv, computeSafeguardProfile } from "@cep/schemas";
 import { matchesBilingualQuery, normalizeSearchText } from "@cep/localization";
@@ -403,6 +404,11 @@ function routeTable(params, pathname) {
 
     case "/api/v1/modules":
       return { status: 200, body: envelope({ modules: moduleRegistry }) };
+
+    // Coverage of the mother file («فن‌سالاری اصلاح‌شده»): every principle, the
+    // surface that answers it, and the four statuses that keep the claim honest.
+    case "/api/v1/principles":
+      return { status: 200, body: envelope(buildPrinciples()) };
 
     case "/api/v1/governance":
       return {

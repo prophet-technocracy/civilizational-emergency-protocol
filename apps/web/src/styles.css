@@ -4069,3 +4069,144 @@ html[dir="rtl"] .drawer {
     text-align: end;
   }
 }
+
+/* ------------------- mother-file principle coverage ------------------- */
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-block: 1rem 0.5rem;
+}
+
+.filter-row__label {
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-300);
+  margin-inline-end: 0.3rem;
+}
+
+.filter-row button.chip {
+  font: inherit;
+  font-size: 0.76rem;
+  padding: 0.25rem 0.65rem;
+  min-height: 28px;
+  cursor: pointer;
+  color: var(--ink-700);
+}
+
+.filter-row button.chip.is-active {
+  color: var(--paper-1);
+  background: var(--ink-900);
+  border-color: var(--ink-900);
+}
+
+.principles-legend {
+  margin: 0.6rem 0 0;
+}
+
+.principles-legend__row {
+  display: grid;
+  grid-template-columns: 11rem 1fr;
+  gap: 0.5rem;
+  align-items: baseline;
+  padding-block: 0.35rem;
+  border-block-start: 1px solid var(--border);
+}
+
+.principles-legend__row:first-child {
+  border-block-start: 0;
+}
+
+.principles-legend__row dd {
+  margin: 0;
+}
+
+.principles-table td,
+.principles-table th {
+  vertical-align: top;
+}
+
+.principles-table__body {
+  font-weight: 400;
+}
+
+.principles-table__title {
+  display: block;
+  font-weight: 600;
+  color: var(--ink-900);
+}
+
+.principles-table__note {
+  display: block;
+  margin-block-start: 0.15rem;
+  max-inline-size: 62ch;
+}
+
+.principles-table__surface {
+  white-space: nowrap;
+}
+
+/* Shown only where the surface column is collapsed (phones). */
+.principles-inline-surface {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .principles-legend__row {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+
+  .principles-table__surface,
+  .principles-table thead th:first-child {
+    white-space: normal;
+  }
+}
+
+/* The coverage table is prose, not numbers: on a phone it wraps instead of
+   scrolling sideways, and the surface link moves under the note. */
+@media (max-width: 720px) {
+  .principles-table {
+    table-layout: fixed;
+    width: 100%;
+    /* The shared table rule sets a 620 px floor for numeric tables; this one is
+       prose, so it drops the floor and wraps instead. */
+    min-width: 0;
+  }
+
+  .principles-table th,
+  .principles-table td {
+    padding: 0.45rem 0.35rem;
+  }
+
+  .principles-table__note {
+    max-inline-size: none;
+  }
+
+  .principles-table__surface {
+    white-space: normal;
+  }
+
+  .principles-table__surface a {
+    word-break: break-word;
+  }
+
+  /* The surface column collapses into the note so the prose keeps the width. */
+  .principles-table thead th:last-child,
+  .principles-table tbody td:last-child {
+    display: none;
+  }
+
+  .principles-table th:first-child,
+  .principles-table td:first-child {
+    width: 6.5rem;
+  }
+
+  .principles-inline-surface {
+    display: block;
+    margin-block-start: 0.3rem;
+  }
+}

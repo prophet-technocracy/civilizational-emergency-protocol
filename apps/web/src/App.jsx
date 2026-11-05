@@ -20,6 +20,7 @@ import DigitalLegacy from "./modules/DigitalLegacy.jsx";
 import LevelHome from "./modules/LevelHome.jsx";
 import Level from "./modules/Level.jsx";
 import Bank from "./modules/Bank.jsx";
+import Principles from "./modules/Principles.jsx";
 
 const VIEWS = {
   dashboard: Dashboard,
@@ -34,13 +35,16 @@ const VIEWS = {
   projects: Projects,
   simulations: Simulations,
   "digital-legacy": DigitalLegacy,
-  bank: Bank
+  bank: Bank,
+  principles: Principles
 };
 
 // The five civic levels are the entry point; the twelve modules remain the
 // library behind them. `#/levels` is the profile chooser, `#/levels/3` one level.
 export const LEVELS_VIEW = "levels";
 export const BANK_VIEW = "bank";
+// The mother file's principles are read against the prototype on their own page.
+export const PRINCIPLES_VIEW = "principles";
 
 const BANK_MODULE = {
   id: BANK_VIEW,
@@ -48,6 +52,14 @@ const BANK_MODULE = {
   icon: "bank",
   title: { fa: "بانک HMMT", en: "HMMT Bank" },
   short: { fa: "بانک", en: "Bank" }
+};
+
+const PRINCIPLES_MODULE = {
+  id: PRINCIPLES_VIEW,
+  number: null,
+  icon: "governance",
+  title: { fa: "اصول سند مادر", en: "Mother-file principles" },
+  short: { fa: "اصول", en: "Principles" }
 };
 
 const LEVEL_HOME_MODULE = {
@@ -67,6 +79,9 @@ export function readRouteFromHash(hash) {
   }
   if (viewId === BANK_VIEW) {
     return { view: BANK_VIEW, recordId: null };
+  }
+  if (viewId === PRINCIPLES_VIEW) {
+    return { view: PRINCIPLES_VIEW, recordId: null };
   }
   const known = MODULES.some((module) => module.id === viewId);
   return {
@@ -99,6 +114,7 @@ export default function App() {
   const activeModule = useMemo(() => {
     if (route.view === LEVELS_VIEW) return LEVEL_HOME_MODULE;
     if (route.view === BANK_VIEW) return BANK_MODULE;
+    if (route.view === PRINCIPLES_VIEW) return PRINCIPLES_MODULE;
     return MODULES.find((module) => module.id === route.view) ?? MODULES[0];
   }, [route.view]);
 
@@ -362,6 +378,21 @@ export default function App() {
                 <span className="nav-item__num" aria-hidden="true" />
                 <span className="nav-item__glyph" aria-hidden="true"><Icon name="bank" size={15} /></span>
                 <span className="nav-item__title">{t(BANK_MODULE.title, lang)}</span>
+              </a>
+            </li>
+          </ul>
+          <p className="sidebar__label">{localeStrings(lang).principles.navLabel}</p>
+          <ul>
+            <li>
+              <a
+                href={`#/${PRINCIPLES_VIEW}`}
+                className={`nav-item nav-item--levels ${route.view === PRINCIPLES_VIEW ? "is-active" : ""}`}
+                aria-current={route.view === PRINCIPLES_VIEW ? "page" : undefined}
+                onClick={() => setNavOpen(false)}
+              >
+                <span className="nav-item__num" aria-hidden="true" />
+                <span className="nav-item__glyph" aria-hidden="true"><Icon name="governance" size={15} /></span>
+                <span className="nav-item__title">{t(PRINCIPLES_MODULE.title, lang)}</span>
               </a>
             </li>
           </ul>

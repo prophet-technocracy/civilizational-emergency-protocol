@@ -5,10 +5,12 @@ import { levelsFa, policyFa } from "./fa/levels.js";
 import { levelsEn, policyEn } from "./en/levels.js";
 import { bankFa } from "./fa/bank.js";
 import { bankEn } from "./en/bank.js";
+import { principlesFa } from "./fa/principles.js";
+import { principlesEn } from "./en/principles.js";
 
 export const LOCALES = Object.freeze({
-  fa: Object.freeze({ levels: levelsFa, policies: policyFa, bank: bankFa }),
-  en: Object.freeze({ levels: levelsEn, policies: policyEn, bank: bankEn })
+  fa: Object.freeze({ levels: levelsFa, policies: policyFa, bank: bankFa, principles: principlesFa }),
+  en: Object.freeze({ levels: levelsEn, policies: policyEn, bank: bankEn, principles: principlesEn })
 });
 
 export const LOCALE_KEYS = Object.freeze(["fa", "en"]);
