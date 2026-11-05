@@ -33,6 +33,39 @@ The repository owner currently has the technical ability to administer the GitHu
 - [Open Questions](research/OPEN-QUESTIONS.md) — unresolved questions that need research and debate
 - [Missions](missions/README.md) — how focused work is proposed and tracked
 
+
+## Five-level civic operating system
+
+The prototype now opens on a **five-profile chooser** (`#/levels`). Each profile is a different interface over the same synthetic records — not the same dashboard recoloured. The twelve modules below remain the library behind those profiles.
+
+| # | Level | What it is for | Holds a ballot |
+|---|---|---|---|
+| ۱ | ناظر عمومی / Public Observer | Read public records, proposals, expenditure, endorsements and published decisions | no |
+| ۲ | شهروند خصوصی / Private Citizen | Private services, selective credential presentation, consent — **no public profile required** | no |
+| ۳ | شهروند مشارکت‌کننده / Participating Citizen | Political ballot with its full arithmetic, polls, citizen proposals, scoped delegation | yes |
+| ۴ | گرهٔ سازمانی / Organizational Node | Contracts, tasks, deliverables, synthetic budgets, audits — its members' ballots are *not* its own | no |
+| ۵ | تصمیم‌گیرندهٔ عمومی / Public Decision-Maker | Scoped committee decisions with a stated reason, review step, conflict declarations and an audit trail | no |
+
+![The five-level chooser](docs/screenshots/five-levels-home.png)
+
+### Influence, authority and accountability
+
+Endorsement reach, professional authority and political ballots are three different quantities, computed by `packages/domain-models/influence.mjs` and displayed with their arithmetic:
+
+- a political ballot is **base + valid scoped delegations**, and a test asserts the declared components always sum to the total, so no factor can move it silently;
+- professional weight is **domain-scoped** — a healthcare qualification contributes zero to an infrastructure decision and says so; a declared conflict recuses the assessor;
+- an endorsement produces **reach points and a disclosure status, never ballots** (`ballotsCreated` is a constant zero);
+- qualification runs under two labelled, configurable drafts, so the same proposal visibly passes one and fails the other (`108 / 100` vs `60 / 120` for `PROP-SYN-001`);
+- a deceased person's ballot transfers to nobody: the check is a hard return, not a policy setting, and the private digital estate stays separate from the historical archive.
+
+![Level 5: the proposal queue with per-policy arithmetic](docs/screenshots/level-5-decision-maker.png)
+
+Authority is also enforced at the **API boundary**, not only in the interface: `/api/v1/influence/authorize` answers 403 with a reason when a level asks for something outside its scope, and checks that a level-2 request targets the caller's own record.
+
+### Persian-first localization
+
+Copy lives in `apps/web/src/locales/fa/` and `apps/web/src/locales/en/`; the terminology authority is [`docs/localization/PERSIAN-GLOSSARY.md`](docs/localization/PERSIAN-GLOSSARY.md) with the rules in [`docs/localization/PERSIAN-STYLE-GUIDE.md`](docs/localization/PERSIAN-STYLE-GUIDE.md). `apps/web/test/localization.test.mjs` fails the build on an Arabic `ي`/`ك`, a missing half-space, an untranslated string, a missing English key, or a discouraged synonym. The machine-readable glossary is `packages/localization/glossary.mjs`, so the document and the tests cannot drift apart.
+
 ## Iran civic infrastructure prototype — twelve-module demonstrator
 
 A local-only, read-only civic infrastructure prototype ("Civilizational Operating System") with **twelve navigable modules**. Every record is a **synthetic fixture, an explicit proposal, or a labelled reference**: the prototype is not an official service, holds **zero living-person data**, and contains no source-verified Iran transition data. See the [implementation phases](docs/iran/IMPLEMENTATION-PLAN.md), [discovery report](docs/iran/DISCOVERY-AND-EXECUTION-REPORT.md), [system architecture](docs/architecture/SYSTEM-ARCHITECTURE.md), and [task board](agents/iran-mini-app/TASKS.md).
@@ -64,7 +97,7 @@ The web app is served by Vite on port 5173 (Persian RTL by default, English LTR 
 Verification:
 
 ```sh
-npm test         # 124 tests: API contract/security, response-envelope contract,
+npm test         # 176 tests: API contract/security, response-envelope contract,
                  # domain models, schemas, localization, SSR render + a11y guards
 npm run validate:csv   # 77-column historical-dossier gate validator
 npm run build    # production bundle check
@@ -77,7 +110,11 @@ Interface checks that run inside `npm test` (no browser required):
 - the response-envelope contract (`mode`, `schemaVersion`, `generatedAt`, bilingual epistemic notice) enforced on every `/api/v1` payload, including a deep scan that rejects personal-data keys and any `living` record,
 - heading order, accessible names on every control, and WCAG AA contrast for the ink/teal tokens in both light and dark themes,
 - counted ratios rendered in reading order, and text-link buttons kept at a 24 px hit area,
-- the skip link target, the navigation toggle's `aria-expanded`/`aria-controls`, labelled toasts, and full (never truncated) relationship-map labels.
+- the skip link target, the navigation toggle's `aria-expanded`/`aria-controls`, labelled toasts, and full (never truncated) relationship-map labels,
+- the five-profile chooser rendering exactly five cards with ballot ownership stated per level,
+- each level rendering its own module set from the shared records (the same `PROP-SYN-001`, `DEC-SYN-014` and workflow appear at every level),
+- a ballot breakdown whose declared components sum to the total, zero ballots created from advocacy reach, and the posthumous ballot prohibition on every level,
+- the same proposal qualifying under one weighting policy and failing the other.
 
 The same twelve views were additionally audited in a real headless Chromium with axe-core (WCAG 2.1 A/AA + best practice) in light and dark mode, plus the open mobile navigation drawer at 390 px; the result is zero violations. A keyboard-only walkthrough drives the same build: skip link, focus trap and Escape in the search overlay and the provenance drawer, focus return to the control that opened them, an inert off-canvas navigation when closed, and focus moving to the new view after a route change (15/15 checks). A layout sweep of all twelve views in both languages, both themes and four viewport widths (1440 / 1024 / 768 / 390 px) found no horizontal scrolling, no offscreen elements and no clipped text. Contrast failures and undersized hit areas found that way are now part of the render tests so they cannot return.
 

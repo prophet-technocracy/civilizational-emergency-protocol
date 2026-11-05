@@ -410,3 +410,6 @@ export function validateEntityShape(entityName, record) {
     errors
   };
 }
+
+// Influence, authority and qualification engine (Phase D).
+export * from "./influence.mjs";

@@ -86,7 +86,13 @@ before(async () => {
     "/api/v1/public-services",
     "/api/v1/projects",
     "/api/v1/simulations",
-    "/api/v1/digital-legacy"
+    "/api/v1/digital-legacy",
+    "/api/v1/levels",
+    "/api/v1/influence",
+    ...["1", "2", "3", "4", "5"].flatMap((id) => [
+      `/api/v1/levels/${id}?policy=P-OPEN-DRAFT`,
+      `/api/v1/levels/${id}?policy=P-RESTRICTIVE-DRAFT`
+    ])
   ];
 
   const entries = {};
@@ -126,9 +132,15 @@ function renderWithoutFetch(hash = "") {
   };
 }
 
-test("route parsing defaults to the dashboard and accepts record ids", () => {
-  assert.deepEqual(readRouteFromHash(""), { view: "dashboard", recordId: null });
-  assert.deepEqual(readRouteFromHash("#/"), { view: "dashboard", recordId: null });
+test("route parsing defaults to the five-level chooser and accepts record ids", () => {
+  assert.deepEqual(readRouteFromHash(""), { view: "levels", recordId: null });
+  assert.deepEqual(readRouteFromHash("#/"), { view: "levels", recordId: null });
+  assert.deepEqual(readRouteFromHash("#/levels"), { view: "levels", recordId: null });
+  assert.deepEqual(readRouteFromHash("#/levels/3"), { view: "levels", recordId: "3" });
+  // An out-of-range level falls back to the chooser instead of rendering a
+  // dashboard the reader did not ask for.
+  assert.deepEqual(readRouteFromHash("#/levels/9"), { view: "levels", recordId: null });
+  assert.deepEqual(readRouteFromHash("#/dashboard"), { view: "dashboard", recordId: null });
   assert.deepEqual(readRouteFromHash("#/research"), { view: "research", recordId: null });
   assert.deepEqual(readRouteFromHash("#/historical-archive/SYN-HIST-001"), {
     view: "historical-archive",
@@ -155,7 +167,7 @@ test("the shell renders Persian RTL by default with the demo banner and all twel
 });
 
 test("the default dashboard renders real derived figures, not placeholders", () => {
-  const { html, restore } = renderWithoutFetch();
+  const { html, restore } = renderWithoutFetch("#/dashboard");
   try {
     const dashboard = fixtures.get("/api/v1/dashboard").data;
     for (const figure of dashboard.figures) {
@@ -567,6 +579,125 @@ test("every relationship-map node keeps its whole name in the visible label", ()
       assert.equal(visible, `${t(match.name, "fa")} ${labelFor(match.category, "fa")}`.replace(/\s+/g, " ").trim());
       assert.doesNotMatch(visible, /…/, "labels must not be truncated mid-name");
     }
+  } finally {
+    restore();
+  }
+});
+
+/* ----------------------- five-level civic operating system ---------------------- */
+
+test("the first screen is the five-profile chooser, one card per level", () => {
+  const { html, restore } = renderWithoutFetch("#/levels");
+  try {
+    const registry = fixtures.get("/api/v1/levels").data;
+    const cards = html.match(/class="level-card"/g) ?? [];
+    assert.equal(cards.length, 5, "expected exactly five profile cards");
+    for (const level of registry.levels) {
+      assert.ok(html.includes(t(level.title, "fa")), `missing level title ${level.key}`);
+      assert.ok(html.includes(t(level.purpose, "fa").slice(0, 24)), `missing purpose for ${level.key}`);
+    }
+    // Ballot ownership is stated on the screen, not implied.
+    assert.match(html, /دارای برگهٔ رأی سیاسی/);
+    assert.match(html, /بدون برگهٔ رأی/);
+    assert.equal((html.match(/بدون برگهٔ رأی/g) ?? []).length, 4);
+  } finally {
+    restore();
+  }
+});
+
+test("each level renders its own modules and shares the connected workflow", () => {
+  const seen = new Set();
+  for (const id of ["1", "2", "3", "4", "5"]) {
+    const { html, restore } = renderWithoutFetch(`#/levels/${id}`);
+    try {
+      const dashboard = fixtures.get(`/api/v1/levels/${id}?policy=P-OPEN-DRAFT`).data;
+      assert.ok(html.length > 3000, `level ${id} produced suspiciously little markup`);
+      for (const module of dashboard.modules) {
+        assert.ok(html.includes(t(module.title, "fa")), `level ${id} is missing ${module.id}`);
+      }
+      // The same workflow record appears at every level.
+      assert.ok(html.includes("PROP-SYN-001"), `level ${id} lost the shared proposal`);
+      assert.ok(html.includes("DEC-SYN-014"), `level ${id} lost the shared decision`);
+      seen.add(dashboard.modules.map((module) => module.id).join(","));
+    } finally {
+      restore();
+    }
+  }
+  assert.equal(seen.size, 5, "levels must not render the same dashboard five times");
+});
+
+test("level views never offer a ballot to a level that does not hold one", () => {
+  for (const id of ["1", "2", "4", "5"]) {
+    const { html, restore } = renderWithoutFetch(`#/levels/${id}`);
+    try {
+      assert.equal(/cast-political-ballot/.test(html), false, `level ${id} offers a political ballot action`);
+    } finally {
+      restore();
+    }
+  }
+  const { html, restore } = renderWithoutFetch("#/levels/3");
+  try {
+    // Level 3 does hold one, and the breakdown is shown with its arithmetic.
+    assert.match(html, /cast-political-ballot/);
+    assert.match(html, /اجزای اعلام‌شده/);
+    assert.match(html, /برگهٔ رأی ساخته‌شده از دسترسی عمومی/);
+  } finally {
+    restore();
+  }
+});
+
+test("the qualification comparison shows the same proposal passing one policy and failing the other", () => {
+  const { html, restore } = renderWithoutFetch("#/levels");
+  try {
+    const comparison = fixtures.get("/api/v1/levels").data.comparison;
+    const open = comparison[0].results.find((result) => result.policyId === "P-OPEN-DRAFT");
+    const restrictive = comparison[0].results.find((result) => result.policyId === "P-RESTRICTIVE-DRAFT");
+    assert.equal(open.outcome, "qualified");
+    assert.equal(restrictive.outcome, "below-threshold");
+    assert.ok(html.includes(formatNumber(open.total, "fa")), "open score missing");
+    assert.ok(html.includes(formatNumber(restrictive.total, "fa")), "restrictive score missing");
+    assert.match(html, /سیاست باز/);
+    assert.match(html, /سیاست محدودکننده/);
+    // Both policies must be labelled as drafts, never as adopted rules.
+    assert.equal((html.match(/پیش‌نویس قابل تنظیم/g) ?? []).length, 2);
+  } finally {
+    restore();
+  }
+});
+
+test("advocacy reach is rendered as reach, and the ballot it creates is zero", () => {
+  const { html, restore } = renderWithoutFetch("#/levels/1");
+  try {
+    const advocacy = fixtures.get("/api/v1/levels/1?policy=P-OPEN-DRAFT").data.modules.find((module) => module.id === "advocacy");
+    assert.ok(advocacy.breakdown.length > 0);
+    for (const item of advocacy.breakdown) {
+      assert.equal(item.ballotsCreated, 0);
+      assert.ok(html.includes(item.advocateHandle), `missing endorser ${item.advocateHandle}`);
+    }
+    assert.match(html, /به یک تأییدکنندهٔ نام‌دار نسبت داده می‌شود/);
+  } finally {
+    restore();
+  }
+});
+
+test("the posthumous block renders on every level with the ballot prohibition", () => {
+  for (const id of ["1", "3", "5"]) {
+    const { html, restore } = renderWithoutFetch(`#/levels/${id}`);
+    try {
+      assert.match(html, /پروندهٔ هستی و مرز رأی/, `level ${id} is missing the estate boundary`);
+      assert.match(html, /ballot-not-delegable/);
+      assert.match(html, /prohibited/);
+    } finally {
+      restore();
+    }
+  }
+});
+
+test("a level view states that its records are synthetic and non-binding", () => {
+  const { html, restore } = renderWithoutFetch("#/levels/5");
+  try {
+    assert.match(html, /ساختگی و غیرالزام‌آورند|همهٔ رکوردها، ارقام و تصمیم‌های این سطح ساختگی/);
+    assert.match(html, /غیرالزام‌آور/);
   } finally {
     restore();
   }

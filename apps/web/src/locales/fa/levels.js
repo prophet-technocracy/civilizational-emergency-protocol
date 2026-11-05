@@ -1,0 +1,83 @@
+// Persian interface copy for the five-level civic operating system.
+// Kept in a locale file (not inline in components) so terminology can be
+// reviewed in one place and checked against docs/localization/PERSIAN-GLOSSARY.md.
+
+export const levelsFa = {
+  navLabel: "پنج سطح شهروندی",
+  home: {
+    eyebrow: "معماری دسترسی",
+    title: "پنج سطح، پنج بافت مسئولیت",
+    lede: "هر سطح یک رابط جداگانه دارد. سطح، رتبهٔ برتری افراد نیست؛ چارچوب دسترسی، اختیار و پاسخگویی است.",
+    enter: "ورود به این سطح",
+    actionsCount: "کنش مجاز",
+    ballotHeld: "دارای برگهٔ رأی سیاسی",
+    noBallot: "بدون برگهٔ رأی",
+    syntheticBadge: "ساختگی",
+    workflowTitle: "چرخهٔ به‌هم‌پیوستهٔ نمونه",
+    workflowLede: "همان رکوردها از پنج بافت دیده می‌شوند: پیشنهاد، آستانه، تصمیم، کار، تحویل، گزارش عمومی.",
+    guardsTitle: "تضمین‌های ساختاری",
+    policyTitle: "سیاست‌های وزن‌دهی",
+    policyLede: "دو پیکربندی قابل تنظیم روی یک پیشنهاد؛ نتیجه تغییر می‌کند، برگهٔ رأی افراد نه.",
+    openConfigs: "مقایسهٔ کامل محاسبات",
+    noRankNotice: "هیچ سطحی مالک اختیار سطح دیگر نیست."
+  },
+  level: {
+    back: "بازگشت به پنج سطح",
+    policySwitch: "پیکربندی وزن‌دهی",
+    syntheticNotice: "همهٔ رکوردها، ارقام و تصمیم‌های این سطح ساختگی و غیرالزام‌آورند.",
+    loading: "در حال بارگذاری",
+    error: "داده در دسترس نیست",
+    retry: "تلاش دوباره",
+    threshold: "آستانه",
+    total: "امتیاز",
+    margin: "اختلاف با آستانه",
+    outcome: "نتیجه",
+    qualified: "واجد آستانه",
+    below: "زیر آستانه",
+    excluded: "دسته‌های شمرده‌نشده",
+    category: "دسته",
+    count: "تعداد",
+    unitWeight: "وزن واحد",
+    points: "امتیاز",
+    counted: "شمرده می‌شود",
+    notCounted: "شمرده نمی‌شود",
+    formula: "فرمول",
+    components: "اجزای اعلام‌شده",
+    componentSum: "مجموع اجزا",
+    ballotsCreated: "برگهٔ رأی ساخته‌شده از دسترسی عمومی",
+    reach: "دسترسی اعلام‌شده",
+    engagement: "نرخ تعامل",
+    disclosure: "افشا",
+    disclosureComplete: "افشا کامل",
+    disclosureIncomplete: "افشای ناقص",
+    weightNow: "وزن در این تصمیم",
+    scopeMatch: "هم‌دامنه",
+    scopeMismatch: "ناهم‌دامنه",
+    recused: "کناره‌گیری",
+    allowed: "مجاز",
+    denied: "غیرمجاز",
+    audit: "سابقهٔ حسابرسی",
+    posthumousTitle: "پروندهٔ هستی و مرز رأی",
+    posthumousBallot: "درخواست انتقال برگهٔ رأی",
+    posthumousMemoir: "درخواست انتشار خاطرات",
+    prohibited: "ممنوع",
+    permitted: "مجاز",
+    canDo: "می‌تواند",
+    cannotDo: "نمی‌تواند",
+    sponsor: "حامی",
+    policyStatus: "وضعیت سیاست",
+    authorizedBy: "مرجع تأییدکننده",
+    draft: "پیش‌نویس قابل تنظیم",
+    perPolicy: "نتیجهٔ همین پیشنهاد در هر پیکربندی",
+    openCalculation: "نمایش محاسبه",
+    closeCalculation: "بستن محاسبه",
+    steps: "مراحل",
+    noDisclosure: "هیچ پرونده‌ای باز نیست",
+    emptyState: "رکوردی برای نمایش در این بخش نیست"
+  }
+};
+
+export const policyFa = {
+  "P-OPEN-DRAFT": "سیاست باز",
+  "P-RESTRICTIVE-DRAFT": "سیاست محدودکننده"
+};
