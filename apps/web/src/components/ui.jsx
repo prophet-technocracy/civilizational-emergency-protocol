@@ -100,18 +100,21 @@ export function Stat({ label, value, note, tone = "neutral", lang = "fa" }) {
   );
 }
 
-export function BarRow({ label, value, max, tone = "info", display }) {
+// A ratio is spoken, never drawn with a slash: `۷ از ۱۰`, in the reader's own
+// digits, because a slash ratio reverses in the RTL layout (issue #36).
+export function BarRow({ label, value, max, tone = "info", display, lang = "fa" }) {
   const pct = max > 0 ? Math.max(2, Math.round((value / max) * 100)) : 0;
+  const shown = display ?? formatNumber(value, lang);
   return (
     <div className="bar-row">
       <div className="bar-row__head">
         <span>{label}</span>
-        <span className="bar-row__value">{display ?? value}</span>
+        <span className="bar-row__value">{shown}</span>
       </div>
       <div
         className="bar"
         role="img"
-        aria-label={`${label}: ${display ?? value}`}
+        aria-label={`${label}: ${shown} ${UI[lang].of} ${formatNumber(max, lang)}`}
       >
         <span className={`bar__fill bar__fill--${tone}`} style={{ inlineSize: `${pct}%` }} />
       </div>
@@ -119,10 +122,14 @@ export function BarRow({ label, value, max, tone = "info", display }) {
   );
 }
 
-export function Meter({ value, max = 6, label, tone = "good" }) {
+export function Meter({ value, max = 6, label, tone = "good", lang = "fa" }) {
   const cells = Array.from({ length: max }, (_, index) => index < value);
   return (
-    <span className="meter" role="img" aria-label={`${label}: ${value}/${max}`}>
+    <span
+      className="meter"
+      role="img"
+      aria-label={`${label}: ${formatNumber(value, lang)} ${UI[lang].of} ${formatNumber(max, lang)}`}
+    >
       {cells.map((filled, index) => (
         <span key={index} className={`meter__cell ${filled ? `meter__cell--${tone}` : ""}`} />
       ))}

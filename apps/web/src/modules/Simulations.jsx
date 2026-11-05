@@ -194,6 +194,7 @@ export default function Simulations({ lang, dict }) {
           <>
             {profile.indicators.map((indicator) => (
               <BarRow
+                lang={lang}
                 key={indicator.id}
                 label={t(indicator.label, lang)}
                 value={indicator.value}

@@ -175,6 +175,13 @@ export const bankEn = {
     newCirculating: "Circulating supply after this action",
     afterTitle: "Reserve state after this action",
     failureTitle: "Not performed",
+    parsedAs: "Read as",
+    amountProblem: {
+      empty: "No amount has been entered.",
+      "not-a-number": "That is not a number; use Latin, Persian or Arabic-Indic digits.",
+      "zero-or-negative": "The amount must be greater than zero.",
+      "ambiguous-separator": "One separator with three digits after it can mean 1000 or 1.000. Use ٫ or . for decimals, and ٬ between groups of three."
+    },
     error: "The API could not be reached. Try again.",
     codes: {
       converted: "Converted",

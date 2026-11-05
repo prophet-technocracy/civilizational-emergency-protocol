@@ -234,6 +234,9 @@ button {
   cursor: pointer;
   text-align: start;
   color: inherit;
+  /* The logo is a real link to the hub: no underline, but the anchor's own
+     affordances (new tab, copy link) stay. */
+  text-decoration: none;
 }
 
 .brand__mark {
@@ -453,6 +456,19 @@ button {
 
 .crumb:hover {
   text-decoration: underline;
+}
+
+/* The last crumb is the page the reader is on: it stays text, so it must not
+   carry the link colour that promises a destination. */
+.crumb--current,
+.crumb--current:hover {
+  color: inherit;
+  text-decoration: none;
+  cursor: default;
+}
+
+a.crumb {
+  text-decoration: none;
 }
 
 .app-body {
@@ -5570,4 +5586,115 @@ html[data-theme="dark"] .work-card__icon {
   border: 1px solid var(--border);
   border-radius: 4px;
   font-size: 0.66rem;
+}
+
+/* A crashed view keeps its heading and its exits, in the page's own type. */
+.crash {
+  max-inline-size: 46rem;
+  margin-block: 2rem;
+}
+
+.crash__title {
+  margin-block: 0.35rem 0.6rem;
+  font-size: clamp(1.15rem, 2.4vw, 1.5rem);
+}
+
+/* An outage in the search panel is a row: the sentence, then the retry. */
+.search-state--error {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.not-found .card {
+  margin-block-start: 1rem;
+}
+
+/* Load-only placeholders. The reduced-motion rule above already freezes them,
+   so a reader who asked for stillness gets a still grey block, not a pulse. */
+.skeleton {
+  display: inline-block;
+  block-size: 0.9em;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--ink-500) 22%, transparent);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.skeleton--text { inline-size: 5.5rem; }
+.skeleton--pill { inline-size: 4rem; }
+
+.door__meter-skeleton {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+/* The doors stay open when the counts do not arrive; the note says so quietly
+   and offers the retry without turning the landing page into an error page. */
+.hub__notice {
+  margin-block: 0.9rem 0;
+  color: var(--ink-500);
+}
+
+/* A typed amount that cannot be read: the reason sits where the number would. */
+.field__hint--problem {
+  color: var(--danger);
+}
+
+.sim__problem {
+  margin-block: 0.4rem 0;
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* The row a project sent you to: a rule and a tint, not a jump of the layout. */
+.principles-table tr.is-targeted {
+  background: color-mix(in oklab, var(--warn) 12%, transparent);
+  box-shadow: inset 3px 0 0 var(--warn);
+}
+
+.principles-table__target {
+  display: block;
+  margin-block-start: 0.2rem;
+}
+
+/* The outcome of the last action, kept in view while the reader scrolls through
+   a tall panel: a refusal that happens below the fold taught nobody anything.
+   --header-h is measured by the shell, so the strip never hides under the
+   sticky header. */
+.sim__outcome {
+  position: sticky;
+  inset-block-start: calc(var(--header-h, 0px) + 0.4rem);
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  margin-block: 0.7rem;
+  padding: 0.5rem 0.7rem;
+  min-block-size: 2.4rem;
+  border: 1px solid var(--border);
+  border-inline-start: 3px solid var(--good);
+  border-radius: 10px;
+  background: var(--paper-1);
+}
+
+.sim__outcome.is-blocked {
+  border-inline-start-color: var(--danger);
+  background: color-mix(in oklab, var(--danger) 7%, var(--paper-1));
+}
+
+.sim__outcome-msg {
+  font-weight: 600;
+}
+
+.sim__audit-count {
+  margin: 0;
 }

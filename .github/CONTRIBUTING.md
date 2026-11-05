@@ -20,6 +20,9 @@ Thank you for helping build CEP. Contributions from people with different skills
 
 ## Pull requests
 
+- For anything that changes the interface, follow the
+  [agent UX checklist](../docs/ux/AGENT-UX-CHECKLIST.md): the fa/en × light/dark ×
+  390/1440 matrix, the audit scripts, and the before/after rating.
 - Use a fork and branch; do not expect direct write access.
 - Keep each pull request focused and explain the problem it solves.
 - Link related issues and include tests or evidence where relevant.

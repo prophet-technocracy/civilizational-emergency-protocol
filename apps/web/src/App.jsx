@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { UI, MODULES, DEPARTMENTS, EPISTEMIC, t, formatNumber } from "./i18n.js";
+import { UI } from "./i18n.js";
 import { useDebounced, readStored, writeStored } from "./lib/api.js";
-import { Drawer, ProvenanceBody, Badge } from "./components/ui.jsx";
+import { readTheme, hasStoredTheme, systemTheme, THEME_COLOR } from "./lib/theme.js";
+import { Drawer, ProvenanceBody } from "./components/ui.jsx";
 import { useFocusTrap, prefersReducedMotion } from "./lib/focus.js";
-import { Icon } from "./components/icons.jsx";
 import { localeStrings } from "./locales/index.js";
 import Dashboard from "./modules/Dashboard.jsx";
 import Governance from "./modules/Governance.jsx";
@@ -24,7 +24,39 @@ import Principles from "./modules/Principles.jsx";
 import Programme from "./modules/Programme.jsx";
 import Referendum from "./modules/Referendum.jsx";
 import Hub from "./modules/Hub.jsx";
+import NotFound from "./modules/NotFound.jsx";
 import KeyDock from "./components/KeyDock.jsx";
+import Header from "./components/Header.jsx";
+import Sidebar from "./components/Sidebar.jsx";
+import SearchOverlay from "./components/SearchOverlay.jsx";
+import ErrorBoundary from "./components/ErrorBoundary.jsx";
+import Footer from "./components/Footer.jsx";
+import {
+  LEVELS_VIEW,
+  BANK_VIEW,
+  PRINCIPLES_VIEW,
+  HUB_VIEW,
+  PROGRAMME_VIEW,
+  REFERENDUM_VIEW,
+  NOT_FOUND_VIEW,
+  readRouteFromHash,
+  routeMeta,
+  hrefFor
+} from "./lib/routes.js";
+
+// Re-exported so existing imports (tests, modules, the key dock) keep working
+// after the route table moved into lib/routes.js (issue #49).
+export {
+  LEVELS_VIEW,
+  BANK_VIEW,
+  PRINCIPLES_VIEW,
+  HUB_VIEW,
+  PROGRAMME_VIEW,
+  REFERENDUM_VIEW,
+  NOT_FOUND_VIEW,
+  readRouteFromHash,
+  routeMeta
+};
 
 const VIEWS = {
   hub: Hub,
@@ -43,87 +75,15 @@ const VIEWS = {
   bank: Bank,
   principles: Principles,
   programme: Programme,
-  referendum: Referendum
+  referendum: Referendum,
+  "not-found": NotFound
 };
-
-// The five civic levels are the entry point; the twelve modules remain the
-// library behind them. `#/levels` is the profile chooser, `#/levels/3` one level.
-export const LEVELS_VIEW = "levels";
-export const BANK_VIEW = "bank";
-// The mother file's principles are read against the prototype on their own page.
-export const PRINCIPLES_VIEW = "principles";
-// The hub is the landing: one centre, six doors. `#/levels` stays the chooser.
-export const HUB_VIEW = "hub";
-// The two work surfaces the light rail promises: the queue that turns an amber
-// principle green, and the arithmetic of a future vote. They hang off the hub,
-// not off the six doors — the doors are levels, these are work.
-export const PROGRAMME_VIEW = "programme";
-export const REFERENDUM_VIEW = "referendum";
-
-const BANK_MODULE = {
-  id: BANK_VIEW,
-  number: null,
-  icon: "bank",
-  title: { fa: "بانک HMMT", en: "HMMT Bank" },
-  short: { fa: "بانک", en: "Bank" }
-};
-
-const HUB_MODULE = {
-  id: HUB_VIEW,
-  number: 0,
-  icon: "layers",
-  title: { fa: "مرکز", en: "Hub" },
-  short: { fa: "مرکز", en: "Hub" }
-};
-
-const PRINCIPLES_MODULE = {
-  id: PRINCIPLES_VIEW,
-  number: null,
-  icon: "governance",
-  title: { fa: "اصول سند مادر", en: "Mother-file principles" },
-  short: { fa: "اصول", en: "Principles" }
-};
-
-const LEVEL_HOME_MODULE = {
-  id: LEVELS_VIEW,
-  number: null,
-  icon: "layers",
-  title: { fa: "پنج سطح شهروندی", en: "Five civic levels" },
-  short: { fa: "سطوح", en: "Levels" }
-};
-
-export function readRouteFromHash(hash) {
-  const raw = String(hash ?? "").replace(/^#\/?/, "");
-  const [viewId, recordId] = raw.split("/");
-  if (viewId === LEVELS_VIEW) {
-    const id = recordId ? decodeURIComponent(recordId) : null;
-    return { view: LEVELS_VIEW, recordId: id && /^[1-5]$/.test(id) ? id : null };
-  }
-  if (viewId === BANK_VIEW) {
-    return { view: BANK_VIEW, recordId: null };
-  }
-  if (viewId === PRINCIPLES_VIEW) {
-    return { view: PRINCIPLES_VIEW, recordId: null };
-  }
-  if (viewId === HUB_VIEW) {
-    return { view: HUB_VIEW, recordId: null };
-  }
-  if (viewId === PROGRAMME_VIEW) {
-    return { view: PROGRAMME_VIEW, recordId: recordId ? decodeURIComponent(recordId) : null };
-  }
-  if (viewId === REFERENDUM_VIEW) {
-    return { view: REFERENDUM_VIEW, recordId: null };
-  }
-  const known = MODULES.some((module) => module.id === viewId);
-  return {
-    view: known ? viewId : raw === "" ? HUB_VIEW : "dashboard",
-    recordId: recordId ? decodeURIComponent(recordId) : null
-  };
-}
 
 export default function App() {
   const [lang, setLang] = useState(() => readStored("cep.lang", "fa"));
-  const [theme, setTheme] = useState(() => readStored("cep.theme", "light"));
+  // The inline script in index.html has already painted this theme; the state
+  // starts from the same rule so the two never disagree (issue #34).
+  const [theme, setTheme] = useState(() => readTheme());
   const [route, setRoute] = useState(() =>
     readRouteFromHash(typeof window === "undefined" ? "" : window.location.hash)
   );
@@ -131,7 +91,9 @@ export default function App() {
   const [bannerOpen, setBannerOpen] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchResults, setSearchResults] = useState(null);
+  // idle | loading | ready | error, plus the payload and the term it answers.
+  const [search, setSearch] = useState({ status: "idle", term: "", payload: null });
+  const [searchNonce, setSearchNonce] = useState(0);
   const [provenance, setProvenance] = useState(null);
   const searchInputRef = useRef(null);
   const navToggleRef = useRef(null);
@@ -142,13 +104,8 @@ export default function App() {
   const debouncedSearch = useDebounced(searchTerm, 220);
 
   const dict = UI[lang];
-  const activeModule = useMemo(() => {
-    if (route.view === LEVELS_VIEW) return LEVEL_HOME_MODULE;
-    if (route.view === BANK_VIEW) return BANK_MODULE;
-    if (route.view === PRINCIPLES_VIEW) return PRINCIPLES_MODULE;
-    if (route.view === HUB_VIEW) return HUB_MODULE;
-    return MODULES.find((module) => module.id === route.view) ?? MODULES[0];
-  }, [route.view]);
+  // Where the reader is, named once and shared by the title and the breadcrumb.
+  const meta = useMemo(() => routeMeta(route, lang), [route, lang]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -157,11 +114,45 @@ export default function App() {
     root.setAttribute("data-theme", theme);
     writeStored("cep.lang", lang);
     writeStored("cep.theme", theme);
-    document.title =
-      lang === "fa"
-        ? `${t(activeModule.title, "fa")} · سامانهٔ عامل مدنی CEP`
-        : `${t(activeModule.title, "en")} · CEP Civilizational Operating System`;
-  }, [lang, theme, activeModule]);
+    // The browser chrome should follow the page, not the other way round.
+    // (Not named `meta`: that would shadow the route metadata above, and
+    // document.title would quietly become the <meta> element's title attribute.)
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeMeta) themeMeta.setAttribute("content", THEME_COLOR[theme] ?? THEME_COLOR.light);
+    document.title = meta.title;
+  }, [lang, theme, meta]);
+
+  // Until the reader chooses, the operating system stays in charge: a laptop that
+  // flips to dark at sunset takes the interface with it.
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return undefined;
+    const query = window.matchMedia("(prefers-color-scheme: dark)");
+    const sync = () => {
+      if (!hasStoredTheme()) setTheme(systemTheme());
+    };
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
+
+  // Sticky things need to know how tall the sticky header currently is (it grows
+  // when the demo banner is open), so the measurement is published as a CSS
+  // variable instead of guessed at in a stylesheet.
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof document === "undefined") return undefined;
+    const header = document.querySelector(".app-header");
+    if (!header) return undefined;
+    const publish = () => {
+      document.documentElement.style.setProperty("--header-h", `${Math.round(header.getBoundingClientRect().height)}px`);
+    };
+    publish();
+    if (typeof ResizeObserver !== "function") {
+      window.addEventListener("resize", publish);
+      return () => window.removeEventListener("resize", publish);
+    }
+    const observer = new ResizeObserver(publish);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
 
   // The module drawer only exists below 900px; above it the sidebar is a
   // permanent landmark and must stay reachable.
@@ -213,25 +204,33 @@ export default function App() {
     if (!searchOpen) return undefined;
     const term = debouncedSearch.trim();
     if (term.length < 2) {
-      setSearchResults(null);
+      setSearch({ status: "idle", term: "", payload: null });
       return undefined;
     }
+    // A new query clears the previous answer instead of leaving a stale list
+    // (and its count) under the new word: loading is a state of its own.
     let alive = true;
+    setSearch((previous) =>
+      previous.term === term && previous.status === "ready" && searchNonce === 0
+        ? previous
+        : { status: "loading", term, payload: null }
+    );
     fetch(`/api/v1/search?q=${encodeURIComponent(term)}`, { headers: { Accept: "application/json" }, credentials: "omit" })
       .then((response) => (response.ok ? response.json() : Promise.reject(new Error("search failed"))))
       .then((payload) => {
-        if (alive) setSearchResults(payload.data);
+        if (alive) setSearch({ status: "ready", term, payload: payload.data });
       })
       .catch(() => {
-        if (alive) setSearchResults({ query: term, total: 0, results: [], error: true });
+        // An outage is not an empty answer (issue #29).
+        if (alive) setSearch({ status: "error", term, payload: null });
       });
     return () => {
       alive = false;
     };
-  }, [debouncedSearch, searchOpen]);
+  }, [debouncedSearch, searchOpen, searchNonce]);
 
   const navigate = useCallback((viewId, recordId) => {
-    const target = recordId ? `#/${viewId}/${encodeURIComponent(recordId)}` : `#/${viewId}`;
+    const target = hrefFor(viewId, recordId);
     routeMovedRef.current = true;
     if (window.location.hash === target) {
       setRoute({ view: viewId, recordId: recordId ?? null });
@@ -241,12 +240,14 @@ export default function App() {
     setNavOpen(false);
     setSearchOpen(false);
     setSearchTerm("");
+    setSearch({ status: "idle", term: "", payload: null });
     window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? "auto" : "smooth" });
   }, []);
 
   const closeSearch = useCallback(() => {
     setSearchOpen(false);
     setSearchTerm("");
+    setSearch({ status: "idle", term: "", payload: null });
   }, []);
 
   // Below 900px the module list is a modal drawer: it traps focus while open,
@@ -271,210 +272,41 @@ export default function App() {
         {dict.skip}
       </a>
 
-      <header className="app-header" inert={overlayOpen || undefined}>
-        <div className="app-header__top">
-          <button
-            type="button"
-            className="icon-btn nav-toggle"
-            ref={navToggleRef}
-            aria-expanded={navOpen}
-            aria-controls="primary-navigation"
-            aria-label={dict.menu}
-            onClick={() => setNavOpen((value) => !value)}
-          >
-            <Icon name="menu" size={18} />
-          </button>
-
-          <button type="button" className="brand" onClick={() => navigate("dashboard")}>
-            <span className="brand__mark" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.7">
-                <circle cx="12" cy="12" r="3.1" />
-                <path d="M12 2.6v3.2M12 18.2v3.2M2.6 12h3.2M18.2 12h3.2M5.4 5.4l2.3 2.3M16.3 16.3l2.3 2.3M18.6 5.4l-2.3 2.3M7.7 16.3l-2.3 2.3" />
-              </svg>
-            </span>
-            <span className="brand__text">
-              <span className="brand__name">
-                {dict.brand} <span className="brand__accent">{dict.brandAccent}</span>
-              </span>
-              <span className="brand__sub">{dict.subtitle}</span>
-            </span>
-          </button>
-
-          <div className="app-header__tools">
-            <button type="button" className="search-trigger" onClick={() => setSearchOpen(true)}>
-              <Icon name="search" size={15} />
-              <span className="search-trigger__label">{dict.searchPlaceholder}</span>
-              {/* The shortcut hint is decorative: keeping it out of the
-                  accessible name makes the label match the visible label. */}
-              <kbd aria-hidden="true">{dict.searchHint}</kbd>
-            </button>
-
-            <div className="tool-group" role="group" aria-label={dict.theme}>
-              <button
-                type="button"
-                className={`seg ${theme === "light" ? "is-active" : ""}`}
-                aria-pressed={theme === "light"}
-                onClick={() => setTheme("light")}
-                title={dict.themeLight}
-              >
-                <Icon name="sun" size={15} />
-              </button>
-              <button
-                type="button"
-                className={`seg ${theme === "dark" ? "is-active" : ""}`}
-                aria-pressed={theme === "dark"}
-                onClick={() => setTheme("dark")}
-                title={dict.themeDark}
-              >
-                <Icon name="moon" size={15} />
-              </button>
-            </div>
-
-            <button
-              type="button"
-              className="lang-btn"
-              onClick={() => setLang(lang === "fa" ? "en" : "fa")}
-              aria-label={`${dict.language}: ${dict.languageSwitch}`}
-            >
-              <Icon name="globe" size={15} />
-              {dict.languageSwitch}
-            </button>
-          </div>
-        </div>
-
-        {bannerOpen ? (
-          <div className="demo-banner" role="note">
-            <span className="demo-banner__dot" aria-hidden="true" />
-            <p>
-              <strong>{dict.demoTitle}.</strong> {dict.demoBody}
-            </p>
-            <span className="demo-banner__meta">{dict.readOnly}</span>
-            <button type="button" className="icon-btn icon-btn--sm" onClick={() => setBannerOpen(false)} aria-label={dict.demoDismiss}>
-              <Icon name="close" size={13} />
-            </button>
-          </div>
-        ) : (
-          <button type="button" className="demo-banner demo-banner--collapsed" onClick={() => setBannerOpen(true)}>
-            <span className="demo-banner__dot" aria-hidden="true" />
-            {dict.demoReopen}
-          </button>
-        )}
-
-        <nav className="breadcrumbs" aria-label="Breadcrumb">
-          <ol>
-            <li>
-              <button type="button" className="crumb" onClick={() => navigate("dashboard")}>
-                {dict.breadcrumbHome}
-              </button>
-            </li>
-            <li aria-current="page">
-              {activeModule.number ? `${formatNumber(activeModule.number, lang)} · ` : ""}
-              {t(activeModule.title, lang)}
-            </li>
-          </ol>
-        </nav>
-      </header>
+      <Header
+        dict={dict}
+        lang={lang}
+        theme={theme}
+        onTheme={setTheme}
+        onLangToggle={() => setLang(lang === "fa" ? "en" : "fa")}
+        bannerOpen={bannerOpen}
+        onBannerToggle={() => setBannerOpen((value) => !value)}
+        navOpen={navOpen}
+        onNavToggle={() => setNavOpen((value) => !value)}
+        navToggleRef={navToggleRef}
+        onSearch={() => setSearchOpen(true)}
+        crumbs={meta.crumbs}
+        crumbLabel={localeStrings(lang).shell.breadcrumb}
+        inert={overlayOpen}
+      />
 
       <div className="app-body" inert={overlayOpen || undefined}>
-        <nav
-          id="primary-navigation"
-          ref={navRef}
-          className={`sidebar ${navOpen ? "is-open" : ""}`}
-          aria-label={dict.modules}
-          inert={isNarrow && !navOpen ? true : undefined}
-        >
-          {/* The levels and the bank live on the key dock at the bottom edge.
-              The sidebar keeps one way into the chooser and says where the rest
-              went, so there are not two navigations pretending to be one. */}
-          <p className="sidebar__label">{localeStrings(lang).hub.navLabel}</p>
-          <ul>
-            <li>
-              <a
-                href={`#/${LEVELS_VIEW}`}
-                className={`nav-item nav-item--levels ${route.view === LEVELS_VIEW ? "is-active" : ""}`}
-                aria-current={route.view === LEVELS_VIEW ? "page" : undefined}
-                onClick={() => setNavOpen(false)}
-              >
-                <span className="nav-item__num" aria-hidden="true">۵</span>
-                <span className="nav-item__glyph" aria-hidden="true"><Icon name="layers" size={15} /></span>
-                <span className="nav-item__title">{dict.levelsNav}</span>
-              </a>
-            </li>
-          </ul>
-          <p className="sidebar__hint">{localeStrings(lang).hub.dockHint}</p>
-          <p className="sidebar__label">{localeStrings(lang).principles.navLabel}</p>
-          <ul>
-            <li>
-              <a
-                href={`#/${PRINCIPLES_VIEW}`}
-                className={`nav-item nav-item--levels ${route.view === PRINCIPLES_VIEW ? "is-active" : ""}`}
-                aria-current={route.view === PRINCIPLES_VIEW ? "page" : undefined}
-                onClick={() => setNavOpen(false)}
-              >
-                <span className="nav-item__num" aria-hidden="true" />
-                <span className="nav-item__glyph" aria-hidden="true"><Icon name="governance" size={15} /></span>
-                <span className="nav-item__title">{t(PRINCIPLES_MODULE.title, lang)}</span>
-              </a>
-            </li>
-          </ul>
-          <p className="sidebar__label">{localeStrings(lang).programme.navLabel}</p>
-          <ul>
-            <li>
-              <a
-                href={`#/${PROGRAMME_VIEW}`}
-                className={`nav-item nav-item--levels ${route.view === PROGRAMME_VIEW ? "is-active" : ""}`}
-                aria-current={route.view === PROGRAMME_VIEW ? "page" : undefined}
-                onClick={() => setNavOpen(false)}
-              >
-                <span className="nav-item__num" aria-hidden="true" />
-                <span className="nav-item__glyph" aria-hidden="true"><Icon name="projects" size={15} /></span>
-                <span className="nav-item__title">{localeStrings(lang).programme.navLabel}</span>
-              </a>
-            </li>
-            <li>
-              <a
-                href={`#/${REFERENDUM_VIEW}`}
-                className={`nav-item nav-item--levels ${route.view === REFERENDUM_VIEW ? "is-active" : ""}`}
-                aria-current={route.view === REFERENDUM_VIEW ? "page" : undefined}
-                onClick={() => setNavOpen(false)}
-              >
-                <span className="nav-item__num" aria-hidden="true" />
-                <span className="nav-item__glyph" aria-hidden="true"><Icon name="ballot" size={15} /></span>
-                <span className="nav-item__title">{localeStrings(lang).referendum.navLabel}</span>
-              </a>
-            </li>
-          </ul>
-          <p className="sidebar__label">{dict.modules}</p>
-          <ul>
-            {MODULES.map((module) => {
-              const active = module.id === route.view;
-              return (
-                <li key={module.id}>
-                  <a
-                    href={`#/${module.id}`}
-                    className={`nav-item ${active ? "is-active" : ""}`}
-                    aria-current={active ? "page" : undefined}
-                    onClick={() => setNavOpen(false)}
-                  >
-                    <span className="nav-item__num">{formatNumber(String(module.number).padStart(2, "0"), lang)}</span>
-                    <span className="nav-item__glyph" aria-hidden="true">
-                      <Icon name={module.icon} size={15} />
-                    </span>
-                    <span className="nav-item__title">{t(module.title, lang)}</span>
-                  </a>
-                </li>
-              );
-            })}
-          </ul>
-          <div className="sidebar__foot">
-            <p className="mono">CEP · v1.0.0</p>
-            <p>{DEPARTMENTS["DEPT-G"][lang]} · {DEPARTMENTS["DEPT-H"][lang]}</p>
-          </div>
-        </nav>
+        <Sidebar
+          lang={lang}
+          dict={dict}
+          route={route}
+          isNarrow={isNarrow}
+          navOpen={navOpen}
+          navRef={navRef}
+          onClose={() => setNavOpen(false)}
+        />
 
         {navOpen ? <button type="button" className="nav-scrim" aria-label={dict.close} onClick={() => setNavOpen(false)} /> : null}
 
         <main id="main-content" className="content" tabIndex={-1} ref={mainRef}>
+          {/* One boundary per route: a broken view must not take the header,
+              the navigation or the frame with it, and moving to another page
+              must start from a clean state. */}
+          <ErrorBoundary key={`${route.view}-${route.recordId ?? ""}`} lang={lang}>
           {isLevels ? (
             route.recordId ? (
               <Level
@@ -497,17 +329,13 @@ export default function App() {
               navigate={navigate}
               route={route}
               openProvenance={openProvenance}
+              onSearch={() => setSearchOpen(true)}
               initialRecordId={route.recordId}
             />
           )}
+          </ErrorBoundary>
 
-          <footer className="app-footer">
-            <p>{dict.footer}</p>
-            <p className="app-footer__meta">{dict.footerMeta}</p>
-            <p className="app-footer__meta">
-              <Badge tone="warn">{dict.governanceNote}</Badge>
-            </p>
-          </footer>
+          <Footer lang={lang} dict={dict} />
         </main>
       </div>
 
@@ -516,12 +344,12 @@ export default function App() {
       {searchOpen ? (
         <SearchOverlay
           lang={lang}
-          dict={dict}
           term={searchTerm}
           onTerm={setSearchTerm}
-          results={searchResults}
+          state={search}
           inputRef={searchInputRef}
           onClose={closeSearch}
+          onRetry={() => setSearchNonce((value) => value + 1)}
           onPick={(result) => navigate(result.target.view, result.target.recordId)}
         />
       ) : null}
@@ -536,67 +364,6 @@ export default function App() {
         {provenance ? <ProvenanceBody record={provenance} lang={lang} /> : null}
       </Drawer>
 
-    </div>
-  );
-}
-
-function SearchOverlay({ lang, dict, term, onTerm, results, inputRef, onClose, onPick }) {
-  // Same trap as the drawer: Escape closes and hands focus back to whatever
-  // opened the search, and Tab cycles through the results instead of escaping
-  // into the page behind the scrim.
-  const layerRef = useFocusTrap({ active: true, onEscape: onClose, initialFocus: inputRef });
-
-  return (
-    <div className="search-layer" role="dialog" aria-modal="true" aria-label={dict.searchLabel} ref={layerRef}>
-      <button type="button" className="search-scrim" aria-label={dict.closeSearch} onClick={onClose} tabIndex={-1} />
-      <div className="search-panel">
-        <div className="search-panel__head">
-          <Icon name="search" size={17} />
-          <input
-            ref={inputRef}
-            type="search"
-            value={term}
-            onChange={(event) => onTerm(event.target.value)}
-            placeholder={dict.searchPlaceholder}
-            aria-label={dict.searchLabel}
-            autoComplete="off"
-          />
-          <button type="button" className="icon-btn" onClick={onClose} aria-label={dict.closeSearch}>
-            <Icon name="close" size={15} />
-          </button>
-        </div>
-        <div className="search-panel__body">
-          {term.trim().length < 2 ? (
-            <p className="muted">{dict.searchPrompt}</p>
-          ) : !results ? (
-            <p className="muted">{dict.loading}</p>
-          ) : results.total === 0 ? (
-            <p className="muted">{dict.searchEmpty}</p>
-          ) : (
-            <>
-              <p className="search-count">
-                {formatNumber(results.total, lang)} {dict.searchResults}
-              </p>
-              <ul className="search-results">
-                {results.results.map((result) => (
-                  <li key={`${result.module}-${result.id}`}>
-                    <button type="button" className="search-result" onClick={() => onPick(result)}>
-                      <span className="search-result__mod">
-                        {formatNumber(result.moduleNumber, lang)} · {t({ fa: MODULES[result.moduleNumber - 1].short.fa, en: MODULES[result.moduleNumber - 1].short.en }, lang)}
-                      </span>
-                      <span className="search-result__title">{t(result.title, lang)}</span>
-                      <span className="search-result__sub">{t(result.subtitle, lang)}</span>
-                      <span className="search-result__meta">
-                        {t(result.kind, lang)} · <Badge tone={EPISTEMIC[result.epistemicStatus]?.tone ?? "neutral"}>{t(EPISTEMIC[result.epistemicStatus] ?? { fa: result.epistemicStatus, en: result.epistemicStatus }, lang)}</Badge>
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

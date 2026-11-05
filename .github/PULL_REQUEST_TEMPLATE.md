@@ -14,6 +14,15 @@
 - Accessibility:
 - Misuse:
 
+## UX (interface changes only)
+- [ ] Checked fa (RTL) and en (LTR), light and dark, at 390 px and 1440 px.
+- [ ] No slash ratios; numbers go through `formatNumber`; no Arabic `ي`/`ك`; ZWNJ where the glossary requires it.
+- [ ] New strings exist in both `locales/fa/` and `locales/en/`.
+- [ ] Focus order, focus return and inert backgrounds unchanged or improved; hit areas >= 24 px.
+- [ ] `node scripts/audit/a11y.mjs` prints `{}`, `keyboard.mjs` passes, `layout.mjs` is clean.
+- [ ] Before/after rating and the "not done yet" list are below.
+- [Checklist](../docs/ux/AGENT-UX-CHECKLIST.md)
+
 ## Validation
 - [ ] I checked links, spelling and formatting.
 - [ ] I ran relevant tests (or explained why none apply).

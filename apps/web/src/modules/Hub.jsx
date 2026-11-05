@@ -1,7 +1,7 @@
 import { useApi } from "../lib/api.js";
 import { t, formatNumber } from "../i18n.js";
 import { localeStrings } from "../locales/index.js";
-import { StateBlock, Callout } from "../components/ui.jsx";
+import { Callout } from "../components/ui.jsx";
 import { MODULES } from "../i18n.js";
 import { Icon } from "../components/icons.jsx";
 
@@ -13,41 +13,54 @@ import { Icon } from "../components/icons.jsx";
 // one card with a different number.
 
 const LEVEL_ICON = ["eye", "shield", "ballot", "org", "gavel"];
+const DOOR_IDS = [1, 2, 3, 4, 5];
 
-function LevelDoor({ level, lang, copy, navigate }) {
+function LevelDoor({ id, title, purpose, stats, state, lang, copy, navigate }) {
   return (
-    <article className={`door door--l${level.id}`}>
+    <article className={`door door--l${id}`}>
       <a
         className="door__link"
-        href={`#/levels/${level.id}`}
+        href={`#/levels/${id}`}
         onClick={(event) => {
           event.preventDefault();
-          navigate("levels", String(level.id));
+          navigate("levels", String(id));
         }}
       >
         <span className="door__rail" aria-hidden="true" />
         <header className="door__head">
           <span className="door__num" aria-hidden="true">
-            {formatNumber(level.id, lang)}
+            {formatNumber(id, lang)}
           </span>
           <span className="door__icon" aria-hidden="true">
-            <Icon name={LEVEL_ICON[level.id - 1]} size={20} />
+            <Icon name={LEVEL_ICON[id - 1]} size={20} />
           </span>
           <span className="door__titles">
             <span className="door__kicker">
-              {copy.levelWord} {formatNumber(level.id, lang)}
+              {copy.levelWord} {formatNumber(id, lang)}
             </span>
-            <span className="door__title">{t(level.title, lang)}</span>
+            <span className="door__title">{title}</span>
           </span>
         </header>
-        <p className="door__purpose">{t(level.purpose, lang)}</p>
+        <p className="door__purpose">{purpose}</p>
+        {/* The door, its name and its purpose are static. Only the counts come
+            from /api/v1/levels, and when they are missing the door says nothing
+            rather than inventing a number. */}
         <p className="door__meter">
-          <span className="door__meter-count">
-            {formatNumber(level.actionCount, lang)} {copy.actions}
-          </span>
-          <span className={`door__meter-ballot ${level.holdsBallot ? "is-yes" : ""}`}>
-            {level.holdsBallot ? copy.ballotYes : copy.ballotNo}
-          </span>
+          {stats ? (
+            <>
+              <span className="door__meter-count">
+                {formatNumber(stats.actionCount, lang)} {copy.actions}
+              </span>
+              <span className={`door__meter-ballot ${stats.holdsBallot ? "is-yes" : ""}`}>
+                {stats.holdsBallot ? copy.ballotYes : copy.ballotNo}
+              </span>
+            </>
+          ) : state === "loading" ? (
+            <span className="door__meter-skeleton" aria-hidden="true">
+              <span className="skeleton skeleton--text" />
+              <span className="skeleton skeleton--pill" />
+            </span>
+          ) : null}
         </p>
         <span className="door__cta">
           {copy.open}
@@ -96,8 +109,12 @@ function BankDoor({ lang, copy, navigate }) {
   );
 }
 
-export default function Hub({ lang, navigate, route }) {
+export default function Hub({ lang, navigate, route, dict }) {
   const copy = localeStrings(lang).hub;
+  // The five names and purposes are the design's own definitions, so the six
+  // doors paint immediately. The API is the single source of truth for the
+  // numbers only (issue #33).
+  const staticCopy = localeStrings(lang).levels;
   const { status, payload, reload } = useApi("/api/v1/levels");
   // The workbench under the six doors: two surfaces that are work, not levels.
   // They load beside the doors and degrade quietly — a slow programme endpoint
@@ -105,18 +122,11 @@ export default function Hub({ lang, navigate, route }) {
   const programme = useApi("/api/v1/programme");
   const referendum = useApi("/api/v1/referendum");
 
-  if (status !== "ready") {
-    return (
-      <div className="hub">
-        <StateBlock status={status} lang={lang} onRetry={reload} />
-      </div>
-    );
-  }
-
-  const levels = payload.data.levels;
-  const currentLevel = route.view === "levels" && route.recordId ? levels.find((level) => String(level.id) === String(route.recordId)) : null;
-  const stationLabel = currentLevel
-    ? `${copy.levelWord} ${formatNumber(currentLevel.id, lang)} · ${t(currentLevel.title, lang)}`
+  const levels = payload?.data?.levels ?? null;
+  const statsFor = (id) => levels?.find((level) => String(level.id) === String(id)) ?? null;
+  const currentId = route.view === "levels" && route.recordId ? String(route.recordId) : null;
+  const stationLabel = currentId
+    ? `${copy.levelWord} ${formatNumber(currentId, lang)} · ${staticCopy.titles[currentId] ?? ""}`
     : route.view === "bank"
       ? copy.bankTitle
       : route.view === "hub"
@@ -179,12 +189,30 @@ export default function Hub({ lang, navigate, route }) {
             <p className="lede">{copy.keysLede}</p>
           </div>
         </div>
-        <div className="door-grid">
-          {levels.map((level) => (
-            <LevelDoor key={level.id} level={level} lang={lang} copy={copy} navigate={navigate} />
+        <div className="door-grid" aria-busy={status === "loading" || undefined}>
+          {DOOR_IDS.map((id) => (
+            <LevelDoor
+              key={id}
+              id={id}
+              title={staticCopy.titles[id]}
+              purpose={staticCopy.purposes[id]}
+              stats={statsFor(id)}
+              state={status}
+              lang={lang}
+              copy={copy}
+              navigate={navigate}
+            />
           ))}
           <BankDoor lang={lang} copy={copy} navigate={navigate} />
         </div>
+        {status === "error" ? (
+          <p className="hub__notice small" role="status">
+            {copy.countsUnavailable}{" "}
+            <button type="button" className="link-button" onClick={reload}>
+              {copy.countsRetry}
+            </button>
+          </p>
+        ) : null}
       </section>
 
 

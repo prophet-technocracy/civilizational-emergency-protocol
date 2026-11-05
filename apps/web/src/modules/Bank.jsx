@@ -6,6 +6,7 @@
 // the haircut chain is never hidden behind a headline.
 import { useMemo, useState } from "react";
 import { useApi } from "../lib/api.js";
+import { parseDecimalInput } from "../lib/decimal.mjs";
 import { t, formatNumber, formatDate } from "../i18n.js";
 import { localeStrings } from "../locales/index.js";
 import { SectionHeader, Card, Callout, StateBlock, Badge, Stat, BarRow } from "../components/ui.jsx";
@@ -131,6 +132,7 @@ function SupplySection({ supply, copy, lang }) {
 
       <div className="card">
         <BarRow
+          lang={lang}
           label={copy.supply.circulating}
           value={circulating.tokens}
           max={ceiling.tokens}
@@ -502,12 +504,22 @@ function Simulator({ copy, lang, caps, defaultHint }) {
     ];
   }, [action, capValue, copy.sim]);
 
-  const amountNumber = amount.trim() === "" ? null : Number(String(amount).replace(/[٫,]/g, "."));
+  // One parser, one truth: the number shown under the field is the number sent
+  // to the API, and an ambiguous separator is a question, not a guess (issue #28).
+  const parsed = parseDecimalInput(amount);
+  const amountNumber = parsed.ok ? parsed.value : null;
 
   const submit = async (event) => {
     event.preventDefault();
-    if (amountNumber === null || !Number.isFinite(amountNumber) || amountNumber <= 0) {
-      setState({ status: "ready", payload: { action, result: { allowed: false, code: "invalid-amount" }, after: null } });
+    if (!parsed.ok) {
+      setState({
+        status: "ready",
+        payload: {
+          action,
+          result: { allowed: false, code: "invalid-amount", amountProblem: parsed.reason },
+          after: null
+        }
+      });
       return;
     }
     setState({ status: "running", payload: null });
@@ -643,6 +655,14 @@ function Simulator({ copy, lang, caps, defaultHint }) {
               onChange={(event) => setAmount(event.target.value)}
             />
             <span className="field__hint small">{copy.sim.amountHint}</span>
+            <span className={`field__hint small ${parsed.ok ? "" : "field__hint--problem"}`}>
+              {copy.sim.parsedAs}:{" "}
+              {parsed.ok
+                ? `${numberFormat(parsed.value, lang, 4)} HMMT`
+                : amount.trim() === ""
+                  ? "—"
+                  : copy.sim.amountProblem[parsed.reason]}
+            </span>
             <span className="field__hint small">
               {copy.sim.tomanEquivalent}:{" "}
               {amountNumber === null ? "—" : `${compact(amountNumber * 1e12, lang)} ${lang === "fa" ? "تومان" : "toman"}`}
@@ -704,6 +724,9 @@ function Simulator({ copy, lang, caps, defaultHint }) {
               </p>
 
               {!result.allowed && result.reason ? <p>{t(result.reason, lang)}</p> : null}
+              {!result.allowed && result.amountProblem ? (
+                <p className="sim__problem">{copy.sim.amountProblem[result.amountProblem]}</p>
+              ) : null}
 
               <dl className="kv kv--inline">
                 {result.allowed && result.netTokens !== undefined ? (

@@ -4,7 +4,7 @@
 // The JSX sources are bundled on the fly with esbuild (a Vite dependency) so
 // node:test can import them without a browser or a dev server.
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { after, before, test } from "node:test";
 import { createElement } from "react";
@@ -19,7 +19,17 @@ const BUNDLE = join(BUILD_DIR, "app.mjs");
 
 let App;
 let readRouteFromHash;
+let routeMeta;
+let localeStrings;
+let SearchOverlay;
+let ErrorBoundary;
+let CrashFallback;
+let readTheme;
+let Meter;
+let BarRow;
+let visibleAudit;
 let primeApiCache;
+let clearApiCache;
 let UI;
 let MODULES;
 let t;
@@ -38,16 +48,22 @@ let DOORS;
 const server = createServer();
 let baseUrl;
 const fixtures = new Map();
+let allEntries = null;
 
 before(async () => {
   await build({
     stdin: {
       contents: [
-        'export { default as App, readRouteFromHash } from "./src/App.jsx";',
-        'export { primeApiCache } from "./src/lib/api.js";',
+        'export { default as App, readRouteFromHash, routeMeta } from "./src/App.jsx";',
+        'export { primeApiCache, clearApiCache } from "./src/lib/api.js";',
+        'export { localeStrings } from "./src/locales/index.js";',
+        'export { readTheme } from "./src/lib/theme.js";',
         'export { UI, MODULES, t, formatNumber, labelFor, ENUM_LABELS, formatDate, formatRatio } from "./src/i18n.js";',
-        'export { Toast } from "./src/components/ui.jsx";',
-        'export { nextDoorIndex, doorStepForArrow, doorHref, isDoorActive, DOORS } from "./src/components/KeyDock.jsx";'
+        'export { Toast, Meter, BarRow } from "./src/components/ui.jsx";',
+        'export { default as SearchOverlay } from "./src/components/SearchOverlay.jsx";',
+        'export { default as ErrorBoundary, CrashFallback } from "./src/components/ErrorBoundary.jsx";',
+        'export { nextDoorIndex, doorStepForArrow, doorHref, isDoorActive, DOORS } from "./src/components/KeyDock.jsx";',
+        'export { visibleAudit } from "./src/modules/levels/panels.jsx";'
       ].join("\n"),
       resolveDir: WEB_ROOT,
       loader: "js"
@@ -64,7 +80,17 @@ before(async () => {
   const bundle = await import(`${BUNDLE}?t=${Date.now()}`);
   App = bundle.App;
   readRouteFromHash = bundle.readRouteFromHash;
+  routeMeta = bundle.routeMeta;
+  localeStrings = bundle.localeStrings;
+  SearchOverlay = bundle.SearchOverlay;
+  ErrorBoundary = bundle.ErrorBoundary;
+  CrashFallback = bundle.CrashFallback;
+  readTheme = bundle.readTheme;
+  Meter = bundle.Meter;
+  BarRow = bundle.BarRow;
+  visibleAudit = bundle.visibleAudit;
   primeApiCache = bundle.primeApiCache;
+  clearApiCache = bundle.clearApiCache;
   UI = bundle.UI;
   MODULES = bundle.MODULES;
   t = bundle.t;
@@ -111,6 +137,7 @@ before(async () => {
   ];
 
   const entries = {};
+  allEntries = entries;
   for (const path of paths) {
     const payload = await (await fetch(`${baseUrl}${path}`)).json();
     fixtures.set(path, payload);
@@ -132,11 +159,20 @@ after(async () => {
  * Renders <App /> at a given hash with network access disabled, proving that
  * every view is fully driven by the read-only API payloads we captured.
  */
-function renderWithoutFetch(hash = "") {
+function renderWithoutFetch(hash = "", lang = null) {
   const originalFetch = globalThis.fetch;
   const originalWindow = globalThis.window;
   globalThis.fetch = () => Promise.reject(new Error("network access is forbidden in render tests"));
-  globalThis.window = { location: { hash }, scrollTo() {}, addEventListener() {}, removeEventListener() {} };
+  // The shell reads its preferences from localStorage on the first render; the
+  // stub lets a test render in English (the fa default is the fallback).
+  const stored = lang ? new Map([["cep.lang", lang]]) : new Map();
+  globalThis.window = {
+    location: { hash },
+    localStorage: { getItem: (key) => stored.get(key) ?? null, setItem: (key, value) => stored.set(key, value) },
+    scrollTo() {},
+    addEventListener() {},
+    removeEventListener() {}
+  };
   const html = renderToString(createElement(App));
   return {
     html,
@@ -154,19 +190,124 @@ test("route parsing defaults to the five-level chooser and accepts record ids", 
   assert.deepEqual(readRouteFromHash("#/hub"), { view: "hub", recordId: null });
   assert.deepEqual(readRouteFromHash("#/levels"), { view: "levels", recordId: null });
   assert.deepEqual(readRouteFromHash("#/levels/3"), { view: "levels", recordId: "3" });
-  // An out-of-range level falls back to the chooser instead of rendering a
-  // dashboard the reader did not ask for.
-  assert.deepEqual(readRouteFromHash("#/levels/9"), { view: "levels", recordId: null });
   assert.deepEqual(readRouteFromHash("#/dashboard"), { view: "dashboard", recordId: null });
   assert.deepEqual(readRouteFromHash("#/research"), { view: "research", recordId: null });
   assert.deepEqual(readRouteFromHash("#/historical-archive/SYN-HIST-001"), {
     view: "historical-archive",
     recordId: "SYN-HIST-001"
   });
-  assert.deepEqual(readRouteFromHash("#/not-a-module"), { view: "dashboard", recordId: null });
-  // The bank is its own surface, not a module and not a level.
+  // An address that names nothing real is a not-found, not a plausible-looking
+  // wrong page: a level outside 1-5, an unknown module, a record id on a view
+  // that has no addressable records.
+  assert.deepEqual(readRouteFromHash("#/levels/9"), { view: "not-found", recordId: null });
+  assert.deepEqual(readRouteFromHash("#/levels/abc"), { view: "not-found", recordId: null });
+  assert.deepEqual(readRouteFromHash("#/not-a-module"), { view: "not-found", recordId: null });
+  assert.deepEqual(readRouteFromHash("#/programme/PRG-SYN-001"), { view: "not-found", recordId: null });
+  assert.deepEqual(readRouteFromHash("#/bank/anything"), { view: "not-found", recordId: null });
   assert.deepEqual(readRouteFromHash("#/bank"), { view: "bank", recordId: null });
-  assert.deepEqual(readRouteFromHash("#/bank/anything"), { view: "bank", recordId: null });
+  // A principle is addressable so a project can point at the row it targets.
+  assert.deepEqual(readRouteFromHash("#/principles/Z-01"), { view: "principles", recordId: "Z-01" });
+  assert.deepEqual(readRouteFromHash("#/principles/P-013"), { view: "principles", recordId: "P-013" });
+  assert.deepEqual(readRouteFromHash("#/principles/NOPE"), { view: "not-found", recordId: null });
+});
+
+test("every route is named once, and a level names itself in the title and the crumbs", () => {
+  const en = routeMeta({ view: "levels", recordId: "3" }, "en");
+  assert.equal(en.title, "Level 3 · Participating Citizen · CEP Civilizational Operating System");
+  assert.deepEqual(en.crumbs.map((crumb) => crumb.label), [
+    "Hub",
+    "Five civic levels",
+    "Level 3 · Participating Citizen"
+  ]);
+  assert.equal(en.crumbs[0].href, "#/hub");
+  assert.equal(en.crumbs[1].href, "#/levels");
+  assert.equal(en.crumbs[2].href, undefined, "the last crumb is the current page, not a link");
+
+  const fa = routeMeta({ view: "levels", recordId: "3" }, "fa");
+  assert.equal(fa.title, "سطح ۳ · شهروند مشارکت‌کننده · سامانهٔ عامل مدنی CEP");
+  assert.equal(fa.crumbs[0].label, "مرکز");
+
+  // The hub is home: no crumb pointing at itself.
+  for (const lang of ["fa", "en"]) {
+    const hub = routeMeta({ view: "hub", recordId: null }, lang);
+    assert.equal(hub.crumbs.length, 1);
+    assert.ok(hub.title.endsWith("CEP") || hub.title.includes("CEP"));
+  }
+
+  // No route may fall through to an unnamed page.
+  const routes = [
+    { view: "hub", recordId: null },
+    { view: "levels", recordId: null },
+    { view: "levels", recordId: "1" },
+    { view: "levels", recordId: "5" },
+    { view: "bank", recordId: null },
+    { view: "principles", recordId: null },
+    { view: "programme", recordId: null },
+    { view: "referendum", recordId: null },
+    { view: "not-found", recordId: null },
+    ...MODULES.map((module) => ({ view: module.id, recordId: null }))
+  ];
+  for (const lang of ["fa", "en"]) {
+    for (const route of routes) {
+      const meta = routeMeta(route, lang);
+      assert.ok(meta.label && meta.label.trim().length > 0, `${route.view} has no label in ${lang}`);
+      assert.ok(meta.title.includes(meta.label), `${route.view} title does not contain its label`);
+      assert.ok(meta.crumbs.length >= 1, `${route.view} has no crumbs`);
+    }
+  }
+
+  // Level pages must not all read the same, which was the bug.
+  const distinct = new Set(["1", "2", "3", "4", "5"].map((id) => routeMeta({ view: "levels", recordId: id }, "en").title));
+  assert.equal(distinct.size, 5, "five levels must produce five different titles");
+});
+
+test("the crumb trail is made of links, and home is the hub rather than the dashboard", () => {
+  const { html, restore } = renderWithoutFetch("#/levels/3");
+  try {
+    assert.match(html, /<a class="brand" href="#\/hub">/, "the logo must link to the hub");
+    assert.match(html, /<nav class="breadcrumbs" aria-label="مسیر صفحه">/);
+    assert.match(html, /<a class="crumb" href="#\/hub">مرکز<\/a>/, "Home points at the hub");
+    assert.match(html, /<a class="crumb" href="#\/levels">پنج سطح شهروندی<\/a>/);
+    assert.match(
+      html,
+      /aria-current="page"><span class="crumb crumb--current">سطح ۳ · شهروند مشارکت‌کننده<\/span>/,
+      "the current crumb names the level, and is text rather than a link"
+    );
+    assert.doesNotMatch(html, /<button[^>]*class="crumb"/, "crumbs are anchors, not buttons");
+  } finally {
+    restore();
+  }
+});
+
+test("an address that resolves to nothing gets a page that says so, in both languages", () => {
+  for (const [lang, title, homeLabel] of [
+    ["fa", "این صفحه را نیافتیم", "بازگشت به مرکز"],
+    ["en", "We could not find that page", "Back to the hub"]
+  ]) {
+    const { html, restore } = renderWithoutFetch("#/levels/9", lang);
+    try {
+      assert.match(html, new RegExp(`<h1[^>]*>${title}<\/h1>`), `${lang}: not-found needs its own h1`);
+      assert.ok(html.includes(homeLabel), `${lang}: not-found needs a way back to the hub`);
+      assert.match(html, /href="#\/hub"/);
+      assert.match(html, /href="#\/levels"/);
+      // It must not render some other page's content under a wrong address.
+      const main = html.slice(html.indexOf("<main"));
+      assert.doesNotMatch(main, /پیشخوان تمدنی|Civilization Dashboard/);
+    } finally {
+      restore();
+    }
+  }
+});
+
+test("the static door copy is the API's own words, not a second opinion", () => {
+  const levels = fixtures.get("/api/v1/levels").data.levels;
+  for (const lang of ["fa", "en"]) {
+    const copy = localeStrings(lang).levels;
+    for (const level of levels) {
+      assert.equal(copy.titles[String(level.id)], level.title[lang], `${lang}: level ${level.id} name drifted`);
+      assert.equal(copy.purposes[String(level.id)], level.purpose[lang], `${lang}: level ${level.id} purpose drifted`);
+    }
+  }
 });
 
 test("the shell renders Persian RTL by default with the demo banner and all twelve sections", () => {
@@ -1156,5 +1297,308 @@ test("the two work surfaces are reachable from the hub and from the sidebar", ()
     assert.ok(sidebar.includes('href="#/referendum"'), "the referendum is not in the sidebar");
   } finally {
     restore();
+  }
+});
+
+/* --------------------------- search overlay states -------------------------- */
+
+function renderSearch(state, lang = "fa", term = "زمین") {
+  return renderToString(
+    createElement(SearchOverlay, {
+      lang,
+      term,
+      onTerm() {},
+      state,
+      onClose() {},
+      onPick() {},
+      onRetry() {}
+    })
+  );
+}
+
+const ONE_RESULT = {
+  module: "principles",
+  moduleNumber: 99,
+  id: "Z-01",
+  title: { fa: "مدت و خاتمهٔ دولت انتقالی", en: "A dated, bounded transition government" },
+  subtitle: { fa: "اصل صفر ممیز یک", en: "Principle 0.1" },
+  kind: { fa: "اصل", en: "principle" },
+  epistemicStatus: "sourced"
+};
+
+test("the search overlay has five states, and an outage never reads as no results", () => {
+  const idle = renderSearch({ status: "idle", term: "", payload: null });
+  assert.match(idle, /role="status"/, "the overlay needs a live region");
+  assert.match(idle, /دست‌کم دو نویسه/, "idle state is the prompt");
+
+  const loading = renderSearch({ status: "loading", term: "زمین", payload: null });
+  assert.match(loading, /aria-busy="true"/, "loading is announced as busy");
+  assert.match(loading, /در حال جستجو/, "loading has its own words");
+  assert.doesNotMatch(loading, /search-results/, "a stale list must not stay on screen");
+
+  const empty = renderSearch({ status: "ready", term: "زمین", payload: { total: 0, results: [] } });
+  assert.match(empty, /زمین/, "the empty answer names the query");
+  assert.match(empty, /چیزی یافت نشد/);
+
+  const results = renderSearch({
+    status: "ready",
+    term: "اصل",
+    payload: { total: 1, results: [ONE_RESULT] }
+  });
+  assert.match(results, /search-result__title/);
+  assert.match(results, /۱/, "the count is localized");
+
+  const error = renderSearch({ status: "error", term: "زمین", payload: null });
+  assert.match(error, /role="alert"/, "an outage is announced as an alert");
+  assert.match(error, /تلاش دوباره/, "the error offers Retry");
+  assert.match(error, /جستجو انجام نشد/);
+  assert.doesNotMatch(error, /چیزی یافت نشد/, "an outage must not claim there were no results");
+
+  const errorEn = renderSearch({ status: "error", term: "land", payload: null }, "en", "land");
+  assert.match(errorEn, /did not answer/);
+  assert.match(errorEn, /Retry/);
+});
+
+test("a search result outside the twelve modules renders without a module chip", () => {
+  const html = renderSearch(
+    { status: "ready", term: "اصل", payload: { total: 1, results: [ONE_RESULT] } },
+    "en",
+    "principle"
+  );
+  assert.doesNotMatch(html, /search-result__mod/, "an unknown module number must not render a chip");
+  assert.match(html, /A dated, bounded transition government/);
+});
+
+test("a render error shows a fallback with a heading, a sentence and a way out", () => {
+  const state = ErrorBoundary.getDerivedStateFromError(new Error("boom"));
+  assert.equal(state.error.message, "boom", "the boundary must catch and hold the error");
+
+  for (const [lang, title, home] of [
+    ["fa", "این بخش نمایش داده نشد", "بازگشت به مرکز"],
+    ["en", "This section could not be displayed", "Back to the hub"]
+  ]) {
+    const html = renderToString(createElement(CrashFallback, { lang, onReset() {} }));
+    assert.match(html, new RegExp(`<h1[^>]*>${title}</h1>`), `${lang}: the fallback needs its own h1`);
+    assert.match(html, /role="alert"/);
+    assert.match(html, /href="#\/hub"/, `${lang}: a link back to the hub`);
+    assert.match(html, /<button type="button" class="btn btn--primary"/, `${lang}: a retry control`);
+    assert.ok(html.includes(home));
+  }
+});
+
+/* ------------------------- theme before the first paint ------------------------ */
+
+test("the theme follows the operating system until the reader chooses", () => {
+  const originalWindow = globalThis.window;
+  let stored = null;
+  let systemDark = true;
+  globalThis.window = {
+    localStorage: { getItem: () => stored, setItem() {} },
+    matchMedia: () => ({ matches: systemDark, addEventListener() {}, removeEventListener() {} })
+  };
+  try {
+    assert.equal(readTheme(), "dark", "OS dark with nothing stored must paint dark");
+    stored = "light";
+    assert.equal(readTheme(), "light", "an explicit choice always wins over the OS");
+    stored = null;
+    systemDark = false;
+    assert.equal(readTheme(), "light", "OS light with nothing stored must paint light");
+  } finally {
+    globalThis.window = originalWindow;
+  }
+});
+
+test("index.html settles language and theme before the app script runs", () => {
+  const html = readFileSync(join(WEB_ROOT, "index.html"), "utf8");
+  const head = html.slice(0, html.indexOf('<div id="root"'));
+  assert.match(head, /localStorage\.getItem\("cep\.theme"\)/, "the pre-paint script reads the stored theme");
+  assert.match(head, /localStorage\.getItem\("cep\.lang"\)/, "the pre-paint script reads the stored language");
+  assert.match(head, /prefers-color-scheme: dark/, "with nothing stored the OS decides");
+  assert.match(head, /setAttribute\("data-theme", theme\)/);
+  assert.match(head, /<meta name="color-scheme" content="light dark" \/>/);
+  assert.match(head, /try \{/, "storage may be disabled, so the read must be guarded");
+});
+
+test("the hub paints its six doors before /api/v1/levels answers", () => {
+  clearApiCache();
+  const { html, restore } = renderWithoutFetch("#/hub");
+  try {
+    assert.match(html, /<h1[^>]*>یک کلید، شش در<\/h1>/, "the heading does not wait for the API");
+    const doors = html.match(/class="door__link"/g) ?? [];
+    assert.equal(doors.length, 6, "five levels and the bank, painted from static copy");
+    assert.match(html, /ناظر عمومی/, "a door names itself without the API");
+    assert.match(html, /گرهٔ سازمانی/);
+    assert.match(html, /door__meter-skeleton/, "missing counts are a skeleton, not a wrong number");
+    assert.doesNotMatch(html, /state-block/, "the landing page is not replaced by a spinner");
+    assert.match(html, /aria-busy="true"/, "the grid says the counts are still coming");
+  } finally {
+    restore();
+    primeApiCache(allEntries);
+  }
+});
+
+test("the hub states what it refuses to be, even with no data at all", () => {
+  clearApiCache();
+  const { html, restore } = renderWithoutFetch("#/hub");
+  try {
+    assert.match(html, /آنچه این مرکز نمی‌گوید/, "the guard callout is static copy");
+    assert.match(html, /دسترسی|حکمرانی/, "the module strip still renders");
+    assert.doesNotMatch(html, /state-block/, "no full-page error block");
+  } finally {
+    restore();
+    primeApiCache(allEntries);
+  }
+});
+
+/* ------------------------ digits and labels that travel ---------------------- */
+
+test("the English sidebar shows no Persian digits, in either language's copy", () => {
+  const { html, restore } = renderWithoutFetch("#/dashboard", "en");
+  try {
+    const sidebar = html.slice(html.indexOf('id="primary-navigation"'), html.indexOf("</nav>", html.indexOf('id="primary-navigation"')));
+    assert.doesNotMatch(sidebar, /[\u06F0-\u06F9]/, "no Persian digit may appear in the English interface");
+    assert.match(sidebar, /nav-item__num">05</, "the level count is a number formatted for the reader");
+  } finally {
+    restore();
+  }
+});
+
+test("meters speak their ratio in the reader's digits and words, never with a slash", () => {
+  const fa = renderToString(createElement(Meter, { value: 4, max: 6, label: "نقاط عطف کامل", lang: "fa" }));
+  const faLabel = fa.match(/aria-label="([^"]+)"/)[1];
+  assert.equal(faLabel, "نقاط عطف کامل: ۴ از ۶");
+  assert.doesNotMatch(faLabel, /[0-9]/, "no ASCII digit inside a Persian accessible name");
+  assert.doesNotMatch(faLabel, /\//, "no slash ratio");
+
+  const en = renderToString(createElement(Meter, { value: 4, max: 6, label: "Milestones complete", lang: "en" }));
+  assert.equal(en.match(/aria-label="([^"]+)"/)[1], "Milestones complete: 4 of 6");
+
+  // A BarRow with no pre-formatted display must not leak a raw number into fa.
+  const bar = renderToString(createElement(BarRow, { label: "ادعاها", value: 3, max: 9, lang: "fa" }));
+  const barLabel = bar.match(/aria-label="([^"]+)"/)[1];
+  assert.equal(barLabel, "ادعاها: ۳ از ۹");
+  assert.doesNotMatch(barLabel, /[0-9]/);
+});
+
+/* ------------------------------- build metadata ----------------------------- */
+
+test("no invented build metadata is left in the web sources", () => {
+  const webRoot = WEB_ROOT;
+  const files = [];
+  const walk = (dir) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) walk(path);
+      else if (/\.(jsx?|mjs)$/.test(entry.name)) files.push(path);
+    }
+  };
+  walk(join(webRoot, "src"));
+  for (const file of files) {
+    const source = readFileSync(file, "utf8");
+    assert.doesNotMatch(source, /v1\.0\.0/, `${file} still hard-codes v1.0.0`);
+    assert.doesNotMatch(source, /4c526f6a|arena\//, `${file} still names a session branch`);
+  }
+
+  // The version and the commit come from package.json and git, at build time.
+  const viteConfig = readFileSync(join(webRoot, "vite.config.js"), "utf8");
+  assert.match(viteConfig, /package\.json/, "the version must be read from package.json");
+  assert.match(viteConfig, /rev-parse.*--short/, "the commit must be read from git");
+  assert.match(viteConfig, /__CEP_VERSION__/);
+  assert.match(viteConfig, /__CEP_COMMIT__/);
+});
+
+test("a build without git says dev instead of inventing a hash", () => {
+  // Under node --test the Vite defines do not exist, which is exactly the
+  // fallback path: no version, `dev` for the commit.
+  const { html, restore } = renderWithoutFetch("#/dashboard");
+  try {
+    const footer = html.slice(html.indexOf("app-footer"));
+    assert.match(footer, /dev/, "the commit fallback is visible");
+    assert.match(footer, /نامعلوم/, "an unknown version says so rather than guessing");
+    assert.doesNotMatch(footer, /arena\/|v1\.0\.0/);
+  } finally {
+    restore();
+  }
+});
+
+test("the bank states the amount it actually read, before the form is submitted", () => {
+  const { html, restore } = renderWithoutFetch("#/bank");
+  try {
+    assert.match(html, /مقدار خوانده‌شده/, "the field says how it read what was typed");
+    assert.match(html, /۰٫۰۵ HMMT/, "the default amount is echoed back as 0.05, not as 0");
+    // The old parser turned "1,000" into 1; the page must not contain that path.
+    const source = readFileSync(join(WEB_ROOT, "src/modules/Bank.jsx"), "utf8");
+    assert.doesNotMatch(source, /replace\(\/\[٫,\]\/g/, "the lossy amount parser is gone");
+    assert.match(source, /parseDecimalInput/);
+  } finally {
+    restore();
+  }
+});
+
+test("a project and the principle it targets link to each other, once each", () => {
+  const programme = fixtures.get("/api/v1/programme").data;
+  const project = programme.projects[0];
+
+  // Programme -> principle: the id and the title are one link, not two.
+  const fromProgramme = renderWithoutFetch("#/programme");
+  try {
+    assert.match(
+      fromProgramme.html,
+      new RegExp(`<a class="link-button" href="#/principles/${project.principleId}">`),
+      "the principle id must link to its row"
+    );
+    const links = fromProgramme.html.match(new RegExp(`href="#/principles/${project.principleId}"`, "g")) ?? [];
+    assert.equal(links.length, 1, "one link per project, so a screen reader announces it once");
+  } finally {
+    fromProgramme.restore();
+  }
+
+  // Principle -> programme: the row says which project is working on it.
+  const fromPrinciple = renderWithoutFetch(`#/principles/${project.principleId}`);
+  try {
+    assert.match(fromPrinciple.html, new RegExp(`id="principle-${project.principleId}"`), "the row is anchorable");
+    assert.match(fromPrinciple.html, /class="is-targeted"/, "the row a deep link names is marked");
+    assert.match(fromPrinciple.html, /در دستور کار/, "the row says it is targeted");
+    assert.ok(fromPrinciple.html.includes(project.id), "the row names the project id");
+  } finally {
+    fromPrinciple.restore();
+  }
+
+  // An address for a principle this file does not have says so.
+  const missing = renderWithoutFetch("#/principles/Q-99");
+  try {
+    assert.match(missing.html, /این اصل در این سند نیست/);
+  } finally {
+    missing.restore();
+  }
+});
+
+/* ---------------------- level simulator outcomes (#30) ---------------------- */
+
+test("each of the five level panels announces its last outcome", () => {
+  for (const id of ["1", "2", "3", "4", "5"]) {
+    const { html, restore } = renderWithoutFetch(`#/levels/${id}`);
+    try {
+      assert.match(html, /class="sim__outcome/, `level ${id} has no outcome region`);
+      assert.match(html, /role="status"[^>]*aria-live="polite"|aria-live="polite"/, `level ${id} outcome is not live`);
+      assert.match(html, /نتیجهٔ آخرین کنش این‌جا می‌آید/, `level ${id} does not say what the region is for`);
+      assert.equal((html.match(/class="sim__outcome/g) ?? []).length, 1, `level ${id} must have exactly one live region`);
+    } finally {
+      restore();
+    }
+  }
+});
+
+test("the audit log says when it is showing only part of the session", () => {
+  const audit = Array.from({ length: 12 }, (_, index) => ({ id: `SIM-${index}` }));
+  assert.equal(visibleAudit(audit, false).length, 8, "collapsed shows eight");
+  assert.equal(visibleAudit(audit, true).length, 12, "expanded shows the whole history");
+  assert.equal(visibleAudit(audit.slice(0, 3), false).length, 3, "a short history is not padded");
+  // The copy for both states exists in both languages.
+  for (const lang of ["fa", "en"]) {
+    const copy = localeStrings(lang).levels.sim;
+    assert.ok(copy.auditShowing.includes("{shown}") && copy.auditShowing.includes("{total}"));
+    assert.ok(copy.auditShowAll.includes("{total}"));
+    assert.ok(copy.auditCollapse.length > 0);
   }
 });

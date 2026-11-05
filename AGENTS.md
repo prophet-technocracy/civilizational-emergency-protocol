@@ -35,7 +35,7 @@ An agent must not:
 2. Select one workstream from [Agent Workstreams](agents/WORKSTREAMS.md).
 3. Check existing issues and pull requests to avoid duplicate work.
 4. State the exact question, scope, method, sources and expected deliverable before researching.
-5. Work on a separate branch and submit a focused pull request.
+5. Work on a separate branch and submit a focused pull request. Interface work follows [the agent UX checklist](docs/ux/AGENT-UX-CHECKLIST.md) — the eight-cell matrix, the three audit scripts, and the honest "not done yet" list.
 6. Include evidence, limitations, unresolved questions and a self-critique.
 7. Wait for human review. A merged pull request means the contribution was accepted into the repository; it does not mean the community ratified its conclusions.
 

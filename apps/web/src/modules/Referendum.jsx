@@ -136,6 +136,7 @@ export default function Referendum({ lang }) {
                 <div className="ref-rehearsal__shares">
                   {Object.entries(rehearsal.shares).map(([optionId, value]) => (
                     <BarRow
+                      lang={lang}
                       key={optionId}
                       label={optionLabel(question, optionId, lang)}
                       value={value}
