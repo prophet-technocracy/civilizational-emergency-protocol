@@ -3,6 +3,7 @@ import { useApi } from "../lib/api.js";
 import { t, formatNumber } from "../i18n.js";
 import { localeStrings } from "../locales/index.js";
 import { SectionHeader, Card, StateBlock, Badge, Callout, Empty, Stat } from "../components/ui.jsx";
+import { LightDot } from "../components/lights.jsx";
 
 // The four statuses map onto badge tones; anything unknown stays neutral rather
 // than inventing a colour the reader would have to guess at.
@@ -24,8 +25,11 @@ export default function Principles({ lang }) {
     );
   }
 
-  const { motherFile, chapters, summary, method, statuses } = payload.data;
+  const { motherFile, chapters, summary, method, statuses, lights } = payload.data;
   const statusCopy = (id) => copy.status[id] ?? id;
+
+  const percent = (value) => `${formatNumber(Math.round(value * 100), lang)}${t({ fa: "٪", en: "%" }, lang)}`;
+  const lightCopy = (id) => copy.lightName[id] ?? id;
 
   const shown = filter === "all" ? null : filter;
   const visibleChapters = chapters
@@ -50,7 +54,7 @@ export default function Principles({ lang }) {
       </Callout>
 
       <h2 className="h2">{copy.summaryTitle}</h2>
-      <div className="grid grid--inline">
+      <div className="grid grid--inline grid--six">
         <Stat label={copy.total} value={formatNumber(summary.total, lang)} lang={lang} />
         <Stat label={copy.status.covered} value={formatNumber(summary.demonstrated, lang)} tone="good" lang={lang} />
         <Stat label={copy.status.partial} value={formatNumber(summary.represented, lang)} tone="warn" lang={lang} />
@@ -58,6 +62,60 @@ export default function Principles({ lang }) {
         <Stat label={copy.status.outside} value={formatNumber(summary.beyondSoftware, lang)} lang={lang} />
         <Stat label={copy.chaptersWith} value={formatNumber(chapters.length, lang)} lang={lang} />
       </div>
+
+      <Card title={copy.livingTitle} className="living">
+        <p className="living__lede">{copy.livingLede}</p>
+        <div className="living__grid">
+          <div className="living__body">
+            <p>
+              <Badge tone={lights.band.id === "building" ? "warn" : lights.band.id === "draft" ? "info" : "good"}>
+                {copy.bandLabel}: {t(lights.band.label, lang)}
+              </Badge>
+            </p>
+            <p className="small muted">
+              {copy.readinessContext.replace("{counted}", formatNumber(lights.counted, lang))}
+            </p>
+            <p className="mono small living__formula">
+              {copy.readinessFormula
+                .replace("{green}", formatNumber(lights.counts.green, lang))
+                .replace("{amber}", formatNumber(lights.counts.amber, lang))
+                .replace("{counted}", formatNumber(lights.counted, lang))}
+            </p>
+            <ul className="light-legend" aria-label={copy.lightLegendTitle}>
+              {lights.definitions.map((definition) => (
+                <li key={definition.id} className="light-legend__row">
+                  <LightDot light={definition.id} label={lightCopy(definition.id)} />
+                  <span className="light-legend__name">{lightCopy(definition.id)}</span>
+                  <span className="light-legend__count">
+                    {formatNumber(lights.counts[definition.id], lang)} · {copy.lightCountLabel}
+                  </span>
+                  <span className="light-legend__weight">
+                    {definition.excluded ? copy.weightExcluded : `${copy.weightLabel} ${formatNumber(definition.weight, lang)}`}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="small living__live">{copy.liveNote}</p>
+            <p className="living__cta">
+              <a className="link-button" href="#/programme">
+                {copy.programCta}
+              </a>
+            </p>
+            <p className="small muted">
+              {copy.programHint.replace("{partial}", formatNumber(lights.counts.amber, lang))}
+            </p>
+          </div>
+          <div
+            className="living__dial"
+            style={{ "--value": lights.readiness }}
+            role="img"
+            aria-label={`${copy.readinessLabel}: ${percent(lights.readiness)}`}
+          >
+            <span className="living__value">{percent(lights.readiness)}</span>
+            <span className="living__caption">{copy.readinessLabel}</span>
+          </div>
+        </div>
+      </Card>
 
       <Card title={copy.methodTitle}>
         <p>{t(method, lang)}</p>
@@ -100,7 +158,9 @@ export default function Principles({ lang }) {
                 <h2 id={`principle-chapter-${chapter.id}`} className="h2">
                   {t(chapter.title, lang)}
                 </h2>
-                <p className="small muted">{t(chapter.range, lang)}</p>
+                <p className="small muted">
+                  {t(chapter.range, lang)} · {copy.chapterReadiness}: {percent(chapter.readiness)}
+                </p>
               </div>
             </div>
 
@@ -118,7 +178,10 @@ export default function Principles({ lang }) {
                   {chapter.rows.map((principle) => (
                     <tr key={principle.id}>
                       <td>
-                        <Badge tone={TONE[principle.coverage] ?? "neutral"}>{statusCopy(principle.coverage)}</Badge>
+                        <span className="principles-status">
+                          <LightDot light={principle.light} label={`${copy.lightColumn}: ${lightCopy(principle.light)}`} />
+                          <Badge tone={TONE[principle.coverage] ?? "neutral"}>{statusCopy(principle.coverage)}</Badge>
+                        </span>
                       </td>
                       <th scope="row" className="principles-table__body">
                         <span className="principles-table__title">

@@ -21,8 +21,13 @@ import LevelHome from "./modules/LevelHome.jsx";
 import Level from "./modules/Level.jsx";
 import Bank from "./modules/Bank.jsx";
 import Principles from "./modules/Principles.jsx";
+import Programme from "./modules/Programme.jsx";
+import Referendum from "./modules/Referendum.jsx";
+import Hub from "./modules/Hub.jsx";
+import KeyDock from "./components/KeyDock.jsx";
 
 const VIEWS = {
+  hub: Hub,
   dashboard: Dashboard,
   governance: Governance,
   transition: Transition,
@@ -36,7 +41,9 @@ const VIEWS = {
   simulations: Simulations,
   "digital-legacy": DigitalLegacy,
   bank: Bank,
-  principles: Principles
+  principles: Principles,
+  programme: Programme,
+  referendum: Referendum
 };
 
 // The five civic levels are the entry point; the twelve modules remain the
@@ -45,6 +52,13 @@ export const LEVELS_VIEW = "levels";
 export const BANK_VIEW = "bank";
 // The mother file's principles are read against the prototype on their own page.
 export const PRINCIPLES_VIEW = "principles";
+// The hub is the landing: one centre, six doors. `#/levels` stays the chooser.
+export const HUB_VIEW = "hub";
+// The two work surfaces the light rail promises: the queue that turns an amber
+// principle green, and the arithmetic of a future vote. They hang off the hub,
+// not off the six doors — the doors are levels, these are work.
+export const PROGRAMME_VIEW = "programme";
+export const REFERENDUM_VIEW = "referendum";
 
 const BANK_MODULE = {
   id: BANK_VIEW,
@@ -52,6 +66,14 @@ const BANK_MODULE = {
   icon: "bank",
   title: { fa: "بانک HMMT", en: "HMMT Bank" },
   short: { fa: "بانک", en: "Bank" }
+};
+
+const HUB_MODULE = {
+  id: HUB_VIEW,
+  number: 0,
+  icon: "layers",
+  title: { fa: "مرکز", en: "Hub" },
+  short: { fa: "مرکز", en: "Hub" }
 };
 
 const PRINCIPLES_MODULE = {
@@ -83,9 +105,18 @@ export function readRouteFromHash(hash) {
   if (viewId === PRINCIPLES_VIEW) {
     return { view: PRINCIPLES_VIEW, recordId: null };
   }
+  if (viewId === HUB_VIEW) {
+    return { view: HUB_VIEW, recordId: null };
+  }
+  if (viewId === PROGRAMME_VIEW) {
+    return { view: PROGRAMME_VIEW, recordId: recordId ? decodeURIComponent(recordId) : null };
+  }
+  if (viewId === REFERENDUM_VIEW) {
+    return { view: REFERENDUM_VIEW, recordId: null };
+  }
   const known = MODULES.some((module) => module.id === viewId);
   return {
-    view: known ? viewId : raw === "" ? LEVELS_VIEW : "dashboard",
+    view: known ? viewId : raw === "" ? HUB_VIEW : "dashboard",
     recordId: recordId ? decodeURIComponent(recordId) : null
   };
 }
@@ -115,6 +146,7 @@ export default function App() {
     if (route.view === LEVELS_VIEW) return LEVEL_HOME_MODULE;
     if (route.view === BANK_VIEW) return BANK_MODULE;
     if (route.view === PRINCIPLES_VIEW) return PRINCIPLES_MODULE;
+    if (route.view === HUB_VIEW) return HUB_MODULE;
     return MODULES.find((module) => module.id === route.view) ?? MODULES[0];
   }, [route.view]);
 
@@ -351,7 +383,10 @@ export default function App() {
           aria-label={dict.modules}
           inert={isNarrow && !navOpen ? true : undefined}
         >
-          <p className="sidebar__label">{dict.levelsNav}</p>
+          {/* The levels and the bank live on the key dock at the bottom edge.
+              The sidebar keeps one way into the chooser and says where the rest
+              went, so there are not two navigations pretending to be one. */}
+          <p className="sidebar__label">{localeStrings(lang).hub.navLabel}</p>
           <ul>
             <li>
               <a
@@ -366,21 +401,7 @@ export default function App() {
               </a>
             </li>
           </ul>
-          <p className="sidebar__label">{localeStrings(lang).bank.navLabel}</p>
-          <ul>
-            <li>
-              <a
-                href={`#/${BANK_VIEW}`}
-                className={`nav-item nav-item--levels ${route.view === BANK_VIEW ? "is-active" : ""}`}
-                aria-current={route.view === BANK_VIEW ? "page" : undefined}
-                onClick={() => setNavOpen(false)}
-              >
-                <span className="nav-item__num" aria-hidden="true" />
-                <span className="nav-item__glyph" aria-hidden="true"><Icon name="bank" size={15} /></span>
-                <span className="nav-item__title">{t(BANK_MODULE.title, lang)}</span>
-              </a>
-            </li>
-          </ul>
+          <p className="sidebar__hint">{localeStrings(lang).hub.dockHint}</p>
           <p className="sidebar__label">{localeStrings(lang).principles.navLabel}</p>
           <ul>
             <li>
@@ -393,6 +414,33 @@ export default function App() {
                 <span className="nav-item__num" aria-hidden="true" />
                 <span className="nav-item__glyph" aria-hidden="true"><Icon name="governance" size={15} /></span>
                 <span className="nav-item__title">{t(PRINCIPLES_MODULE.title, lang)}</span>
+              </a>
+            </li>
+          </ul>
+          <p className="sidebar__label">{localeStrings(lang).programme.navLabel}</p>
+          <ul>
+            <li>
+              <a
+                href={`#/${PROGRAMME_VIEW}`}
+                className={`nav-item nav-item--levels ${route.view === PROGRAMME_VIEW ? "is-active" : ""}`}
+                aria-current={route.view === PROGRAMME_VIEW ? "page" : undefined}
+                onClick={() => setNavOpen(false)}
+              >
+                <span className="nav-item__num" aria-hidden="true" />
+                <span className="nav-item__glyph" aria-hidden="true"><Icon name="projects" size={15} /></span>
+                <span className="nav-item__title">{localeStrings(lang).programme.navLabel}</span>
+              </a>
+            </li>
+            <li>
+              <a
+                href={`#/${REFERENDUM_VIEW}`}
+                className={`nav-item nav-item--levels ${route.view === REFERENDUM_VIEW ? "is-active" : ""}`}
+                aria-current={route.view === REFERENDUM_VIEW ? "page" : undefined}
+                onClick={() => setNavOpen(false)}
+              >
+                <span className="nav-item__num" aria-hidden="true" />
+                <span className="nav-item__glyph" aria-hidden="true"><Icon name="ballot" size={15} /></span>
+                <span className="nav-item__title">{localeStrings(lang).referendum.navLabel}</span>
               </a>
             </li>
           </ul>
@@ -447,6 +495,7 @@ export default function App() {
               lang={lang}
               dict={dict}
               navigate={navigate}
+              route={route}
               openProvenance={openProvenance}
               initialRecordId={route.recordId}
             />
@@ -461,6 +510,8 @@ export default function App() {
           </footer>
         </main>
       </div>
+
+      <KeyDock lang={lang} route={route} navigate={navigate} />
 
       {searchOpen ? (
         <SearchOverlay

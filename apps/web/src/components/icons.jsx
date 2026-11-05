@@ -32,7 +32,14 @@ const PATHS = {
   warning: "M12 3.5 21 20H3l9-16.5ZM12 10v4.5M12 17.4v.6",
   lock: "M6.5 10.5h11v9h-11zM9 10.5V8a3 3 0 0 1 6 0v2.5",
   filter: "M3.5 5.5h17l-6.5 7.5v5.5l-4 2v-7.5Z",
-  copy: "M9 9h10v10H9zM5 15V5h10"
+  copy: "M9 9h10v10H9zM5 15V5h10",
+  // The five level glyphs. They existed only as names in the level chooser, so
+  // every one of them rendered as an empty box until now.
+  eye: "M2.5 12S6.2 5.5 12 5.5 21.5 12 21.5 12S17.8 18.5 12 18.5 2.5 12 2.5 12ZM12 9.2a2.8 2.8 0 1 0 0 5.6 2.8 2.8 0 0 0 0-5.6Z",
+  shield: "M12 3 5 6v5.4c0 4 2.7 7.1 7 8.6 4.3-1.5 7-4.6 7-8.6V6l-7-3Z",
+  ballot: "M5 4.5h14v15H5ZM8.4 11.6l2.2 2.2 4.4-4.4",
+  org: "M12 3v4.5M4.5 21v-5h4v5M10 21v-5h4v5M15.5 21v-5h4v5M6.5 12.5h11L12 7.5l-5.5 5Z",
+  gavel: "M14.6 3.4l6 6M9.4 5.6l8.9 8.9M4 21l7.6-7.6M3.5 14.5l5.9 5.9"
 };
 
 export function Icon({ name, size = 16, title, className = "" }) {

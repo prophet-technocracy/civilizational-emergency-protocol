@@ -1,4 +1,5 @@
-// axe-core sweep: 12 views x light/dark, WCAG 2.1 A/AA + best practice.
+// axe-core sweep: every view x light/dark, WCAG 2.1 A/AA + best practice.
+// "" is the landing hash, which now resolves to the hub.
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { launch } from "./launch.mjs";
@@ -6,7 +7,28 @@ import { launch } from "./launch.mjs";
 const require = createRequire(import.meta.url);
 
 const axeSource = readFileSync(require.resolve("axe-core/axe.min.js"), "utf8");
-const routes = ["dashboard","bank","principles","governance","transition","institutions","historical-archive","research","verification","accountability","public-services","projects","simulations","digital-legacy"];
+const routes = [
+  "",
+  "hub",
+  "levels",
+  "levels/3",
+  "dashboard",
+  "bank",
+  "principles",
+  "programme",
+  "referendum",
+  "governance",
+  "transition",
+  "institutions",
+  "historical-archive",
+  "research",
+  "verification",
+  "accountability",
+  "public-services",
+  "projects",
+  "simulations",
+  "digital-legacy"
+];
 const url = process.env.CEP_URL ?? "http://127.0.0.1:5173";
 
 const browser = await launch();

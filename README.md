@@ -36,7 +36,9 @@ The repository owner currently has the technical ability to administer the GitHu
 
 ## Five-level civic operating system
 
-The prototype now opens on a **five-profile chooser** (`#/levels`); `#/bank` is the HMMT monetary design described below, and `#/principles` reads the draft national covenant principle by principle against what the prototype actually does. Each profile is a different interface over the same synthetic records — not the same dashboard recoloured. The twelve modules below remain the library behind those profiles.
+The prototype opens on the **hub** (`#/hub`): one centre, six doors. A fixed key switch on the bottom edge carries a bold **MY.X** centre — the hub, and the station readout that says which level you are standing on — flanked by six doors: levels 1–5 and the HMMT bank. Each door states only what its own node moderates (the action count that level allows, whether it holds a ballot, its one-line purpose), and the level pages behind them are different interfaces over the same synthetic records — not one dashboard recoloured. `#/levels` is the side-by-side comparison, `#/bank` the monetary design described below, `#/principles` the draft national covenant read principle by principle against what the prototype does. The twelve modules below are the library behind those doors, and the sidebar says so instead of repeating them.
+
+![The hub: one centre, six doors, and the key switch that rides on every page](docs/screenshots/hub.png)
 
 | # | Level | What it is for | Holds a ballot |
 |---|---|---|---|
@@ -146,6 +148,28 @@ Figures, sources, dates and the unverified list are in
 [docs/economics/HMMT-FACT-CHECK.md](docs/economics/HMMT-FACT-CHECK.md); the bank
 architecture, governance and threat model are in
 [docs/economics/HMMT-DESIGN.md](docs/economics/HMMT-DESIGN.md).
+
+### The living covenant: a light beside every principle, and a queue that can turn it green
+
+`#/principles` now puts a light beside each of the 113 principles — green (a working surface demonstrates the mechanism), amber (present in data or design, enacted nowhere), red (software could show it and does not), grey (beyond software entirely). The readiness score uses weights that cannot flatter the project: **green counts 1, amber counts 0.1, red counts 0**, and the grey band is taken out of the denominator rather than scored as failure.
+
+That gives **۰٫۳۰۶ — «در ساخت»**, not the two-thirds a kinder count would produce. The top band, «زنده», is unreachable in this repository by construction: it requires all 113 principles green *and* a real ratification outside this system, and the page says so in words.
+
+![The living covenant: a light per principle, the harsh readiness score, and the weights stated openly](docs/screenshots/living-lights.png)
+
+`#/programme` is the route out of an amber light: fourteen projects, each targeting one Partially covered principle, each with a ballot (quorum and threshold published before the count), a budget that must pass the level-4 entity cap in the HMMT cap ladder, and a **mudarabah** contract with a level-4 contractor — capital from the fund, labour from the contractor, monetary loss on the capital side. A project that fails a gate is reported as blocked, not as in progress; a light moves only on an audited delivery. The queue targets 14 of the 47 amber principles and says so out loud.
+
+![The partial-coverage queue: balloted, capped, contracted projects and the gates each one has to clear](docs/screenshots/programme-queue.png)
+
+`#/referendum` is the arithmetic of a future vote and nothing more: the four chained questions the published transition roadmap puts forward (form of government → constituent assembly → ratification → first government), with quorum and threshold published before any count, invalid ballots counted apart, and **no winner declared when quorum or the threshold fails** — two of its four synthetic rehearsals are refusals, on purpose. Its posture travels in the API payload and is tested: `isElectionAuthority: false`, no voter roll, no real ballot. Seven gates have to close before any of it could mean anything.
+
+![The referendum instrument: the four-question chain, quorum arithmetic, and the refusals](docs/screenshots/referendum-sequence.png)
+
+The reasoning, the weights, and the honest boundary are in [`docs/strategy/LIVING-CONSTITUTION.md`](docs/strategy/LIVING-CONSTITUTION.md); the alignment with the Iran Prosperity Project, with sources and tensions named, is in [`docs/strategy/IPP-RECONCILIATION.md`](docs/strategy/IPP-RECONCILIATION.md); the path to a party list in a future parliament («مهستان») — and what stays outside this codebase — is in [`docs/strategy/PARTY-AND-PARLIAMENT.md`](docs/strategy/PARTY-AND-PARLIAMENT.md).
+
+### Why the interface is one centre and six doors
+
+The diagnosis, the per-door contract, the keyboard and screen-reader behaviour, and a self-criticism with explicit ratings are in [`docs/ux/ONE-CENTRE-SIX-DOORS.md`](docs/ux/ONE-CENTRE-SIX-DOORS.md). Short version: the prototype had twelve modules, a chooser, and no answer to *where am I standing and what may I do here*. The key dock answers both in one glance, and the hub states what it refuses to do before the reader asks.
 
 ### The mother file, principle by principle (`#/principles`)
 

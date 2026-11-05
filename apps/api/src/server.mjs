@@ -11,6 +11,8 @@ import { sourceDocuments, evidenceClaims, unresolvedQuestions } from "./data/evi
 import { verificationBands, accessPolicies, rejectedProofCatalogue } from "./data/assurance.mjs";
 import { buildLevelDashboard, buildLevelsIndex, buildInfluenceOverview, buildInfluenceGuards, authorizeAction } from "./data/civic-levels.mjs";
 import { buildPrinciples } from "./data/principles.mjs";
+import { buildProgramme } from "./data/programme.mjs";
+import { buildReferendum } from "./data/referendum.mjs";
 import { buildHmmtOverview, buildHmmtSupply, buildHmmtBacking, buildHmmtReserve, buildHmmtLedger, buildHmmtCaps, simulateHmmt } from "./data/hmmt.mjs";
 import { evaluateAssurancePolicy, validateClaimProvenance, calculateTimelineMetrics, validateHistoricalDossierCsv, computeSafeguardProfile } from "@cep/schemas";
 import { matchesBilingualQuery, normalizeSearchText } from "@cep/localization";
@@ -409,6 +411,16 @@ function routeTable(params, pathname) {
     // surface that answers it, and the four statuses that keep the claim honest.
     case "/api/v1/principles":
       return { status: 200, body: envelope(buildPrinciples()) };
+
+    // The partial-coverage programme: balloted, budgeted, contracted work that
+    // turns an amber light green — and nothing that turns a light green by claim.
+    case "/api/v1/programme":
+      return { status: 200, body: envelope(buildProgramme()) };
+
+    // The referendum instrument: the arithmetic of four future questions, with
+    // the posture (not an election authority) travelling in the payload.
+    case "/api/v1/referendum":
+      return { status: 200, body: envelope(buildReferendum()) };
 
     case "/api/v1/governance":
       return {
