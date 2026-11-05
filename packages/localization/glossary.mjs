@@ -129,6 +129,26 @@ export const GLOSSARY = Object.freeze([
     }
   },
   {
+    id: "personal-cap",
+    fa: "سقف شخصی",
+    en: "Personal cap",
+    avoid: ["سقف فردی", "سقف هر شخص"],
+    note: {
+      fa: "از سطح شهروندی می‌آید، نه از هویت؛ سطح ۲ و ۳ سقف یکسانی دارند تا مشارکت سقف نگذرد.",
+      en: "It comes from the civic level, not from identity; levels 2 and 3 share one cap so participation cannot buy headroom."
+    }
+  },
+  {
+    id: "level-cap",
+    fa: "سقف هر سطح",
+    en: "Per-level cap",
+    avoid: ["سقف لایه", "سقف هر لایه"],
+    note: {
+      fa: "«لایه» برای لایه‌های حکمرانی است؛ سقف به سطح شهروندی می‌چسبد و فقط خرید را محدود می‌کند.",
+      en: "«لایه» belongs to the governance layers; the cap attaches to the civic level and limits acquisition only."
+    }
+  },
+  {
     id: "circulating-supply",
     fa: "عرضهٔ در گردش",
     en: "Circulating supply",

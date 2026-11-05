@@ -6,7 +6,7 @@ import { launch } from "./launch.mjs";
 const require = createRequire(import.meta.url);
 
 const axeSource = readFileSync(require.resolve("axe-core/axe.min.js"), "utf8");
-const routes = ["dashboard","governance","transition","institutions","historical-archive","research","verification","accountability","public-services","projects","simulations","digital-legacy"];
+const routes = ["dashboard","bank","governance","transition","institutions","historical-archive","research","verification","accountability","public-services","projects","simulations","digital-legacy"];
 const url = process.env.CEP_URL ?? "http://127.0.0.1:5173";
 
 const browser = await launch();

@@ -346,43 +346,179 @@ function ReserveSection({ reserve, copy, lang }) {
   );
 }
 
-function Simulator({ copy, lang }) {
+function capLookup(caps, { policyId, level, entityId }) {
+  const numeric = Number(level);
+  const rows = caps.matrix.filter((row) => row.policyId === policyId && row.level === numeric);
+  if (rows.length === 0) return null;
+  const formulaRow = rows.find((row) => row.capKind === "formula");
+  if (formulaRow) return rows.find((row) => row.entityId === entityId) ?? formulaRow;
+  return rows[0];
+}
+
+function capText(entry, copy, lang, numberFormat) {
+  if (!entry) return "—";
+  if (entry.code === "entity-budget-required") return copy.caps.noBudget;
+  if (!(entry.capTokens > 0)) return copy.caps.notEligible;
+  const value = `${numberFormat(entry.capTokens, lang, 2)} HMMT`;
+  return entry.hardCapApplied ? `${value} · ${copy.caps.hardCap}` : value;
+}
+
+function CapsSection({ caps, copy, lang }) {
+  const policies = caps.policies;
+  return (
+    <section aria-labelledby="bank-caps">
+      <div className="section-head">
+        <div>
+          <h2 id="bank-caps" className="h2">
+            {copy.caps.title}
+          </h2>
+          <p className="lede">{copy.caps.lede}</p>
+        </div>
+        <Badge tone="warn">{copy.caps.draft}</Badge>
+      </div>
+
+      <div className="table-wrap" tabIndex={0} role="region" aria-label={`${copy.tableRegion}: ${copy.caps.title}`}>
+        <table className="data-table">
+          <caption className="sr-only">{copy.caps.title}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{copy.caps.level}</th>
+              {policies.map((policy) => (
+                <th key={policy.id} scope="col" className="caps-policy-head">
+                  <span className="caps-policy-head__name">{t(policy.label, lang)}</span>
+                  <span className="caps-policy-head__meta mono">
+                    {policy.id}
+                    {policy.id === caps.defaultPolicyId ? ` · ${copy.caps.defaultPolicy}` : ""}
+                  </span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {caps.levels.map((level) => (
+              <tr key={level.level}>
+                <th scope="row" className="caps-level">
+                  <span className="mono">{formatNumber(level.level, lang)}</span> · {t(level.title, lang)}
+                </th>
+                {policies.map((policy) => {
+                  const cell = policy.cells.find((item) => item.level === level.level);
+                  return (
+                    <td key={policy.id}>
+                      <span className="caps-value">{capText(cell, copy, lang, numberFormat)}</span>
+                      <span className="caps-req small muted">
+                        {cell?.requires ? `${copy.caps.requires}: ${copy.requirements[cell.requires] ?? cell.requires}` : copy.caps.noProof}
+                        {cell?.disclosure ? ` · ${copy.caps.disclosure}` : ""}
+                      </span>
+                      {cell?.entityName ? (
+                        <span className="caps-req small muted">
+                          {copy.caps.basedOn}: {t(cell.entityName, lang)}
+                        </span>
+                      ) : null}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <ul className="caps-mobile">
+        {caps.levels.map((level) => (
+          <li key={level.level} className="caps-mobile__level">
+            <h3 className="caps-mobile__title">
+              <span className="mono">{formatNumber(level.level, lang)}</span> · {t(level.title, lang)}
+            </h3>
+            <dl className="caps-mobile__rows">
+              {policies.map((policy) => {
+                const cell = policy.cells.find((item) => item.level === level.level);
+                return (
+                  <div key={policy.id} className="caps-mobile__row">
+                    <dt>
+                      {t(policy.label, lang)}
+                      {policy.id === caps.defaultPolicyId ? ` · ${copy.caps.defaultPolicy}` : ""}
+                    </dt>
+                    <dd>
+                      <span className="caps-value">{capText(cell, copy, lang, numberFormat)}</span>
+                      {cell?.requires ? (
+                        <span className="caps-req small muted">
+                          {copy.caps.requires}: {copy.requirements[cell.requires] ?? cell.requires}
+                          {cell?.disclosure ? ` · ${copy.caps.disclosure}` : ""}
+                        </span>
+                      ) : null}
+                      {cell?.entityName ? (
+                        <span className="caps-req small muted">
+                          {copy.caps.basedOn}: {t(cell.entityName, lang)}
+                        </span>
+                      ) : null}
+                    </dd>
+                  </div>
+                );
+              })}
+            </dl>
+          </li>
+        ))}
+      </ul>
+
+      <Card title={copy.caps.invariantsTitle}>
+        <ul className="tight-list">
+          {caps.invariants.map((invariant) => (
+            <li key={invariant.id}>{t({ fa: invariant.fa, en: invariant.en }, lang)}</li>
+          ))}
+        </ul>
+        <p className="small muted caps-note">{copy.caps.recordedUnder}</p>
+      </Card>
+    </section>
+  );
+}
+
+function Simulator({ copy, lang, caps, defaultHint }) {
   const [action, setAction] = useState("convert");
+  const [level, setLevel] = useState("2");
+  const [policyId, setPolicyId] = useState(caps.defaultPolicyId);
+  const [entityId, setEntityId] = useState(caps.entities[0]?.id ?? "");
   const [amount, setAmount] = useState("0.05");
   const [state, setState] = useState({ status: "idle", payload: null });
 
-  const presets = useMemo(
-    () =>
-      action === "convert"
-        ? [
-            { id: "cap", value: "0.05", label: copy.sim.presetCap },
-            { id: "one", value: "1", label: copy.sim.presetOne },
-            { id: "over", value: "200000", label: copy.sim.presetOverCeiling }
-          ]
-        : [
-            { id: "half", value: "0.5", label: copy.sim.presetHalf },
-            { id: "five", value: "5", label: copy.sim.presetFive },
-            { id: "over", value: "5000", label: copy.sim.presetOver }
-          ],
-    [action, copy.sim]
-  );
+  const entry = capLookup(caps, { policyId, level, entityId });
+  const needsEntity = entry?.capKind === "formula";
+  const capValue = entry && entry.code === "resolved" ? entry.capTokens : 0;
+
+  const presets = useMemo(() => {
+    if (action === "redeem") {
+      return [
+        { id: "half", value: "0.5", label: copy.sim.presetHalf },
+        { id: "five", value: "5", label: copy.sim.presetFive },
+        { id: "over", value: "5000", label: copy.sim.presetOver }
+      ];
+    }
+    if (!(capValue > 0)) {
+      return [{ id: "any", value: "0.01", label: copy.sim.presetOver }];
+    }
+    return [
+      { id: "cap", value: String(capValue), label: copy.sim.presetCap },
+      { id: "half", value: String(Math.round((capValue / 2) * 1e6) / 1e6), label: copy.sim.presetHalf },
+      { id: "over", value: String(capValue * 2), label: copy.sim.presetOverCap }
+    ];
+  }, [action, capValue, copy.sim]);
+
+  const amountNumber = amount.trim() === "" ? null : Number(String(amount).replace(/[٫,]/g, "."));
 
   const submit = async (event) => {
     event.preventDefault();
-    const value = Number(String(amount).replace(/[٫,]/g, "."));
-    if (!Number.isFinite(value) || value <= 0) {
+    if (amountNumber === null || !Number.isFinite(amountNumber) || amountNumber <= 0) {
       setState({ status: "ready", payload: { action, result: { allowed: false, code: "invalid-amount" }, after: null } });
       return;
     }
     setState({ status: "running", payload: null });
     try {
-      const toman = action === "convert" ? value * 1e12 : undefined;
-      const tokens = action === "redeem" ? value : undefined;
-      const query =
-        action === "convert"
-          ? `action=convert&amount=${encodeURIComponent(toman)}`
-          : `action=redeem&amount=${encodeURIComponent(tokens)}`;
-      const response = await fetch(`/api/v1/hmmt/simulate?${query}`, {
+      const params = new URLSearchParams({ action, amount: String(amountNumber) });
+      if (action === "convert") {
+        params.set("level", level);
+        params.set("policy", policyId);
+        if (needsEntity && entityId) params.set("entity", entityId);
+      }
+      const response = await fetch(`/api/v1/hmmt/simulate?${params.toString()}`, {
         headers: { Accept: "application/json" },
         credentials: "omit"
       });
@@ -429,6 +565,73 @@ function Simulator({ copy, lang }) {
           </p>
 
           <p className="field">
+            <label htmlFor="bank-level" className="field__label">
+              {copy.sim.level}
+            </label>
+            <select
+              id="bank-level"
+              className="input"
+              value={level}
+              disabled={action === "redeem"}
+              onChange={(event) => {
+                setLevel(event.target.value);
+                setState({ status: "idle", payload: null });
+              }}
+            >
+              {caps.levels.map((item) => (
+                <option key={item.level} value={String(item.level)}>
+                  {formatNumber(item.level, lang)} · {t(item.title, lang)}
+                </option>
+              ))}
+            </select>
+          </p>
+
+          <p className="field">
+            <label htmlFor="bank-policy" className="field__label">
+              {copy.sim.capPolicy}
+            </label>
+            <select
+              id="bank-policy"
+              className="input"
+              value={policyId}
+              disabled={action === "redeem"}
+              onChange={(event) => {
+                setPolicyId(event.target.value);
+                setState({ status: "idle", payload: null });
+              }}
+            >
+              {caps.policies.map((policy) => (
+                <option key={policy.id} value={policy.id}>
+                  {t(policy.label, lang)}
+                </option>
+              ))}
+            </select>
+          </p>
+
+          {action === "convert" && needsEntity ? (
+            <p className="field">
+              <label htmlFor="bank-entity" className="field__label">
+                {copy.sim.entity}
+              </label>
+              <select
+                id="bank-entity"
+                className="input"
+                value={entityId}
+                onChange={(event) => {
+                  setEntityId(event.target.value);
+                  setState({ status: "idle", payload: null });
+                }}
+              >
+                {caps.entities.map((entity) => (
+                  <option key={entity.id} value={entity.id}>
+                    {t(entity.name, lang)}
+                  </option>
+                ))}
+              </select>
+            </p>
+          ) : null}
+
+          <p className="field">
             <label htmlFor="bank-amount" className="field__label">
               {copy.sim.amount}
             </label>
@@ -439,14 +642,23 @@ function Simulator({ copy, lang }) {
               value={amount}
               onChange={(event) => setAmount(event.target.value)}
             />
+            <span className="field__hint small">{copy.sim.amountHint}</span>
             <span className="field__hint small">
-              {copy.sim.amountHint} · {copy.sim.tomanEquivalent}:{" "}
-              {Number.isFinite(Number(amount)) ? compact(Number(amount) * 1e12, lang) : "—"}{" "}
-              {lang === "fa" ? "تومان" : "toman"}
+              {copy.sim.tomanEquivalent}:{" "}
+              {amountNumber === null ? "—" : `${compact(amountNumber * 1e12, lang)} ${lang === "fa" ? "تومان" : "toman"}`}
+            </span>
+            <span className="field__hint small">
+              {action === "convert" ? (
+                <>
+                  {copy.sim.capForLevel}: <strong className="mono">{capText(entry, copy, lang, numberFormat)}</strong>
+                </>
+              ) : (
+                copy.sim.noCapForRedeem
+              )}
             </span>
           </p>
 
-          <div className="field">
+          <div className="field field--presets">
             <span className="field__label">{copy.sim.presets}</span>
             <div className="btn-row">
               {presets.map((preset) => (
@@ -483,9 +695,7 @@ function Simulator({ copy, lang }) {
           {state.status === "error" ? <Callout tone="danger">{copy.sim.error}</Callout> : null}
           {result ? (
             <>
-              <h3 className="minor-heading">
-                {result.allowed ? copy.sim.resultTitle : copy.sim.failureTitle}
-              </h3>
+              <h3 className="minor-heading">{result.allowed ? copy.sim.resultTitle : copy.sim.failureTitle}</h3>
               <p>
                 <Badge tone={result.allowed ? "good" : code === "queue" ? "warn" : "danger"}>
                   {copy.sim.codes[code] ?? code}
@@ -520,6 +730,24 @@ function Simulator({ copy, lang }) {
                   <div className="kv__row">
                     <dt>{copy.sim.netToman}</dt>
                     <dd className="mono">{compact(result.netToman, lang)}</dd>
+                  </div>
+                ) : null}
+                {result.capTokens !== undefined && result.capTokens !== null ? (
+                  <div className="kv__row">
+                    <dt>{copy.sim.capForLevel}</dt>
+                    <dd className="mono">{numberFormat(result.capTokens, lang, 2)} HMMT</dd>
+                  </div>
+                ) : null}
+                {result.requires ? (
+                  <div className="kv__row">
+                    <dt>{copy.caps.requires}</dt>
+                    <dd>{copy.requirements[result.requires] ?? result.requires}</dd>
+                  </div>
+                ) : null}
+                {result.excessTokens !== undefined && result.capTokens > 0 ? (
+                  <div className="kv__row">
+                    <dt>{copy.sim.excess}</dt>
+                    <dd className="mono">{numberFormat(result.excessTokens, lang, 2)} HMMT</dd>
                   </div>
                 ) : null}
                 {result.availableToman !== undefined && result.availableToman !== null ? (
@@ -565,6 +793,7 @@ function Simulator({ copy, lang }) {
           ) : null}
         </div>
       </Card>
+      {defaultHint ? <p className="small muted">{defaultHint}</p> : null}
     </section>
   );
 }
@@ -583,7 +812,7 @@ function LedgerSection({ ledger, copy, lang }) {
         <Badge tone="synthetic">{copy.syntheticLedger}</Badge>
       </div>
 
-      <div className="table-wrap" tabIndex={0} role="region" aria-label={copy.ledger.title}>
+      <div className="table-wrap" tabIndex={0} role="region" aria-label={`${copy.tableRegion}: ${copy.ledger.title}`}>
         <table className="data-table">
           <caption className="sr-only">{copy.ledger.title}</caption>
           <thead>
@@ -674,7 +903,7 @@ function PhasesSection({ supply, copy, lang }) {
         </div>
       </div>
 
-      <div className="table-wrap" tabIndex={0} role="region" aria-label={copy.phases.title}>
+      <div className="table-wrap" tabIndex={0} role="region" aria-label={`${copy.tableRegion}: ${copy.phases.title}`}>
         <table className="data-table">
           <caption className="sr-only">{copy.phases.title}</caption>
           <thead>
@@ -781,7 +1010,7 @@ export default function Bank({ lang }) {
     );
   }
 
-  const { notice, asOf, supply, backing, reserve, ledger, design } = payload.data;
+  const { notice, asOf, supply, backing, reserve, ledger, caps, design } = payload.data;
 
   return (
     <article className="bank">
@@ -803,7 +1032,7 @@ export default function Bank({ lang }) {
       <div className="grid grid--two">
         <DefinitionCard definition={supply.definition} copy={copy} lang={lang} />
         <Card title={copy.supply.sourceTitle}>
-          <div className="table-wrap" tabIndex={0} role="region" aria-label={copy.supply.sourceTitle}>
+          <div className="table-wrap" tabIndex={0} role="region" aria-label={`${copy.tableRegion}: ${copy.supply.sourceTitle}`}>
             <table className="data-table data-table--compact">
               <caption className="sr-only">{copy.supply.sourceTitle}</caption>
               <thead>
@@ -830,9 +1059,10 @@ export default function Bank({ lang }) {
       </div>
 
       <SupplySection supply={supply} copy={copy} lang={lang} />
+      <CapsSection caps={caps} copy={copy} lang={lang} />
       <ChainSection supply={supply} backing={backing} copy={copy} lang={lang} />
       <ReserveSection reserve={reserve} copy={copy} lang={lang} />
-      <Simulator copy={copy} lang={lang} />
+      <Simulator copy={copy} lang={lang} caps={caps} defaultHint={copy.caps.recordedUnder} />
       <LedgerSection ledger={ledger} copy={copy} lang={lang} />
       <PhasesSection supply={supply} copy={copy} lang={lang} />
       <DesignSection design={design} copy={copy} lang={lang} />

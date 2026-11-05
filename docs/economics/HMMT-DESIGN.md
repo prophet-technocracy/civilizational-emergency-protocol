@@ -120,10 +120,65 @@ revenue). Rules:
 
 - The amount must fit the remaining ceiling capacity; otherwise the request is
   refused with the capacity stated and moves to the next window, pro-rated.
-- A per-person cap (0.05 HMMT = 50 bn toman in the demo) keeps distribution
-  dispersed without collecting identity data: the cap is enforced by the
-  deposit channel, not by an on-chain profile.
+- An acquisition cap that follows the civic level (0.05 HMMT = 50 bn toman for
+  levels 2 and 3 in the demo) keeps distribution dispersed without collecting
+  identity data: the cap is enforced by the deposit channel, not by an on-chain
+  profile. Section 5.1 sets out the ladder.
 - Pending deposits mint nothing. Only settled deposits count.
+
+### 5.1 The cap follows the civic level, not one flat number
+
+A single per-person figure is the wrong shape for a system built on five civic
+levels. A flat cap either lets an observer (level 1) acquire units, or taxes a
+registered entity (level 4) at the same ceiling as a private individual
+(level 2). Three draft policies sit in the code (`DEC-SYN-0042`); none is
+adopted, and each is one table that a reviewer can read and change:
+
+| Level | `CAP-LADDER-DRAFT` | `CAP-ENTITY-SCALED-DRAFT` (default) | `CAP-PILOT-STRICT-DRAFT` |
+|---|---|---|---|
+| 1 observer | 0 | 0 | 0 |
+| 2 private citizen | 0.05 | 0.05 | 0.01 |
+| 3 participating citizen | 0.05 | 0.05 | 0.01 |
+| 4 organised node | 1,000 | min(20 % of audited budget ÷ 3.71 m USD, 1,000, 25 % of ceiling) | 100 |
+| 5 general decision-maker | 0.05 | 0.05 | 0.01 |
+
+Values are HMMT acquired per holder, not held: the cap limits what may be
+bought, and redemption is never capped by a level (a holder must always be able
+to leave). With the synthetic entities in the demo the scaled policy resolves to
+240 / 480 / 120 / 1,000 / 600 / 360 / 160 HMMT for the seven registered bodies —
+the largest one is cut by the hard cap rather than by its budget.
+
+Six invariants are asserted in code, not just written here
+(`CAP_INVARIANTS` in `packages/domain-models/hmmt.mjs`):
+
+1. **Observers hold nothing.** Level 1 may read every screen and acquire no
+   units; its cap is zero in all three policies.
+2. **Participation never pays.** Levels 2 and 3 have the same cap in every
+   policy, so a higher level of participation cannot buy headroom. This is the
+   invariant that stops the ladder from becoming a loyalty programme.
+3. **No cap without proof.** A cap above the personal figure needs a document
+   that exists for the organisation, not for a person: a registered entity with
+   a published budget, or a mandate record.
+4. **Caps limit acquisition only.** A cap never blocks a redemption, a queue
+   position, or a proof-of-reserve claim.
+5. **An organisation's cap is not a person's cap.** The budget-derived ceiling
+   belongs to the body; members hold against their own personal caps.
+6. **The caps are drafts.** Every policy is labelled as a proposal until a
+   governance decision adopts one, and the interface says so on screen.
+
+The flexibility is a policy table with a resolver
+(`resolveLevelCap({ policyId, level, entityId, entityBudgetToman, ceilingTokens })`),
+not a slider: any change is a diff, a review and a dated decision. The API
+exposes the same table at `GET /api/v1/hmmt/caps` (21 resolved rows: three
+policies × five levels, plus one row per entity at level 4), and the simulator
+at `POST /api/v1/hmmt/simulate` refuses with `over-level-cap`,
+`level-not-eligible` or `entity-budget-required` and quotes the cap and the
+headroom it measured. An unknown policy or an out-of-range level fails closed
+(`unknown-cap-policy`, `invalid-level`) rather than falling back to a default.
+
+Raising a cap is the dangerous direction, so it inherits the ceiling rule in
+section 4: lowering takes effect immediately, raising needs the monetary
+committee's supermajority and a 30-day public timelock.
 
 **Redemption (redeem).** A holder returns tokens; the bank burns them and pays
 toman net of a 20 bps fee. Two limits can delay payment, and neither is a
@@ -150,8 +205,8 @@ No premine means distribution starts at zero and grows through gates:
 | P3 general | 100 % (189,544) | a clear legal mandate + an adopted governance mechanism |
 
 The phases cap *how much of the ceiling may be used*, never how much a person
-may hold beyond the per-person cap. P3 is not reachable without a legal mandate,
-which is stated in the gate rather than assumed.
+may acquire beyond the level cap in section 5.1. P3 is not reachable without a
+legal mandate, which is stated in the gate rather than assumed.
 
 ---
 
@@ -257,9 +312,9 @@ the honest status of HMMT is the one printed on the screen: a design proposal.
 
 | Path | What it holds |
 |---|---|
-| `packages/domain-models/hmmt.mjs` | definition, reference data, tiers, haircut policy, basket, ceiling, convert, redeem, proof of reserve, phases, invariants |
-| `packages/domain-models/test/hmmt.test.mjs` | 22 tests on the arithmetic, the refusals and the disclosure rules |
-| `apps/api/src/data/hmmt.mjs` | synthetic ledger, supply/backing/reserve views, simulator |
-| `apps/api/src/server.mjs` | `/api/v1/hmmt`, `/supply`, `/backing`, `/reserve`, `/ledger`, `/simulate` |
-| `apps/web/src/modules/Bank.jsx` | `#/bank`: ceiling vs circulating, haircut chain, proof of reserve, simulator, ledger, phases, architecture |
-| `apps/web/src/locales/{fa,en}/bank.js` | the copy, 164 keys per locale |
+| `packages/domain-models/hmmt.mjs` | definition, reference data, tiers, haircut policy, basket, ceiling, convert, redeem, proof of reserve, phases, cap policies (`CAP_POLICIES`, `CAP_INVARIANTS`, `resolveLevelCap`, `checkLevelCap`), invariants |
+| `packages/domain-models/test/hmmt.test.mjs` | 68 tests on the arithmetic, the refusals, the cap ladder and the disclosure rules |
+| `apps/api/src/data/hmmt.mjs` | synthetic entities, ledger with a recorded cap per row, supply/backing/reserve views, `buildHmmtCaps`, level-aware simulator |
+| `apps/api/src/server.mjs` | `/api/v1/hmmt`, `/supply`, `/backing`, `/reserve`, `/ledger`, `/caps`, `/simulate` |
+| `apps/web/src/modules/Bank.jsx` | `#/bank`: ceiling vs circulating, per-level cap ladder, haircut chain, proof of reserve, level-aware simulator, ledger, phases, architecture |
+| `apps/web/src/locales/{fa,en}/bank.js` | the copy, 201 keys per locale |

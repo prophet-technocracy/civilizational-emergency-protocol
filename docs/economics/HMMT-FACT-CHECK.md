@@ -168,3 +168,31 @@ obliged to honour. This repository has none of those and claims none of them;
 so above the first number. What the arithmetic does do is make the proposal
 *falsifiable*: every figure has a source, a date and a status, and the difference
 between the headline and the backing is a table rather than a promise.
+
+---
+
+## 7. The cap ladder is a parameter, not a finding
+
+The ladder in design §5.1 (`0 / 0.05 / 0.05 / 1,000 / 0.05` HMMT, the
+budget-scaled variant, and the pilot variant) is **not** derived from any source
+in the register above. It is a draft parameter chosen so that:
+
+- an observer (level 1) can hold nothing, which is a rule, not an estimate;
+- the personal figure stays at the demo's 0.05 HMMT = 50 bn toman, the same
+  figure the phase table already used;
+- the entity figure is a formula over a figure that *is* sourced — 20 % of the
+  audited annual budget, divided by the 3.71 m USD per token that the haircut
+  chain yields — with a hard cap of 1,000 HMMT and a share cap of 25 % of the
+  ceiling. The divisor is the existing chain; the 20 % and the 1,000 are the
+  draft.
+
+What the arithmetic does not say: that a 0.05 HMMT personal cap is the correct
+dispersal policy, that a 1,000 HMMT hard cap is the right size for an entity, or
+that 20 % of a budget is the right multiplier. All three are reviewable numbers
+in a table, and the pilot variant exists precisely because the first of them may
+turn out to be too loose at launch.
+
+Two properties *are* arithmetic and are tested, so they can be relied on
+regardless of which policy is adopted: the cap never exceeds the share of the
+ceiling that backing allows (a cap cannot mint), and a refusal always quotes the
+cap it measured, so a reader can check the division themselves.

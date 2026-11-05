@@ -835,3 +835,42 @@ test("the bank never presents a gross resource figure as backing", () => {
     restore();
   }
 });
+
+test("the bank publishes a cap ladder across the five levels and several policies", () => {
+  const { html, restore } = renderWithoutFetch("#/bank");
+  try {
+    const caps = fixtures.get("/api/v1/hmmt").data.caps;
+    assert.ok(caps.policies.length >= 3, "one hard-coded cap would not be flexible");
+    // Every policy is named, and the default is marked.
+    for (const policy of caps.policies) {
+      assert.ok(html.includes(policy.id), `policy ${policy.id} is missing from the table`);
+      assert.ok(policy.summary.fa.length > 20 && policy.summary.en.length > 20);
+    }
+    // All five levels appear, with their civic names, not just numbers.
+    for (const level of caps.levels) {
+      assert.ok(html.includes(level.title.fa), `level ${level.level} has no name`);
+    }
+    // The invariants that make the ladder honest are on the page, not only in data.
+    assert.ok(html.includes("مشارکت در حکمرانی هرگز سقف مالی نمی‌خرد"), "the participation invariant is missing");
+    assert.ok(html.includes("بازخرید هرگز به سطح وابسته نیست"), "the redemption invariant is missing");
+    // The simulator exposes level and policy as labelled controls.
+    for (const id of ["bank-level", "bank-policy"]) {
+      assert.ok(html.includes(`id="${id}"`), `missing control ${id}`);
+      assert.ok(html.includes(`for="${id}"`), `control ${id} has no label`);
+    }
+  } finally {
+    restore();
+  }
+});
+
+test("the ladder never pays for participation and never lets an observer hold units", () => {
+  const caps = fixtures.get("/api/v1/hmmt").data.caps;
+  for (const policy of caps.policies) {
+    const [l1, l2, l3, l4, l5] = policy.cells;
+    assert.equal(l1.capTokens, 0, `${policy.id} lets an observer hold units`);
+    assert.equal(l2.capTokens, l3.capTokens, `${policy.id} pays for participation`);
+    assert.equal(l5.capTokens, l2.capTokens, `${policy.id} gives decision-makers more`);
+    assert.equal(l5.disclosure, true, `${policy.id} lets a decision-maker hide a holding`);
+    assert.ok(l4.capTokens >= l2.capTokens, `${policy.id} caps an entity below a person`);
+  }
+});

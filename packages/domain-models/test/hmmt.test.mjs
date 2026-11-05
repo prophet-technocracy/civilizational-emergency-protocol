@@ -7,6 +7,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   ASSET_TIERS,
+  CAP_INVARIANTS,
+  CAP_POLICIES,
+  CAP_POLICY_DEFAULT_ID,
+  capLadder,
+  checkLevelCap,
+  resolveLevelCap,
   HAIRCUT_POLICY,
   HMMT_DEFINITION,
   HMMT_INVARIANTS,
@@ -233,4 +239,123 @@ test("a tier with no source cannot be audited into the ceiling", () => {
   const fabricated = applyHaircuts({ id: "T9", name: { fa: "نامعلوم", en: "Unknown" }, grossUsd: 1e15, status: "unverified-estimate" }, HAIRCUT_POLICY);
   assert.equal(fabricated.netUsd, 0);
   assert.equal(fabricated.counted, false);
+});
+
+/* ------------------------- per-level caps (سقف سطح) ------------------------- */
+
+test("cap policies are labelled drafts with an authorising record", () => {
+  assert.ok(CAP_POLICIES.length >= 3, "the ladder should not be a single hard-coded number");
+  for (const policy of CAP_POLICIES) {
+    assert.equal(policy.status, "proposed-configurable", policy.id);
+    assert.match(policy.authorizedBy, /^DEC-SYN-/);
+    assert.ok(policy.label.fa && policy.label.en, `${policy.id} has no label`);
+    assert.ok(policy.summary.fa.length > 20 && policy.summary.en.length > 20, `${policy.id} has no summary`);
+    for (const level of [1, 2, 3, 4, 5]) {
+      const entry = policy.levels[level];
+      assert.ok(entry, `${policy.id} is missing level ${level}`);
+      assert.ok(entry.note.fa && entry.note.en, `${policy.id}/${level} has no note`);
+    }
+  }
+});
+
+test("observed rule: level 1 holds nothing in every policy", () => {
+  for (const policy of CAP_POLICIES) {
+    const resolved = resolveLevelCap({ policyId: policy.id, level: 1, ceilingTokens: ceiling.ceilingTokens });
+    assert.equal(resolved.capTokens, 0, policy.id);
+    assert.equal(checkLevelCap({ policyId: policy.id, level: 1, amountTokens: 0.01 }).code, "level-not-eligible");
+  }
+});
+
+test("participation never pays: levels 2 and 3 carry the same cap in every policy", () => {
+  for (const policy of CAP_POLICIES) {
+    const two = resolveLevelCap({ policyId: policy.id, level: 2, ceilingTokens: ceiling.ceilingTokens });
+    const three = resolveLevelCap({ policyId: policy.id, level: 3, ceilingTokens: ceiling.ceilingTokens });
+    assert.equal(two.capTokens, three.capTokens, `${policy.id} pays for participation`);
+    // The ballot credential changes the proof, never the money.
+    assert.equal(three.requires, "ballot-credential");
+  }
+});
+
+test("a cap above the personal one needs a proof persons do not have", () => {
+  for (const policy of CAP_POLICIES) {
+    const personal = resolveLevelCap({ policyId: policy.id, level: 2, ceilingTokens: ceiling.ceilingTokens }).capTokens;
+    for (const level of [4]) {
+      const org = resolveLevelCap({ policyId: policy.id, level, ceilingTokens: ceiling.ceilingTokens, entityBudgetToman: 2500e12 });
+      if (org.capTokens > personal) {
+        assert.ok(org.requires, `${policy.id} grants a larger cap without a requirement`);
+        assert.notEqual(org.requires, "ballot-credential", `${policy.id} pays for a ballot`);
+      }
+    }
+    const decisionMaker = resolveLevelCap({ policyId: policy.id, level: 5, ceilingTokens: ceiling.ceilingTokens });
+    assert.equal(decisionMaker.capTokens, personal, `${policy.id} gives decision-makers a larger cap`);
+    assert.equal(decisionMaker.disclosure, true, `${policy.id} hides decision-maker holdings`);
+  }
+});
+
+test("the ladder is diverse: the policies disagree where they should", () => {
+  const ladder = capLadder({ policyId: "CAP-LADDER-DRAFT", ceilingTokens: ceiling.ceilingTokens });
+  const strict = capLadder({ policyId: "CAP-PILOT-STRICT-DRAFT", ceilingTokens: ceiling.ceilingTokens });
+  assert.deepEqual(ladder.map((item) => item.capTokens), [0, 0.05, 0.05, 1000, 0.05]);
+  assert.deepEqual(strict.map((item) => item.capTokens), [0, 0.01, 0.01, 100, 0.01]);
+  // Same levels, different exposure: that is the point of a policy choice.
+  assert.notEqual(ladder[3].capTokens, strict[3].capTokens);
+  assert.deepEqual(ladder.map((item) => item.level), [1, 2, 3, 4, 5]);
+});
+
+test("an entity cap is a formula, not a favour", () => {
+  const withoutBudget = checkLevelCap({ policyId: "CAP-ENTITY-SCALED-DRAFT", level: 4, amountTokens: 1 });
+  assert.equal(withoutBudget.allowed, false);
+  assert.equal(withoutBudget.code, "entity-budget-required");
+
+  // 20 % of a 60 trillion toman budget is 12 HMMT.
+  const scaled = resolveLevelCap({ policyId: "CAP-ENTITY-SCALED-DRAFT", level: 4, entityBudgetToman: 60e12, ceilingTokens: ceiling.ceilingTokens });
+  assert.equal(scaled.capTokens, 12);
+  assert.equal(scaled.capKind, "formula");
+
+  // The hard cap and the ceiling share both bind before the formula runs away.
+  const huge = resolveLevelCap({ policyId: "CAP-ENTITY-SCALED-DRAFT", level: 4, entityBudgetToman: 1e18, ceilingTokens: ceiling.ceilingTokens });
+  assert.equal(huge.capTokens, 1000);
+  assert.equal(huge.hardCapApplied, true);
+});
+
+test("a cap refuses the excess and names the headroom", () => {
+  const refused = checkLevelCap({ level: 2, amountTokens: 0.2 });
+  assert.equal(refused.allowed, false);
+  assert.equal(refused.code, "over-level-cap");
+  assert.equal(refused.capTokens, 0.05);
+  assert.equal(refused.headroomTokens, 0.05);
+  assert.ok(Math.abs(refused.excessTokens - 0.15) < 1e-9);
+  assert.match(refused.reason.fa, /سقف این سطح/);
+
+  const accepted = checkLevelCap({ level: 2, amountTokens: 0.04 });
+  assert.equal(accepted.allowed, true);
+  assert.equal(accepted.code, "within-level-cap");
+  assert.ok(Math.abs(accepted.headroomTokens - 0.01) < 1e-9);
+});
+
+test("unknown policies and levels fail closed, they never default to generous", () => {
+  assert.equal(checkLevelCap({ policyId: "CAP-NOPE", level: 2, amountTokens: 0.01 }).code, "unknown-cap-policy");
+  assert.equal(checkLevelCap({ level: 9, amountTokens: 0.01 }).code, "invalid-level");
+  assert.equal(checkLevelCap({ level: 2, amountTokens: 0 }).code, "invalid-amount");
+  assert.equal(checkLevelCap({ level: 2, amountTokens: -1 }).code, "invalid-amount");
+});
+
+test("no level cap ever exceeds the supply ceiling", () => {
+  for (const policy of CAP_POLICIES) {
+    for (const level of [1, 2, 3, 4, 5]) {
+      const resolved = resolveLevelCap({ policyId: policy.id, level, ceilingTokens: ceiling.ceilingTokens, entityBudgetToman: 1e18 });
+      if (resolved.capTokens === null) continue;
+      assert.ok(resolved.capTokens <= ceiling.ceilingTokens, `${policy.id}/${level} cap exceeds the ceiling`);
+    }
+  }
+});
+
+test("the cap invariants are stated in both languages and are not empty slogans", () => {
+  const ids = CAP_INVARIANTS.map((item) => item.id);
+  for (const required of ["observers-hold-nothing", "participation-never-pays", "no-cap-without-proof", "caps-limit-acquisition-only", "caps-are-drafts"]) {
+    assert.ok(ids.includes(required), `missing cap invariant ${required}`);
+  }
+  for (const invariant of CAP_INVARIANTS) {
+    assert.ok(invariant.fa.length > 20 && invariant.en.length > 20, invariant.id);
+  }
 });

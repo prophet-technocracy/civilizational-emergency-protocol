@@ -349,7 +349,7 @@ export function proofOfReserve({ circulatingTokens, tomanReserve, fxRate = REFER
 }
 
 /** Distribution by gated phases. No premine, no sale, no airdrop. */
-export function distributionPhases({ ceilingTokens, perPersonCapTokens = 0.05 }) {
+export function distributionPhases({ ceilingTokens, perPersonCapTokens = DEFAULT_PERSON_CAP }) {
   const phases = [
     { id: "P0", share: 0.02, label: { fa: "پایلوت محدود", en: "Limited pilot" }, gate: { fa: "بازبینی مستقل قرارداد و دو گزارش اثبات ذخیره.", en: "Independent contract review plus two proof-of-reserve reports." } },
     { id: "P1", share: 0.10, label: { fa: "مرحلهٔ اول", en: "Phase one" }, gate: { fa: "یک فصل کامل حسابرسی پشتوانه و صف بازخرید سالم.", en: "A full quarter of backing audits and a healthy redemption queue." } },
@@ -374,3 +374,256 @@ export const HMMT_INVARIANTS = Object.freeze([
   { id: "no-identity-on-chain", fa: "هیچ دادهٔ هویتی روی زنجیره نوشته نمی‌شود؛ اثبات ذخیره فقط ریشهٔ هش است.", en: "No identity data is written on-chain; proof of reserve publishes a hash root only." },
   { id: "exit-path", fa: "مسیر خروج از زنجیرهٔ اول پیش از راه‌اندازی منتشر می‌شود.", en: "The exit path from the first chain is published before launch." }
 ]);
+
+/* ------------------------------------------------------------------ *
+ * Per-level caps (سقف هر سطح)
+ *
+ * The cap on how much of the unit one holder may acquire follows the five
+ * civic levels — but not as a reward ladder. Two rules keep it honest:
+ *
+ *   1. Levels 2 and 3 carry the *same* personal cap in every policy. Taking
+ *      part in governance must never buy a larger financial position.
+ *   2. A cap above the personal one is not a privilege of a person: it needs a
+ *      proof that does not exist for persons (an entity registration with a
+ *      published budget, or a mandate record with disclosure).
+ *
+ * Everything here is a labelled configurable draft (`proposed-configurable`)
+ * until a recorded decision adopts it, exactly like the haircut parameters.
+ * ------------------------------------------------------------------ */
+
+/** The entity-scaled policy is the default: it derives the cap from evidence. */
+export const CAP_POLICY_DEFAULT_ID = "CAP-ENTITY-SCALED-DRAFT";
+
+export const CAP_INVARIANTS = Object.freeze([
+  {
+    id: "observers-hold-nothing",
+    fa: "سطح ۱ (ناظر عمومی) هیچ واحدی نمی‌گیرد؛ دسترسی او فقط خواندن است.",
+    en: "Level 1 (public observer) acquires nothing; its access is read-only."
+  },
+  {
+    id: "participation-never-pays",
+    fa: "سطح ۲ و سطح ۳ در هر سیاست سقف یکسانی دارند: مشارکت در حکمرانی هرگز سقف مالی نمی‌خرد.",
+    en: "Levels 2 and 3 carry the same cap in every policy: taking part in governance never buys financial headroom."
+  },
+  {
+    id: "no-cap-without-proof",
+    fa: "سقفی بالاتر از سقف شخصی فقط با مدرکی به دست می‌آید که برای شخص وجود ندارد: ثبت نهاد با بودجهٔ منتشرشده یا سند اختیار.",
+    en: "A cap above the personal one requires a proof that does not exist for persons: an entity registration with a published budget, or a mandate record."
+  },
+  {
+    id: "caps-limit-acquisition-only",
+    fa: "سقف سطح فقط مقدار خرید را محدود می‌کند؛ بازخرید هرگز به سطح وابسته نیست.",
+    en: "A level cap limits what may be acquired; redemption never depends on a level."
+  },
+  {
+    id: "org-cap-is-not-a-person-cap",
+    fa: "سقف نهاد به اعضای آن نهاد نمی‌رسد؛ هر عضو سقف شخصی خودش را دارد.",
+    en: "An entity's cap does not flow to its members; every member keeps their own personal cap."
+  },
+  {
+    id: "caps-are-drafts",
+    fa: "هر سیاست سقف پیش‌نویس قابل تنظیم است و تا تصویب، فقط پیشنهاد خوانده می‌شود.",
+    en: "Every cap policy is a configurable draft and is described as a proposal until adopted."
+  }
+]);
+
+export const CAP_POLICIES = Object.freeze([
+  {
+    id: "CAP-LADDER-DRAFT",
+    label: { fa: "نردبان دسترسی", en: "Access ladder" },
+    status: "proposed-configurable",
+    authorizedBy: "DEC-SYN-0042",
+    basis: { fa: "نقش و مدرک", en: "Role and proof" },
+    summary: {
+      fa: "سقف هر سطح از نقش و مدرک آن می‌آید. سقف نهاد ثابت است و به بودجهٔ حسابرسی‌شدهٔ آن گره نمی‌خورد.",
+      en: "Each level's cap follows its role and its proof. The entity cap is fixed and does not scale with its audited budget."
+    },
+    levels: {
+      1: {
+        capTokens: 0,
+        requires: null,
+        note: { fa: "ناظر عمومی فقط می‌خواند؛ هیچ واحد و هیچ سپرده‌ای ندارد.", en: "A public observer only reads: no units, no deposit." }
+      },
+      2: {
+        capTokens: 0.05,
+        requires: null,
+        note: { fa: "کانال خصوصی، بدون ثبت هویت؛ سقف با خود کانال اعمال می‌شود.", en: "Private channel, no identity retained; the channel enforces the cap." }
+      },
+      3: {
+        capTokens: 0.05,
+        requires: "ballot-credential",
+        note: { fa: "همان سقف سطح ۲؛ مدرک رأی سقف مالی نمی‌افزاید.", en: "The same cap as level 2; a ballot credential adds no financial headroom." }
+      },
+      4: {
+        capTokens: 1000,
+        requires: "entity-registration",
+        note: { fa: "نهاد ثبت‌شده با افسر پاسخگو؛ سقف ثابت است و به اعضای نهاد نمی‌رسد.", en: "A registered entity with an accountable officer; the cap is fixed and does not reach its members." }
+      },
+      5: {
+        capTokens: 0.05,
+        requires: "mandate-record",
+        disclosure: true,
+        note: { fa: "سقف شخصی، به‌علاوهٔ اعلام دارایی و کنارگذاری در تصمیم‌های پولی.", en: "The personal cap, plus a declared holding and recusal on monetary decisions." }
+      }
+    }
+  },
+  {
+    id: "CAP-ENTITY-SCALED-DRAFT",
+    label: { fa: "نهاد مقیاس‌دار", en: "Scaled entity" },
+    status: "proposed-configurable",
+    authorizedBy: "DEC-SYN-0042",
+    basis: { fa: "بودجهٔ حسابرسی‌شده", en: "Audited budget" },
+    summary: {
+      fa: "سقف نهاد از بودجهٔ سالانهٔ حسابرسی‌شده‌اش محاسبه می‌شود (۲۰٪ بودجه) و به سقف سخت ۱٬۰۰۰ واحد و سهم ۲۵٪ از سقف عرضه محدود است. سقف شخصی تغییر نمی‌کند.",
+      en: "An entity's cap is computed from its audited annual budget (20 %), bounded by a hard cap of 1,000 units and 25 % of the supply ceiling. Personal caps are unchanged."
+    },
+    levels: {
+      1: { capTokens: 0, requires: null, note: { fa: "ناظر عمومی فقط می‌خواند.", en: "A public observer only reads." } },
+      2: { capTokens: 0.05, requires: null, note: { fa: "کانال خصوصی، بدون ثبت هویت.", en: "Private channel, no identity retained." } },
+      3: { capTokens: 0.05, requires: "ballot-credential", note: { fa: "همان سقف سطح ۲.", en: "The same cap as level 2." } },
+      4: {
+        formula: { share: 0.2, hardCapTokens: 1000, ceilingShare: 0.25 },
+        requires: "audited-budget",
+        note: { fa: "بدون بودجهٔ حسابرسی‌شده سقفی محاسبه نمی‌شود؛ نهاد تا آن زمان صفر است.", en: "No audited budget means no computed cap; the entity's cap is zero until then." }
+      },
+      5: {
+        capTokens: 0.05,
+        requires: "mandate-record",
+        disclosure: true,
+        note: { fa: "سقف شخصی، به‌علاوهٔ اعلام دارایی و کنارگذاری.", en: "The personal cap, plus declaration and recusal." }
+      }
+    }
+  },
+  {
+    id: "CAP-PILOT-STRICT-DRAFT",
+    label: { fa: "پایلوت محدود", en: "Strict pilot" },
+    status: "proposed-configurable",
+    authorizedBy: "DEC-SYN-0042",
+    basis: { fa: "کم‌ترین مواجهه", en: "Minimum exposure" },
+    summary: {
+      fa: "برای مرحلهٔ پایلوت: سقف شخصی یک‌پنجم و سقف نهاد یک‌دهم نردبان. عمداً تنگ است تا هزینهٔ خطا در شروع کم باشد.",
+      en: "For the pilot phase: a fifth of the personal cap and a tenth of the entity cap of the ladder. Deliberately tight so an early mistake is cheap."
+    },
+    levels: {
+      1: { capTokens: 0, requires: null, note: { fa: "ناظر عمومی فقط می‌خواند.", en: "A public observer only reads." } },
+      2: { capTokens: 0.01, requires: null, note: { fa: "کانال خصوصی، بدون ثبت هویت.", en: "Private channel, no identity retained." } },
+      3: { capTokens: 0.01, requires: "ballot-credential", note: { fa: "همان سقف سطح ۲.", en: "The same cap as level 2." } },
+      4: { capTokens: 100, requires: "entity-registration", note: { fa: "یک‌دهم سقف نردبان.", en: "A tenth of the ladder's entity cap." } },
+      5: { capTokens: 0.01, requires: "mandate-record", disclosure: true, note: { fa: "سقف شخصی، به‌علاوهٔ اعلام دارایی.", en: "The personal cap, plus declaration." } }
+    }
+  }
+]);
+
+/** The cap the design uses when nothing else is chosen. */
+export const DEFAULT_PERSON_CAP = CAP_POLICIES[0].levels[2].capTokens;
+
+const entryForLevel = (policy, level) => policy?.levels?.[level] ?? policy?.levels?.[String(level)] ?? null;
+
+/**
+ * Resolves the cap for one level under one policy. A formula-based level (an
+ * entity scaled by its audited budget) needs the budget; without it the answer
+ * is "no cap computed", never a generous default.
+ */
+export function resolveLevelCap({ policyId = CAP_POLICY_DEFAULT_ID, level, entityBudgetToman, ceilingTokens, definition = HMMT_DEFINITION } = {}) {
+  const policy = CAP_POLICIES.find((item) => item.id === policyId);
+  if (!policy) {
+    return { ok: false, code: "unknown-cap-policy", policyId, known: CAP_POLICIES.map((item) => item.id) };
+  }
+  const numericLevel = Number(level);
+  if (!Number.isInteger(numericLevel) || numericLevel < 1 || numericLevel > 5) {
+    return { ok: false, code: "invalid-level", level, allowed: [1, 2, 3, 4, 5] };
+  }
+  const entry = entryForLevel(policy, numericLevel);
+  if (!entry) return { ok: false, code: "invalid-level", level: numericLevel };
+
+  const common = {
+    ok: true,
+    policyId: policy.id,
+    policyStatus: policy.status,
+    authorizedBy: policy.authorizedBy,
+    basis: policy.basis,
+    level: numericLevel,
+    requires: entry.requires ?? null,
+    disclosure: entry.disclosure ?? false,
+    note: entry.note
+  };
+
+  if (!entry.formula) {
+    return { ...common, code: "resolved", capKind: "fixed", capTokens: num(entry.capTokens), formula: null, hardCapApplied: false };
+  }
+
+  const budget = num(entityBudgetToman);
+  if (!(budget > 0)) {
+    return { ...common, code: "entity-budget-required", capKind: "formula", capTokens: null, formula: entry.formula, hardCapApplied: false };
+  }
+  const byBudget = (budget / definition.tomanPerToken) * entry.formula.share;
+  const byHardCap = entry.formula.hardCapTokens ?? Infinity;
+  const byCeiling = entry.formula.ceilingShare && num(ceilingTokens) > 0 ? num(ceilingTokens) * entry.formula.ceilingShare : Infinity;
+  const raw = Math.min(byBudget, byHardCap, byCeiling);
+  return {
+    ...common,
+    code: "resolved",
+    capKind: "formula",
+    capTokens: round6(raw),
+    uncappedTokens: round6(byBudget),
+    entityBudgetToman: budget,
+    formula: entry.formula,
+    hardCapApplied: raw < byBudget
+  };
+}
+
+/** Checks an acquisition against the level cap. Redemption never calls this. */
+export function checkLevelCap({ policyId = CAP_POLICY_DEFAULT_ID, level, amountTokens, entityBudgetToman, ceilingTokens } = {}) {
+  const resolved = resolveLevelCap({ policyId, level, entityBudgetToman, ceilingTokens });
+  if (!resolved.ok) return { allowed: false, code: resolved.code, resolved, reason: null };
+
+  const amount = num(amountTokens);
+  if (!(amount > 0)) {
+    return { allowed: false, code: "invalid-amount", resolved, reason: { fa: "مبلغ باید مثبت باشد.", en: "The amount must be positive." } };
+  }
+  if (resolved.code === "entity-budget-required") {
+    return {
+      allowed: false,
+      code: "entity-budget-required",
+      resolved,
+      headroomTokens: 0,
+      reason: {
+        fa: "برای این سطح، سقف از بودجهٔ حسابرسی‌شدهٔ نهاد محاسبه می‌شود؛ بدون آن سقفی وجود ندارد.",
+        en: "At this level the cap is computed from the entity's audited budget; without it there is no cap."
+      }
+    };
+  }
+  if (!(resolved.capTokens > 0)) {
+    return {
+      allowed: false,
+      code: "level-not-eligible",
+      resolved,
+      headroomTokens: 0,
+      reason: {
+        fa: "این سطح واحد نمی‌گیرد؛ دسترسی آن فقط خواندن است.",
+        en: "This level holds no units; its access is read-only."
+      }
+    };
+  }
+  if (amount > resolved.capTokens) {
+    return {
+      allowed: false,
+      code: "over-level-cap",
+      resolved,
+      capTokens: resolved.capTokens,
+      excessTokens: round6(amount - resolved.capTokens),
+      headroomTokens: resolved.capTokens,
+      // No numerals here: the interface renders the cap in the reader's digits.
+      reason: {
+        fa: "مبلغ از سقف این سطح بیشتر است. سقف سطح فقط مقدار خرید را محدود می‌کند و با مشارکت بیشتر نمی‌شود.",
+        en: "The amount is above this level's cap. A level cap limits what may be acquired and does not grow with participation."
+      }
+    };
+  }
+  return { allowed: true, code: "within-level-cap", resolved, capTokens: resolved.capTokens, headroomTokens: round6(resolved.capTokens - amount) };
+}
+
+/** The whole ladder under one policy, for the comparison table. */
+export function capLadder({ policyId = CAP_POLICY_DEFAULT_ID, ceilingTokens, entityBudgetToman } = {}) {
+  return [1, 2, 3, 4, 5].map((level) => resolveLevelCap({ policyId, level, ceilingTokens, entityBudgetToman }));
+}

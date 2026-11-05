@@ -14,6 +14,7 @@ export const bankEn = {
     "permissioned sovereign chain": "Permissioned sovereign chain"
   },
   syntheticLedger: "Synthetic ledger",
+  tableRegion: "Table",
   notTender: "This screen shows a design: no token exists on any chain and no deposit is accepted.",
   notTenderTitle: "This screen is a design, not a financial system",
   statuses: {
@@ -45,8 +46,8 @@ export const bankEn = {
     ceilingNote: "The most backing allows, not a growth target.",
     circulatingNote: "Minted only from settled toman deposits.",
     phase: "Distribution phase",
-    perPersonCap: "Per-person cap",
-    perPersonCapNote: "No one may convert more than this; no data is retained to identify anyone.",
+    perPersonCap: "Personal cap",
+    perPersonCapNote: "Levels 2 and 3 share the same personal cap, and it does not grow with participation; no data is retained to identify anyone.",
     usdValue: "USD value",
     tomanValue: "Toman value",
     fxRate: "Reference FX rate",
@@ -113,17 +114,51 @@ export const bankEn = {
     hashRootNote: "Proof of reserve publishes one hash root; no identity data is written on-chain."
   },
 
+  caps: {
+    title: "The cap on each level",
+    lede: "What a holder may acquire follows the level's role and proof, not a person's worth. Three draft policies sit side by side so the difference is visible; none has been adopted.",
+    level: "Level",
+    cap: "Acquisition cap",
+    requires: "Required proof",
+    noProof: "No extra proof",
+    disclosure: "Declared holding and recusal",
+    notEligible: "Holds nothing",
+    noBudget: "Not computed without an audited budget",
+    hardCap: "Hard cap applied",
+    draft: "Configurable draft",
+    defaultPolicy: "Default policy",
+    basis: "Basis",
+    basedOn: "Based on",
+    invariantsTitle: "Rules of capping",
+    recordedUnder:
+      "The ledger rows were recorded under the default policy and each one carries its own cap; the other policies would not have allowed those rows."
+  },
+
+  requirements: {
+    "ballot-credential": "Ballot credential",
+    "entity-registration": "Entity registration with an accountable officer",
+    "audited-budget": "Audited annual budget",
+    "mandate-record": "Mandate record"
+  },
+
   sim: {
     title: "Convert and redeem simulator",
     lede: "Enter an amount in HMMT. Every answer either happens or says why it did not.",
     action: "Action",
+    level: "Civic level",
+    capPolicy: "Cap policy",
+    entity: "Entity",
+    capForLevel: "This level's cap",
+    noCapForRedeem: "Redemption has no level cap",
+    excess: "Above the cap",
+    presetOverCap: "Above this level's cap",
     convert: "Convert toman into HMMT",
     redeem: "Redeem HMMT for toman",
     amount: "Amount (HMMT)",
     amountHint: "1 HMMT is one thousand billion toman.",
     tomanEquivalent: "Toman equivalent",
     presets: "Presets",
-    presetCap: "Per-person cap",
+    presetCap: "This level's cap",
     presetOne: "One unit",
     presetHalf: "Half a unit",
     presetFive: "Five units",
@@ -146,6 +181,9 @@ export const bankEn = {
       redeemed: "Redeemed",
       queue: "Queued for redemption",
       "ceiling-reached": "The backing ceiling does not allow it",
+      "over-level-cap": "Above this level's cap",
+      "level-not-eligible": "This level holds no units",
+      "entity-budget-required": "The entity cap needs an audited budget",
       "exceeds-circulating": "More than the circulating supply",
       "invalid-amount": "Invalid amount",
       "unknown-action": "Unknown action"

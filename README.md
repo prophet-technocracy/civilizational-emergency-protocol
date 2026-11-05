@@ -113,17 +113,32 @@ design does instead:
 - **Ceiling asymmetry.** Lowering the ceiling is immediate; raising it needs a
   supermajority and a 30-day timelock, so a rial collapse cannot silently expand
   the supply.
+- **A cap that follows the civic level.** One flat per-person figure would let an
+  observer hold units and tax a registered entity at a private individual's
+  ceiling. Three draft policies are in the code (`DEC-SYN-0042`, none adopted):
+  `0 / 0.05 / 0.05 / 1,000 / 0.05` HMMT across levels 1–5, a default variant
+  that scales level 4 as 20 % of an audited budget (bounded by a 1,000 HMMT hard
+  cap and 25 % of the ceiling) and a pilot variant at a fifth of that. Levels 2
+  and 3 are equal in every policy, so participation never buys headroom, and an
+  observer's cap is zero. Caps limit acquisition only — redemption is never
+  capped by a level.
 - **A published exit path off TON.** Stage one is a TON Jetton (TEP-74); the move
   to a sovereign chain happens only after a dual-chain proof-of-reserve root, a
   unilateral exit for holders, and an independent contract review.
 
-The simulator on the page performs four operations against synthetic fixtures:
-a per-person conversion, a conversion past the ceiling (refused, with the
-remaining capacity stated), a redemption inside the daily cash window, and one
-that must queue. Nothing is minted, no wallet is used, no payment is made, and
+The simulator on the page takes an amount, a civic level and a cap policy, and
+performs four operations against synthetic fixtures: a conversion inside the
+level cap, a conversion past it (refused, with the cap and the headroom stated),
+a redemption inside the daily cash window, and one that must queue. Nothing is minted, no wallet is used, no payment is made, and
 no identity data is written anywhere.
 
 ![The haircut chain: 27.3 tn in the ground becomes 703.8 bn of backing](docs/screenshots/hmmt-haircut-chain.png)
+
+![The cap ladder: five levels, three draft policies, and the proof each level needs](docs/screenshots/hmmt-cap-ladder.png)
+
+![The simulator refusing a conversion past the level cap](docs/screenshots/hmmt-level-cap-refusal.png)
+
+![Level 4 for a registered body: the cap comes from its audited budget, and 500 HMMT is refused at 240](docs/screenshots/hmmt-entity-cap-refusal.png)
 
 ![The simulator refusing a conversion past the ceiling](docs/screenshots/hmmt-simulator.png)
 
@@ -167,7 +182,7 @@ The web app is served by Vite on port 5173 (Persian RTL by default, English LTR 
 Verification:
 
 ```sh
-npm test         # 237 tests: API contract/security, response-envelope contract,
+npm test         # 254 tests: API contract/security, response-envelope contract,
                  # domain models, schemas, localization, SSR render + a11y guards
 npm run validate:csv   # 77-column historical-dossier gate validator
 npm run build    # production bundle check
@@ -189,7 +204,8 @@ Interface checks that run inside `npm test` (no browser required):
 - a label for every interactive form field,
 - a deliberately refused action on levels 4 and 5, so the authority boundary stays testable in the interface,
 - the bank rendering its ceiling, its net backing and its "not legal tender" statement with `fetch` disabled, and never rendering the no-haircut ceiling the gross headline would produce,
-- a label for every bank simulator field, and the API refusing an unknown action or a non-positive amount instead of guessing.
+- a label for every bank simulator field, and the API refusing an unknown action or a non-positive amount instead of guessing,
+- the per-level cap ladder: every policy named, all five levels named, the six invariants rendered, and the data-level properties (an observer's cap is zero, levels 2 and 3 are equal, an entity's cap never sits below a person's) asserted for each policy.
 
 The same twelve views and `#/bank` were additionally audited in a real headless Chromium with axe-core (WCAG 2.1 A/AA + best practice) in light and dark mode, in both languages, plus the open mobile navigation drawer and the bank at 390 px; the result is zero violations. A keyboard-only walkthrough drives the same build: skip link, focus trap and Escape in the search overlay and the provenance drawer, focus return to the control that opened them, an inert off-canvas navigation when closed, and focus moving to the new view after a route change (15/15 checks). A layout sweep of all twelve views in both languages, both themes and four viewport widths (1440 / 1024 / 768 / 390 px) found no horizontal scrolling, no offscreen elements and no clipped text. Contrast failures and undersized hit areas found that way are now part of the render tests so they cannot return.
 

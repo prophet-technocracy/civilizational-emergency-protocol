@@ -703,26 +703,88 @@ test("proof of reserve reports both invariants and the queue", async () => {
   assert.ok(data.invariants.every((item) => item.statement.fa && item.statement.en));
 });
 
-test("a conversion beyond the ceiling is refused, with the capacity named", async () => {
-  const response = await fetch(`${baseUrl}/api/v1/hmmt/simulate?action=convert&amount=${2e17}`);
-  const { data } = await response.json();
-  assert.equal(response.status, 200);
+test("a conversion above the level cap is refused, and the cap is named", async () => {
+  const { data } = await (await fetch(`${baseUrl}/api/v1/hmmt/simulate?action=convert&amount=1&level=2`)).json();
   assert.equal(data.simulationOnly, true);
   assert.equal(data.result.allowed, false);
-  assert.equal(data.result.code, "ceiling-reached");
-  assert.ok(data.result.capacity > 0);
+  assert.equal(data.result.code, "over-level-cap");
+  assert.equal(data.result.capTokens, 0.05);
+  assert.equal(data.result.headroomTokens, 0.05);
+  assert.equal(data.result.requires, null);
   assert.equal(data.after, null);
 });
 
 test("a small conversion performs and reports the reserve state it leaves", async () => {
-  const { data } = await (await fetch(`${baseUrl}/api/v1/hmmt/simulate?action=convert&amount=${5e10}`)).json();
+  const { data } = await (await fetch(`${baseUrl}/api/v1/hmmt/simulate?action=convert&amount=0.05&level=2`)).json();
   assert.equal(data.result.allowed, true);
   // 0.05 gross minus 20 bps: the fee survives rounding at this size.
   assert.equal(data.result.netTokens, 0.0499);
   assert.equal(data.result.feeTokens, 0.0001);
   assert.equal(data.result.feeBps, 20);
+  assert.equal(data.cap.capTokens, 0.05);
   assert.ok(data.after.reserveRatio >= 1);
-  assert.ok(data.after.circulatingTokens > data.result.newCirculatingTokens - 1);
+});
+
+test("the five levels do not buy equal caps, and level 1 buys none", async () => {
+  const ladder = [];
+  for (const level of [1, 2, 3, 4, 5]) {
+    const { data } = await (await fetch(`${baseUrl}/api/v1/hmmt/simulate?action=convert&amount=0.01&level=${level}&entity=ENT-SYN-04`)).json();
+    ladder.push({ level, code: data.result.code, cap: data.cap?.capTokens ?? null });
+  }
+  assert.equal(ladder[0].code, "level-not-eligible");
+  assert.equal(ladder[0].cap, 0);
+  // Levels 2 and 3 hold the same cap: participation is not a payout.
+  assert.equal(ladder[1].cap, ladder[2].cap);
+  // Level 4 is an entity with a published budget, so its cap is formula-derived.
+  assert.equal(ladder[3].cap > ladder[2].cap, true);
+  assert.equal(ladder[3].code, "converted");
+  assert.equal(ladder[4].cap, ladder[1].cap);
+});
+
+test("an entity cap is computed from its audited budget, and hard-capped", async () => {
+  const small = (await (await fetch(`${baseUrl}/api/v1/hmmt/simulate?action=convert&amount=200&level=4&entity=ENT-SYN-03`)).json()).data;
+  assert.equal(small.result.code, "over-level-cap");
+  // 20 % of a 600 trillion toman budget = 120 HMMT.
+  assert.equal(small.result.capTokens, 120);
+
+  const large = (await (await fetch(`${baseUrl}/api/v1/hmmt/simulate?action=convert&amount=1500&level=4&entity=ENT-SYN-04`)).json()).data;
+  assert.equal(large.result.capTokens, 1000);
+  assert.equal(large.cap.hardCapApplied, true);
+});
+
+test("a level-4 conversion without an entity computes no cap and converts nothing", async () => {
+  const { data } = await (await fetch(`${baseUrl}/api/v1/hmmt/simulate?action=convert&amount=10&level=4`)).json();
+  assert.equal(data.result.allowed, false);
+  assert.equal(data.result.code, "entity-budget-required");
+  assert.equal(data.result.capTokens, null);
+});
+
+test("the cap ladder is published as drafts with a comparison per policy", async () => {
+  const { data } = await (await fetch(`${baseUrl}/api/v1/hmmt/caps`)).json();
+  assert.equal(data.levels.length, 5);
+  assert.ok(data.policies.length >= 3, "one hard-coded cap would not be flexible");
+  for (const policy of data.policies) {
+    assert.equal(policy.status, "proposed-configurable");
+    assert.match(policy.authorizedBy, /^DEC-SYN-/);
+    assert.equal(policy.cells.length, 5);
+    const [l1, l2, l3, l4, l5] = policy.cells;
+    assert.equal(l1.capTokens, 0, `${policy.id} lets observers hold something`);
+    assert.equal(l2.capTokens, l3.capTokens, `${policy.id} pays for participation`);
+    assert.equal(l4.capTokens >= l2.capTokens, true);
+    assert.equal(l5.capTokens, l2.capTokens, `${policy.id} gives decision-makers more`);
+    assert.equal(l5.disclosure, true);
+  }
+  // The policies disagree, which is the point of offering a choice.
+  const entityCaps = data.policies.map((policy) => policy.cells[3].capTokens);
+  assert.ok(new Set(entityCaps.map(String)).size > 1);
+  assert.equal(data.entities.length > 0, true);
+  assert.ok(data.invariants.some((item) => item.id === "participation-never-pays"));
+});
+
+test("redemption is never gated by a level", async () => {
+  const { data } = await (await fetch(`${baseUrl}/api/v1/hmmt/simulate?action=redeem&amount=0.5&level=1`)).json();
+  assert.equal(data.result.code, "redeemed");
+  assert.equal(data.cap.capKind, "not-applicable");
 });
 
 test("a redemption larger than the daily window queues instead of being refused", async () => {
@@ -743,6 +805,18 @@ test("the simulator rejects bad input instead of guessing", async () => {
   assert.equal((await negative.json()).error, "invalid_amount");
   const missing = await fetch(`${baseUrl}/api/v1/hmmt/simulate?action=convert`);
   assert.equal(missing.status, 400);
+  // A conversion must name its level: guessing one would be inventing an authorisation.
+  const noLevel = await fetch(`${baseUrl}/api/v1/hmmt/simulate?action=convert&amount=0.01`);
+  assert.equal(noLevel.status, 400);
+  assert.equal((await noLevel.json()).error, "invalid_level");
+  const badLevel = await fetch(`${baseUrl}/api/v1/hmmt/simulate?action=convert&amount=0.01&level=7`);
+  assert.equal(badLevel.status, 400);
+  const badPolicy = await fetch(`${baseUrl}/api/v1/hmmt/simulate?action=convert&amount=0.01&level=2&policy=CAP-NOPE`);
+  assert.equal(badPolicy.status, 400);
+  assert.equal((await badPolicy.json()).error, "unknown_policy");
+  const badEntity = await fetch(`${baseUrl}/api/v1/hmmt/simulate?action=convert&amount=1&level=4&entity=ENT-NOPE`);
+  assert.equal(badEntity.status, 400);
+  assert.equal((await badEntity.json()).error, "unknown_entity");
 });
 
 test("the synthetic ledger totals are derived from its own rows", async () => {
@@ -757,6 +831,13 @@ test("the synthetic ledger totals are derived from its own rows", async () => {
   // Minted minus burned is exactly the circulating supply the supply view reports.
   const supply = (await (await fetch(`${baseUrl}/api/v1/hmmt/supply`)).json()).data;
   assert.equal(Math.round((data.totals.mintedTokens - data.totals.burnedTokens) * 100) / 100, supply.circulating.tokens);
+  // Every recorded deposit sits inside the cap its level and entity computed.
+  const depositsWithCaps = data.entries.filter((entry) => entry.kind === "deposit");
+  assert.ok(depositsWithCaps.every((entry) => typeof entry.level === "number"), "a deposit has no level");
+  for (const entry of depositsWithCaps.filter((item) => item.tokens !== null)) {
+    assert.ok(entry.capTokens !== null, `${entry.id} has no cap`);
+    assert.ok(entry.tokens <= entry.capTokens, `${entry.id} holds ${entry.tokens} above its cap ${entry.capTokens}`);
+  }
   // A queued redemption is a queue, not a refusal, and it says so.
   const queued = data.entries.find((entry) => entry.status === "queued");
   assert.ok(queued);

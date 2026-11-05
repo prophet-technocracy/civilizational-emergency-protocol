@@ -15,6 +15,7 @@ export const bankFa = {
     "permissioned sovereign chain": "زنجیرهٔ اختصاصی مجوزدار"
   },
   syntheticLedger: "دفتر کل ساختگی",
+  tableRegion: "جدول",
   notTender: "این صفحه یک طراحی را نشان می‌دهد: هیچ توکنی در هیچ زنجیره‌ای ساخته نشده و هیچ سپرده‌ای پذیرفته نمی‌شود.",
   notTenderTitle: "این صفحه یک طراحی است، نه یک سامانهٔ مالی",
   statuses: {
@@ -46,8 +47,8 @@ export const bankFa = {
     ceilingNote: "بیشترین توکنی که پشتوانهٔ خالص اجازه می‌دهد؛ هدف رشد نیست.",
     circulatingNote: "فقط از تومانِ واریزشدهٔ تسویه‌شده ساخته شده است.",
     phase: "مرحلهٔ توزیع",
-    perPersonCap: "سقف هر شخص",
-    perPersonCapNote: "هر شخص بیشتر از این مقدار نمی‌تواند تبدیل کند؛ داده‌ای برای شناسایی افراد نگه داشته نمی‌شود.",
+    perPersonCap: "سقف شخصی",
+    perPersonCapNote: "سقف شخصی سطح ۲ و ۳ یکسان است و با مشارکت بیشتر نمی‌شود؛ داده‌ای برای شناسایی افراد نگه داشته نمی‌شود.",
     usdValue: "ارزش دلاری",
     tomanValue: "ارزش تومانی",
     fxRate: "نرخ مبنای دلار",
@@ -114,17 +115,51 @@ export const bankFa = {
     hashRootNote: "اثبات ذخیره فقط یک ریشهٔ هش منتشر می‌کند؛ هیچ دادهٔ هویتی روی زنجیره نوشته نمی‌شود."
   },
 
+  caps: {
+    title: "سقف هر سطح",
+    lede: "سقف خرید برای هر سطح از نقش و مدرک آن می‌آید، نه از ارزش فرد. سه سیاست پیش‌نویس کنار هم آمده‌اند تا تفاوتشان دیده شود؛ هیچ‌کدام تصویب نشده است.",
+    level: "سطح",
+    cap: "سقف خرید",
+    requires: "مدرک لازم",
+    noProof: "بدون مدرک اضافی",
+    disclosure: "اعلام دارایی و کنارگذاری",
+    notEligible: "واحد نمی‌گیرد",
+    noBudget: "بدون بودجهٔ حسابرسی‌شده محاسبه نمی‌شود",
+    hardCap: "سقف سخت اعمال شد",
+    draft: "پیش‌نویس قابل تنظیم",
+    defaultPolicy: "سیاست پیش‌فرض",
+    basis: "مبنا",
+    basedOn: "بر پایهٔ",
+    invariantsTitle: "قاعده‌های سقف‌بندی",
+    recordedUnder:
+      "ردیف‌های دفتر کل با سیاست پیش‌فرض ثبت شده‌اند و هر ردیف سقف خودش را همراه دارد؛ سیاست‌های دیگر همان ردیف‌ها را مجاز نمی‌دانستند."
+  },
+
+  requirements: {
+    "ballot-credential": "مدرک رأی",
+    "entity-registration": "ثبت نهاد با افسر پاسخگو",
+    "audited-budget": "بودجهٔ سالانهٔ حسابرسی‌شده",
+    "mandate-record": "سند اختیار"
+  },
+
   sim: {
     title: "شبیه‌ساز تبدیل و بازخرید",
     lede: "مبلغ را به واحد HMMT وارد کنید. هر پاسخ یا انجام می‌شود یا دلیل انجام‌نشدنش را می‌گوید.",
     action: "کنش",
+    level: "سطح شهروندی",
+    capPolicy: "سیاست سقف",
+    entity: "نهاد",
+    capForLevel: "سقف این سطح",
+    noCapForRedeem: "بازخرید سقف سطح ندارد",
+    excess: "بیش از سقف",
+    presetOverCap: "بیش از سقف این سطح",
     convert: "تبدیل تومان به HMMT",
     redeem: "بازخرید HMMT به تومان",
     amount: "مقدار (HMMT)",
     amountHint: "۱ HMMT برابر هزار میلیارد تومان است.",
     tomanEquivalent: "معادل تومانی",
     presets: "مقدارهای آماده",
-    presetCap: "سقف هر شخص",
+    presetCap: "سقف این سطح",
     presetOne: "یک واحد",
     presetHalf: "نیم واحد",
     presetFive: "پنج واحد",
@@ -147,6 +182,9 @@ export const bankFa = {
       redeemed: "بازخرید انجام شد",
       queue: "در صف بازخرید",
       "ceiling-reached": "سقف پشتوانه اجازه نمی‌دهد",
+      "over-level-cap": "بیش از سقف این سطح",
+      "level-not-eligible": "این سطح واحد نمی‌گیرد",
+      "entity-budget-required": "سقف نهاد بدون بودجه محاسبه نمی‌شود",
       "exceeds-circulating": "بیش از عرضهٔ در گردش",
       "invalid-amount": "مبلغ نامعتبر",
       "unknown-action": "کنش ناشناخته"
