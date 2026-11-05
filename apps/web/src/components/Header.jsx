@@ -1,4 +1,5 @@
 import { Icon } from "./icons.jsx";
+import { localeStrings } from "../locales/index.js";
 import { hrefFor, HUB_VIEW } from "../lib/routes.js";
 
 // The application header: brand, language and theme, the demo banner and the
@@ -19,6 +20,7 @@ export default function Header({
   crumbLabel,
   inert
 }) {
+  const searchCopy = localeStrings(lang).shell.search;
   return (
     <header className="app-header" inert={inert || undefined}>
       <div className="app-header__top">
@@ -50,9 +52,9 @@ export default function Header({
         </a>
 
         <div className="app-header__tools">
-          <button type="button" className="search-trigger" onClick={onSearch}>
+          <button type="button" className="search-trigger" onClick={onSearch} aria-label={searchCopy.label}>
             <Icon name="search" size={15} />
-            <span className="search-trigger__label">{dict.searchPlaceholder}</span>
+            <span className="search-trigger__label">{searchCopy.placeholder}</span>
             {/* The shortcut hint is decorative: keeping it out of the
                 accessible name makes the label match the visible label. */}
             <kbd aria-hidden="true">{dict.searchHint}</kbd>

@@ -28,6 +28,7 @@ import KeyDock from "./components/KeyDock.jsx";
 import Header from "./components/Header.jsx";
 import Sidebar from "./components/Sidebar.jsx";
 import SearchOverlay from "./components/SearchOverlay.jsx";
+import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import {
   LEVELS_VIEW,
   BANK_VIEW,
@@ -86,7 +87,9 @@ export default function App() {
   const [bannerOpen, setBannerOpen] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchResults, setSearchResults] = useState(null);
+  // idle | loading | ready | error, plus the payload and the term it answers.
+  const [search, setSearch] = useState({ status: "idle", term: "", payload: null });
+  const [searchNonce, setSearchNonce] = useState(0);
   const [provenance, setProvenance] = useState(null);
   const searchInputRef = useRef(null);
   const navToggleRef = useRef(null);
@@ -160,22 +163,30 @@ export default function App() {
     if (!searchOpen) return undefined;
     const term = debouncedSearch.trim();
     if (term.length < 2) {
-      setSearchResults(null);
+      setSearch({ status: "idle", term: "", payload: null });
       return undefined;
     }
+    // A new query clears the previous answer instead of leaving a stale list
+    // (and its count) under the new word: loading is a state of its own.
     let alive = true;
+    setSearch((previous) =>
+      previous.term === term && previous.status === "ready" && searchNonce === 0
+        ? previous
+        : { status: "loading", term, payload: null }
+    );
     fetch(`/api/v1/search?q=${encodeURIComponent(term)}`, { headers: { Accept: "application/json" }, credentials: "omit" })
       .then((response) => (response.ok ? response.json() : Promise.reject(new Error("search failed"))))
       .then((payload) => {
-        if (alive) setSearchResults(payload.data);
+        if (alive) setSearch({ status: "ready", term, payload: payload.data });
       })
       .catch(() => {
-        if (alive) setSearchResults({ query: term, total: 0, results: [], error: true });
+        // An outage is not an empty answer (issue #29).
+        if (alive) setSearch({ status: "error", term, payload: null });
       });
     return () => {
       alive = false;
     };
-  }, [debouncedSearch, searchOpen]);
+  }, [debouncedSearch, searchOpen, searchNonce]);
 
   const navigate = useCallback((viewId, recordId) => {
     const target = hrefFor(viewId, recordId);
@@ -188,12 +199,14 @@ export default function App() {
     setNavOpen(false);
     setSearchOpen(false);
     setSearchTerm("");
+    setSearch({ status: "idle", term: "", payload: null });
     window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? "auto" : "smooth" });
   }, []);
 
   const closeSearch = useCallback(() => {
     setSearchOpen(false);
     setSearchTerm("");
+    setSearch({ status: "idle", term: "", payload: null });
   }, []);
 
   // Below 900px the module list is a modal drawer: it traps focus while open,
@@ -249,6 +262,10 @@ export default function App() {
         {navOpen ? <button type="button" className="nav-scrim" aria-label={dict.close} onClick={() => setNavOpen(false)} /> : null}
 
         <main id="main-content" className="content" tabIndex={-1} ref={mainRef}>
+          {/* One boundary per route: a broken view must not take the header,
+              the navigation or the frame with it, and moving to another page
+              must start from a clean state. */}
+          <ErrorBoundary key={`${route.view}-${route.recordId ?? ""}`} lang={lang}>
           {isLevels ? (
             route.recordId ? (
               <Level
@@ -275,6 +292,7 @@ export default function App() {
               initialRecordId={route.recordId}
             />
           )}
+          </ErrorBoundary>
 
           <footer className="app-footer">
             <p>{dict.footer}</p>
@@ -291,12 +309,12 @@ export default function App() {
       {searchOpen ? (
         <SearchOverlay
           lang={lang}
-          dict={dict}
           term={searchTerm}
           onTerm={setSearchTerm}
-          results={searchResults}
+          state={search}
           inputRef={searchInputRef}
           onClose={closeSearch}
+          onRetry={() => setSearchNonce((value) => value + 1)}
           onPick={(result) => navigate(result.target.view, result.target.recordId)}
         />
       ) : null}

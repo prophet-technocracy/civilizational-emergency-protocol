@@ -5587,3 +5587,27 @@ html[data-theme="dark"] .work-card__icon {
   border-radius: 4px;
   font-size: 0.66rem;
 }
+
+/* A crashed view keeps its heading and its exits, in the page's own type. */
+.crash {
+  max-inline-size: 46rem;
+  margin-block: 2rem;
+}
+
+.crash__title {
+  margin-block: 0.35rem 0.6rem;
+  font-size: clamp(1.15rem, 2.4vw, 1.5rem);
+}
+
+/* An outage in the search panel is a row: the sentence, then the retry. */
+.search-state--error {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.not-found .card {
+  margin-block-start: 1rem;
+}

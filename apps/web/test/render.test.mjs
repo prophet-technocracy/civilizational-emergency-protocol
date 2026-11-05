@@ -21,6 +21,9 @@ let App;
 let readRouteFromHash;
 let routeMeta;
 let localeStrings;
+let SearchOverlay;
+let ErrorBoundary;
+let CrashFallback;
 let primeApiCache;
 let UI;
 let MODULES;
@@ -50,6 +53,8 @@ before(async () => {
         'export { localeStrings } from "./src/locales/index.js";',
         'export { UI, MODULES, t, formatNumber, labelFor, ENUM_LABELS, formatDate, formatRatio } from "./src/i18n.js";',
         'export { Toast } from "./src/components/ui.jsx";',
+        'export { default as SearchOverlay } from "./src/components/SearchOverlay.jsx";',
+        'export { default as ErrorBoundary, CrashFallback } from "./src/components/ErrorBoundary.jsx";',
         'export { nextDoorIndex, doorStepForArrow, doorHref, isDoorActive, DOORS } from "./src/components/KeyDock.jsx";'
       ].join("\n"),
       resolveDir: WEB_ROOT,
@@ -69,6 +74,9 @@ before(async () => {
   readRouteFromHash = bundle.readRouteFromHash;
   routeMeta = bundle.routeMeta;
   localeStrings = bundle.localeStrings;
+  SearchOverlay = bundle.SearchOverlay;
+  ErrorBoundary = bundle.ErrorBoundary;
+  CrashFallback = bundle.CrashFallback;
   primeApiCache = bundle.primeApiCache;
   UI = bundle.UI;
   MODULES = bundle.MODULES;
@@ -1271,5 +1279,91 @@ test("the two work surfaces are reachable from the hub and from the sidebar", ()
     assert.ok(sidebar.includes('href="#/referendum"'), "the referendum is not in the sidebar");
   } finally {
     restore();
+  }
+});
+
+/* --------------------------- search overlay states -------------------------- */
+
+function renderSearch(state, lang = "fa", term = "زمین") {
+  return renderToString(
+    createElement(SearchOverlay, {
+      lang,
+      term,
+      onTerm() {},
+      state,
+      onClose() {},
+      onPick() {},
+      onRetry() {}
+    })
+  );
+}
+
+const ONE_RESULT = {
+  module: "principles",
+  moduleNumber: 99,
+  id: "Z-01",
+  title: { fa: "مدت و خاتمهٔ دولت انتقالی", en: "A dated, bounded transition government" },
+  subtitle: { fa: "اصل صفر ممیز یک", en: "Principle 0.1" },
+  kind: { fa: "اصل", en: "principle" },
+  epistemicStatus: "sourced"
+};
+
+test("the search overlay has five states, and an outage never reads as no results", () => {
+  const idle = renderSearch({ status: "idle", term: "", payload: null });
+  assert.match(idle, /role="status"/, "the overlay needs a live region");
+  assert.match(idle, /دست‌کم دو نویسه/, "idle state is the prompt");
+
+  const loading = renderSearch({ status: "loading", term: "زمین", payload: null });
+  assert.match(loading, /aria-busy="true"/, "loading is announced as busy");
+  assert.match(loading, /در حال جستجو/, "loading has its own words");
+  assert.doesNotMatch(loading, /search-results/, "a stale list must not stay on screen");
+
+  const empty = renderSearch({ status: "ready", term: "زمین", payload: { total: 0, results: [] } });
+  assert.match(empty, /زمین/, "the empty answer names the query");
+  assert.match(empty, /چیزی یافت نشد/);
+
+  const results = renderSearch({
+    status: "ready",
+    term: "اصل",
+    payload: { total: 1, results: [ONE_RESULT] }
+  });
+  assert.match(results, /search-result__title/);
+  assert.match(results, /۱/, "the count is localized");
+
+  const error = renderSearch({ status: "error", term: "زمین", payload: null });
+  assert.match(error, /role="alert"/, "an outage is announced as an alert");
+  assert.match(error, /تلاش دوباره/, "the error offers Retry");
+  assert.match(error, /جستجو انجام نشد/);
+  assert.doesNotMatch(error, /چیزی یافت نشد/, "an outage must not claim there were no results");
+
+  const errorEn = renderSearch({ status: "error", term: "land", payload: null }, "en", "land");
+  assert.match(errorEn, /did not answer/);
+  assert.match(errorEn, /Retry/);
+});
+
+test("a search result outside the twelve modules renders without a module chip", () => {
+  const html = renderSearch(
+    { status: "ready", term: "اصل", payload: { total: 1, results: [ONE_RESULT] } },
+    "en",
+    "principle"
+  );
+  assert.doesNotMatch(html, /search-result__mod/, "an unknown module number must not render a chip");
+  assert.match(html, /A dated, bounded transition government/);
+});
+
+test("a render error shows a fallback with a heading, a sentence and a way out", () => {
+  const state = ErrorBoundary.getDerivedStateFromError(new Error("boom"));
+  assert.equal(state.error.message, "boom", "the boundary must catch and hold the error");
+
+  for (const [lang, title, home] of [
+    ["fa", "این بخش نمایش داده نشد", "بازگشت به مرکز"],
+    ["en", "This section could not be displayed", "Back to the hub"]
+  ]) {
+    const html = renderToString(createElement(CrashFallback, { lang, onReset() {} }));
+    assert.match(html, new RegExp(`<h1[^>]*>${title}</h1>`), `${lang}: the fallback needs its own h1`);
+    assert.match(html, /role="alert"/);
+    assert.match(html, /href="#\/hub"/, `${lang}: a link back to the hub`);
+    assert.match(html, /<button type="button" class="btn btn--primary"/, `${lang}: a retry control`);
+    assert.ok(html.includes(home));
   }
 });
