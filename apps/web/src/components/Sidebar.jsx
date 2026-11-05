@@ -27,7 +27,7 @@ export default function Sidebar({ lang, dict, route, isNarrow, navOpen, navRef, 
             aria-current={route.view === LEVELS_VIEW ? "page" : undefined}
             onClick={onClose}
           >
-            <span className="nav-item__num" aria-hidden="true">۵</span>
+            <span className="nav-item__num" aria-hidden="true">{formatNumber(5, lang)}</span>
             <span className="nav-item__glyph" aria-hidden="true"><Icon name="layers" size={15} /></span>
             <span className="nav-item__title">{dict.levelsNav}</span>
           </a>

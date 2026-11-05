@@ -131,6 +131,7 @@ function SupplySection({ supply, copy, lang }) {
 
       <div className="card">
         <BarRow
+          lang={lang}
           label={copy.supply.circulating}
           value={circulating.tokens}
           max={ceiling.tokens}

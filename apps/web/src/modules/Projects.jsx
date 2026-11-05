@@ -94,7 +94,7 @@ export default function Projects({ lang, dict }) {
                 <span>
                   {t({ fa: "پیشرفت نقاط عطف", en: "Milestone progress" }, lang)}: {formatRatio(complete, project.milestones.length, lang)}
                 </span>
-                <Meter value={complete} max={project.milestones.length} label={t({ fa: "نقاط عطف کامل", en: "Milestones complete" }, lang)} />
+                <Meter lang={lang} value={complete} max={project.milestones.length} label={t({ fa: "نقاط عطف کامل", en: "Milestones complete" }, lang)} />
               </div>
 
               {isOpen ? (

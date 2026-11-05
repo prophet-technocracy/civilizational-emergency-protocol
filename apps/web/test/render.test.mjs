@@ -25,6 +25,8 @@ let SearchOverlay;
 let ErrorBoundary;
 let CrashFallback;
 let readTheme;
+let Meter;
+let BarRow;
 let primeApiCache;
 let clearApiCache;
 let UI;
@@ -56,7 +58,7 @@ before(async () => {
         'export { localeStrings } from "./src/locales/index.js";',
         'export { readTheme } from "./src/lib/theme.js";',
         'export { UI, MODULES, t, formatNumber, labelFor, ENUM_LABELS, formatDate, formatRatio } from "./src/i18n.js";',
-        'export { Toast } from "./src/components/ui.jsx";',
+        'export { Toast, Meter, BarRow } from "./src/components/ui.jsx";',
         'export { default as SearchOverlay } from "./src/components/SearchOverlay.jsx";',
         'export { default as ErrorBoundary, CrashFallback } from "./src/components/ErrorBoundary.jsx";',
         'export { nextDoorIndex, doorStepForArrow, doorHref, isDoorActive, DOORS } from "./src/components/KeyDock.jsx";'
@@ -82,6 +84,8 @@ before(async () => {
   ErrorBoundary = bundle.ErrorBoundary;
   CrashFallback = bundle.CrashFallback;
   readTheme = bundle.readTheme;
+  Meter = bundle.Meter;
+  BarRow = bundle.BarRow;
   primeApiCache = bundle.primeApiCache;
   clearApiCache = bundle.clearApiCache;
   UI = bundle.UI;
@@ -1437,4 +1441,34 @@ test("the hub states what it refuses to be, even with no data at all", () => {
     restore();
     primeApiCache(allEntries);
   }
+});
+
+/* ------------------------ digits and labels that travel ---------------------- */
+
+test("the English sidebar shows no Persian digits, in either language's copy", () => {
+  const { html, restore } = renderWithoutFetch("#/dashboard", "en");
+  try {
+    const sidebar = html.slice(html.indexOf('id="primary-navigation"'), html.indexOf("</nav>", html.indexOf('id="primary-navigation"')));
+    assert.doesNotMatch(sidebar, /[\u06F0-\u06F9]/, "no Persian digit may appear in the English interface");
+    assert.match(sidebar, /nav-item__num">05</, "the level count is a number formatted for the reader");
+  } finally {
+    restore();
+  }
+});
+
+test("meters speak their ratio in the reader's digits and words, never with a slash", () => {
+  const fa = renderToString(createElement(Meter, { value: 4, max: 6, label: "نقاط عطف کامل", lang: "fa" }));
+  const faLabel = fa.match(/aria-label="([^"]+)"/)[1];
+  assert.equal(faLabel, "نقاط عطف کامل: ۴ از ۶");
+  assert.doesNotMatch(faLabel, /[0-9]/, "no ASCII digit inside a Persian accessible name");
+  assert.doesNotMatch(faLabel, /\//, "no slash ratio");
+
+  const en = renderToString(createElement(Meter, { value: 4, max: 6, label: "Milestones complete", lang: "en" }));
+  assert.equal(en.match(/aria-label="([^"]+)"/)[1], "Milestones complete: 4 of 6");
+
+  // A BarRow with no pre-formatted display must not leak a raw number into fa.
+  const bar = renderToString(createElement(BarRow, { label: "ادعاها", value: 3, max: 9, lang: "fa" }));
+  const barLabel = bar.match(/aria-label="([^"]+)"/)[1];
+  assert.equal(barLabel, "ادعاها: ۳ از ۹");
+  assert.doesNotMatch(barLabel, /[0-9]/);
 });

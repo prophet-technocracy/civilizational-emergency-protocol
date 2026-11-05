@@ -80,6 +80,7 @@ export default function Research({ lang, dict, openProvenance }) {
             const count = allClaims.filter((claim) => claim.verificationStatus === key).length;
             return (
               <BarRow
+                lang={lang}
                 key={key}
                 label={t(meta, lang)}
                 value={count}

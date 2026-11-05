@@ -72,6 +72,7 @@ export default function Dashboard({ lang, dict, navigate, openProvenance }) {
         >
           {data.epistemicDistribution.map((row) => (
             <BarRow
+              lang={lang}
               key={row.status}
               label={t(EPISTEMIC[row.status] ?? { fa: row.status, en: row.status }, lang)}
               value={row.count}
