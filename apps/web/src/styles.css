@@ -5611,3 +5611,34 @@ html[data-theme="dark"] .work-card__icon {
 .not-found .card {
   margin-block-start: 1rem;
 }
+
+/* Load-only placeholders. The reduced-motion rule above already freezes them,
+   so a reader who asked for stillness gets a still grey block, not a pulse. */
+.skeleton {
+  display: inline-block;
+  block-size: 0.9em;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--ink-500) 22%, transparent);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.skeleton--text { inline-size: 5.5rem; }
+.skeleton--pill { inline-size: 4rem; }
+
+.door__meter-skeleton {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+/* The doors stay open when the counts do not arrive; the note says so quietly
+   and offers the retry without turning the landing page into an error page. */
+.hub__notice {
+  margin-block: 0.9rem 0;
+  color: var(--ink-500);
+}

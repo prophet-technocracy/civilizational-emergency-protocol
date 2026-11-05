@@ -37,6 +37,8 @@ export const hubEn = {
   workReferendumNote: "Quorum and threshold arithmetic for four future questions; the rule is published before the count.",
   workReferendumMeta: "{questions} questions · {gates} gates still open · not an election authority",
   workOpen: "Open",
+  countsUnavailable: "The action counts are unavailable; the doors stay open and the rest of the page is static.",
+  countsRetry: "Retry the counts",
   guardTitle: "What this hub does not say",
   guard:
     "This hub grants nobody authority and verifies no identity; the stations are shown on synthetic data. MY.X is the mark of this hub, not the name of any institution, office or real service.",

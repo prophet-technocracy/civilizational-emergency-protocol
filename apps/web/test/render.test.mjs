@@ -26,6 +26,7 @@ let ErrorBoundary;
 let CrashFallback;
 let readTheme;
 let primeApiCache;
+let clearApiCache;
 let UI;
 let MODULES;
 let t;
@@ -44,13 +45,14 @@ let DOORS;
 const server = createServer();
 let baseUrl;
 const fixtures = new Map();
+let allEntries = null;
 
 before(async () => {
   await build({
     stdin: {
       contents: [
         'export { default as App, readRouteFromHash, routeMeta } from "./src/App.jsx";',
-        'export { primeApiCache } from "./src/lib/api.js";',
+        'export { primeApiCache, clearApiCache } from "./src/lib/api.js";',
         'export { localeStrings } from "./src/locales/index.js";',
         'export { readTheme } from "./src/lib/theme.js";',
         'export { UI, MODULES, t, formatNumber, labelFor, ENUM_LABELS, formatDate, formatRatio } from "./src/i18n.js";',
@@ -81,6 +83,7 @@ before(async () => {
   CrashFallback = bundle.CrashFallback;
   readTheme = bundle.readTheme;
   primeApiCache = bundle.primeApiCache;
+  clearApiCache = bundle.clearApiCache;
   UI = bundle.UI;
   MODULES = bundle.MODULES;
   t = bundle.t;
@@ -127,6 +130,7 @@ before(async () => {
   ];
 
   const entries = {};
+  allEntries = entries;
   for (const path of paths) {
     const payload = await (await fetch(`${baseUrl}${path}`)).json();
     fixtures.set(path, payload);
@@ -1402,4 +1406,35 @@ test("index.html settles language and theme before the app script runs", () => {
   assert.match(head, /setAttribute\("data-theme", theme\)/);
   assert.match(head, /<meta name="color-scheme" content="light dark" \/>/);
   assert.match(head, /try \{/, "storage may be disabled, so the read must be guarded");
+});
+
+test("the hub paints its six doors before /api/v1/levels answers", () => {
+  clearApiCache();
+  const { html, restore } = renderWithoutFetch("#/hub");
+  try {
+    assert.match(html, /<h1[^>]*>یک کلید، شش در<\/h1>/, "the heading does not wait for the API");
+    const doors = html.match(/class="door__link"/g) ?? [];
+    assert.equal(doors.length, 6, "five levels and the bank, painted from static copy");
+    assert.match(html, /ناظر عمومی/, "a door names itself without the API");
+    assert.match(html, /گرهٔ سازمانی/);
+    assert.match(html, /door__meter-skeleton/, "missing counts are a skeleton, not a wrong number");
+    assert.doesNotMatch(html, /state-block/, "the landing page is not replaced by a spinner");
+    assert.match(html, /aria-busy="true"/, "the grid says the counts are still coming");
+  } finally {
+    restore();
+    primeApiCache(allEntries);
+  }
+});
+
+test("the hub states what it refuses to be, even with no data at all", () => {
+  clearApiCache();
+  const { html, restore } = renderWithoutFetch("#/hub");
+  try {
+    assert.match(html, /آنچه این مرکز نمی‌گوید/, "the guard callout is static copy");
+    assert.match(html, /دسترسی|حکمرانی/, "the module strip still renders");
+    assert.doesNotMatch(html, /state-block/, "no full-page error block");
+  } finally {
+    restore();
+    primeApiCache(allEntries);
+  }
 });
