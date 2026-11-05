@@ -2,6 +2,10 @@
 
 Thank you for helping build CEP. Contributions from people with different skills and viewpoints are welcome.
 
+## If you are an agent
+
+Read [AGENT.md](../AGENT.md) instead of inferring the rules from this file: it names the commands that prove your environment works, the code style the linter enforces, the audit checklists, and how to claim a task from [`agent/tasks.json`](../agent/tasks.json). This page is the human-facing summary; that one is the contract.
+
 ## Ways to contribute
 
 - Research and source-checking

@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useApi, useDebounced } from "../lib/api.js";
 import { t, formatNumber } from "../i18n.js";
-import { SectionHeader, Card, StateBlock, Badge, Callout, Empty, Toggle, BarRow, EpistemicBadge } from "../components/ui.jsx";
+import { SectionHeader, Card, StateBlock, Callout, Empty, Toggle, BarRow, EpistemicBadge } from "../components/ui.jsx";
 
 const MODEL_DEFAULT = {
   executiveSelection: "",

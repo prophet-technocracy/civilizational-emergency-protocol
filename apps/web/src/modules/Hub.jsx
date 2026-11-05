@@ -1,8 +1,7 @@
 import { useApi } from "../lib/api.js";
-import { t, formatNumber } from "../i18n.js";
+import { t, formatNumber, MODULES } from "../i18n.js";
 import { localeStrings } from "../locales/index.js";
 import { Callout } from "../components/ui.jsx";
-import { MODULES } from "../i18n.js";
 import { Icon } from "../components/icons.jsx";
 
 // Module 00 — the hub.
@@ -73,7 +72,7 @@ function LevelDoor({ id, title, purpose, stats, state, lang, copy, navigate }) {
   );
 }
 
-function BankDoor({ lang, copy, navigate }) {
+function BankDoor({ copy, navigate }) {
   return (
     <article className="door door--bank">
       <a
@@ -109,7 +108,7 @@ function BankDoor({ lang, copy, navigate }) {
   );
 }
 
-export default function Hub({ lang, navigate, route, dict }) {
+export default function Hub({ lang, navigate, route }) {
   const copy = localeStrings(lang).hub;
   // The five names and purposes are the design's own definitions, so the six
   // doors paint immediately. The API is the single source of truth for the

@@ -17,10 +17,23 @@
     "test": "npm run test --workspaces --if-present",
     "docs:principles": "node scripts/docs/generate-principles-coverage.mjs",
     "validate:csv": "node scripts/validation/validate-historical-csv.mjs data/synthetic/synthetic-deceased-archive-sample.csv",
-    "check": "npm test && npm run validate:csv && npm run build && npm run audit:guardrails",
-    "audit:guardrails": "node scripts/audit/guardrails.mjs"
+    "check": "node scripts/agent/run.mjs --full",
+    "audit:guardrails": "node scripts/audit/guardrails.mjs",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "agent:check": "node scripts/agent/run.mjs",
+    "agent:full": "node scripts/agent/run.mjs --full",
+    "agent:browser": "node scripts/agent/run.mjs --browser",
+    "agent:tasks": "node scripts/agent/tasks.mjs list",
+    "agent:docs": "node scripts/agent/docs-links.mjs",
+    "audit:setup": "npm install --no-save puppeteer-core axe-core @sparticuz/chromium"
   },
   "devDependencies": {
-    "concurrently": "9.2.5"
+    "@eslint/js": "^9.39.5",
+    "concurrently": "9.2.5",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^15.15.0"
   }
 }

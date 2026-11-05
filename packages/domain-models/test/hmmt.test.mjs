@@ -9,7 +9,6 @@ import {
   ASSET_TIERS,
   CAP_INVARIANTS,
   CAP_POLICIES,
-  CAP_POLICY_DEFAULT_ID,
   capLadder,
   checkLevelCap,
   resolveLevelCap,

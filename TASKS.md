@@ -3,6 +3,11 @@
 **Status:** Initial agent task backlog; open for review.  
 **How to use:** Read this file, then open the linked task brief before starting. Tasks are proposals for research and development—not mandates, endorsements or claims of public legitimacy.
 
+## Two backlogs, on purpose
+
+- **This file** is the research and programme queue: questions, sources, deliverables. A task here needs judgement and evidence.
+- **[`agent/tasks.json`](agent/tasks.json)** is the engineering queue: code, data, docs and CI, each with an input, an output, the files it touches and a command that proves it. Read it with `node scripts/agent/tasks.mjs list`, print one with `show <id>`, and check the contract with `validate`. The operating rules for either are in [AGENT.md](AGENT.md).
+
 ## Start here
 
 1. Read [AGENTS.md](AGENTS.md).

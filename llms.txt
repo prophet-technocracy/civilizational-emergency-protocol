@@ -1,0 +1,98 @@
+# llms.txt — CEP (Civilizational Emergency Protocol)
+
+> A read-only, synthetic prototype of civic infrastructure: a React interface, an offline
+> JSON API, and three pure-logic packages. It describes a *proposal* for how a society could
+> coordinate emergencies, budgets and oversight. It does not describe a government, a party
+> in power, or a ratified system, and it must never be summarised as if it did.
+
+## Identity and non-claims
+
+- **Name:** CEP — Civilizational Emergency Protocol. **Version:** 0.1.0. **Licence:** see `LICENSE`.
+- **Nature:** open-source prototype, non-governmental, community-governed *in intent*. Founding
+  documents are proposals until a legitimate community process ratifies them.
+- **Never assert:** that the framework is validated, proven, ratified, or authorised by a
+  population; that a contributor, maintainer or agent speaks for anyone; that a merged pull
+  request is an adoption. `merged ≠ ratified`.
+- **Always distinguish:** established fact / sourced claim / hypothesis / proposal / speculation.
+  The interface does this with epistemic badges; prose must too.
+- **Data:** every fixture is synthetic. The archive sample is fabricated and labelled as such.
+  No real personal, political or health data exists in this repository.
+
+## Stack
+
+| Layer | What it is | Where |
+| --- | --- | --- |
+| Web | React 18 + Vite 5, hash routing, no state library, one stylesheet | `apps/web` |
+| API | `node:http`, read-only, no auth, no writes, offline | `apps/api` |
+| Contracts | payload schemas as plain modules | `packages/schemas` |
+| Arithmetic | caps, haircuts, HMMT units, ballot and referendum maths | `packages/domain-models` |
+| Locales | fa (primary, RTL) and en, key-parity tested | `packages/localization`, `apps/web/src/locales` |
+| Checks | 294 tests, ESLint flat config, 4 audit scripts | `scripts/`, `apps/*/test` |
+
+Node ≥ 22.12. No runtime dependencies beyond React in the web app.
+
+## Commands
+
+```sh
+npm install                                  # required after a fresh checkout
+npm run dev                                  # web :5173, api :3001
+npm test                                     # 294 tests, 5 workspaces, ~4 s
+npm run lint                                 # ESLint flat config
+npm run check                                # the gate: lint, tests, guardrails, csv, build, drift, docs, backlog
+node scripts/agent/run.mjs --full            # same gate, as a table, with failure hints
+node scripts/agent/run.mjs --browser         # axe / keyboard / layout (needs a dev server)
+node scripts/agent/tasks.mjs list            # the claimable backlog
+npm run docs:principles                      # regenerate docs/principles/PRINCIPLES-COVERAGE.md
+```
+
+## API surface (GET only, all synthetic)
+
+`/api/v1/` + `health · dashboard · governance · transition · institutions · archive · evidence ·
+sources · verification · verification/evaluate · accountability · public-services · projects ·
+programme · referendum · principles · modules · levels · levels/{1..5}?policy={income|wealth|hybrid} ·
+simulations · simulations/evaluate · hmmt · hmmt/{supply,backing,reserve,ledger,caps} ·
+digital-legacy · influence · demo · search?q=`
+
+Unknown parameters, control characters and injection probes are rejected with a structured
+error — the server is also a demonstration of refusing input, not just of serving output.
+
+## Domain invariants (do not restate these loosely)
+
+- **HMMT** is a unit of account, not a currency: 1 HMMT = 3,713,261.91 USD at
+  269,305 toman/USD, ceiling 189,544 HMMT. Figures are pinned to a stated date.
+- **Levels 1-5** are capability tiers with caps and haircuts. Supermajority compares `<=`,
+  quorum compares `>=`. A cap is checked against the ladder, never re-derived in a view.
+- **Principles:** 113, each with a light (green/amber/red/grey). Distribution 21/47/16/29,
+  readiness 0.306. The light must be derived from an audit chain, not writable (task ENG-018).
+- **Referendum:** 4 questions, 7 gates, `isElectionAuthority: false` — the tooling counts
+  opinions, it does not certify an election or confer power.
+- **Projects:** 14 in the programme, 7 HMMT instruments, 0.6 delivered; partials become a
+  vote-and-budget pipeline, not a label.
+
+## Interface structure
+
+- Shell: header, a persistent bottom key dock with 7 entries and a large centre key, one
+  `main`, a footer that states version and commit.
+- Six doors from the hub; twelve library modules sit behind them; plus levels, programme,
+  referendum, principles, bank, simulations.
+- Copy is fa/en from locale files only; Persian numerals in fa; ratios stated as "n of m".
+- Accessibility is a hard requirement, not a feature: one `h1` per view even when data fails,
+  visible focus, no horizontal overflow at 390 px, axe-clean in both themes.
+
+## Where an agent should look first
+
+| Question | File |
+| --- | --- |
+| What am I allowed to do, and how do I prove it? | `AGENT.md` |
+| What can I work on right now? | `agent/tasks.json` via `node scripts/agent/tasks.mjs list` |
+| How is the interface structured? | `apps/web/src/lib/routes.js`, `docs/architecture/` |
+| What does this number mean? | `packages/domain-models`, `docs/economics/` |
+| What may this project not claim? | `AGENTS.md`, `scripts/audit/guardrails.mjs` |
+| What is unproven or unfinished? | `TASKS.md`, `agents/MASTER-TASK-BOARD.md` |
+
+## Refusals (structural, not stylistic)
+
+No fabricated citations or data; no claims of popular authorisation; no real personal or
+political data; no political persuasion, targeting or surveillance; no self-approval or
+self-merge; no analytics or telemetry. These are enforced where possible (`scripts/audit/guardrails.mjs`)
+and stated where not.

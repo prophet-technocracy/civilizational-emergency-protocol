@@ -86,6 +86,10 @@ node scripts/audit/keyboard.mjs  # 15 keyboard checks, focus return, inertness
 node scripts/audit/layout.mjs    # 12 views x 4 widths
 ```
 
+Or all three, with a pass/skip verdict and a hint per failure, through the agent
+runner: `node scripts/agent/run.mjs --browser` (it skips loudly, and tells you
+what to install, rather than pretending the check ran).
+
 `a11y.mjs` prints `{}` when clean. `CEP_URL` overrides the default origin. Always
 `page.reload()` after writing theme or language to `localStorage`, or the audit
 measures the previous theme.

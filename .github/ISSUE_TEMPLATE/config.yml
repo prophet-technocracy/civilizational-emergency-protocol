@@ -1,0 +1,13 @@
+# Keep the two forms focused; a blank issue is still allowed for anything that
+# fits neither. The links are the front door an agent should hit first.
+blank_issues_enabled: true
+contact_links:
+  - name: Start here — AGENT.md
+    url: https://github.com/prophet-technocracy/civilizational-emergency-protocol/blob/main/AGENT.md
+    about: The operating contract — commands, style, audit checklists, definition of done, hard stops.
+  - name: The task backlog (machine-readable)
+    url: https://github.com/prophet-technocracy/civilizational-emergency-protocol/blob/main/agent/tasks.json
+    about: Every engineering task with its input, output, files and verify command.
+  - name: Architecture context for LLMs
+    url: https://github.com/prophet-technocracy/civilizational-emergency-protocol/blob/main/llms.txt
+    about: The compressed architecture, domain vocabulary and non-claims.

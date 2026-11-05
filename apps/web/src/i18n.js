@@ -282,7 +282,7 @@ export const ENUM_LABELS = {
   "gated": { fa: "دروازه‌دار", en: "Gated" },
   // institution / relationship categories
   "legislative": { fa: "قانون‌گذاری", en: "Legislative" },
-  "rights-protection": { fa: "حفاظت از حقوق", en: "Rights protection" },
+  // "rights-protection" is defined once, above, with the other status slugs.
   "audit": { fa: "حسابرسی", en: "Audit" },
   "information": { fa: "اطلاع‌رسانی", en: "Information" },
   "prohibited": { fa: "ممنوع", en: "Prohibited" },

@@ -4,7 +4,7 @@ import { t, formatNumber } from "../i18n.js";
 import { localeStrings } from "../locales/index.js";
 import { SectionHeader, Card, StateBlock, Badge, Callout, Empty, Stat } from "../components/ui.jsx";
 import { LightDot } from "../components/lights.jsx";
-import { principleAnchor, principleHref, PROGRAMME_VIEW, hrefFor } from "../lib/routes.js";
+import { principleAnchor, PROGRAMME_VIEW, hrefFor } from "../lib/routes.js";
 import { prefersReducedMotion } from "../lib/focus.js";
 
 // The four statuses map onto badge tones; anything unknown stays neutral rather
