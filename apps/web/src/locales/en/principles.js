@@ -27,6 +27,32 @@ export const principlesEn = {
     "Covered means the principle's mechanism runs in this prototype on synthetic data, not that it has been enacted. Beyond software means enforcing it needs law, courts, forces or a budget, and an interface can only point at it.",
   chaptersWith: "Chapters read",
   emptyFilter: "No principle carries this status.",
+
+  livingTitle: "The covenant's living light",
+  livingLede:
+    "A light sits beside each of the 113 principles. The score comes from harsh weights, not from an optimistic count: a Partially covered principle is worth a tenth of a working one.",
+  readinessLabel: "Readiness",
+  readinessContext: "Score over the {counted} principles software can do something about",
+  readinessFormula: "({green} + 0.1 × {amber}) ÷ {counted}",
+  bandLabel: "Band",
+  lightLegendTitle: "The weight of each light",
+  lightColumn: "Light",
+  weightLabel: "Weight",
+  weightExcluded: "Out of the denominator",
+  lightCountLabel: "Count",
+  turnsOnLabel: "What turns it on",
+  liveNote:
+    "Live means all 113 principles green and a real ratification outside this system; this prototype never claims it.",
+  programCta: "The partial-coverage programme",
+  programHint:
+    "An amber light never turns itself green: it needs a balloted, funded project and an audited delivery. The programme targets part of the {partial} amber principles and hides none of the rest.",
+  chapterReadiness: "Chapter readiness",
+  lightName: {
+    green: "Green",
+    amber: "Amber",
+    red: "Red",
+    grey: "Grey"
+  },
   status: {
     covered: "Covered",
     partial: "Partial",

@@ -102,6 +102,8 @@ before(async () => {
     "/api/v1/influence",
     "/api/v1/hmmt",
     "/api/v1/principles",
+    "/api/v1/programme",
+    "/api/v1/referendum",
     ...["1", "2", "3", "4", "5"].flatMap((id) => [
       `/api/v1/levels/${id}?policy=P-OPEN-DRAFT`,
       `/api/v1/levels/${id}?policy=P-RESTRICTIVE-DRAFT`
@@ -1046,4 +1048,113 @@ test("the switch behaves like a switch: wrap, direction and the pressed route", 
   assert.equal(isDoorActive(DOORS[5], { view: "levels", recordId: null }), false);
   assert.equal(doorHref(DOORS[0]), "#/levels/1");
   assert.equal(doorHref(DOORS[5]), "#/bank");
+});
+
+/* ------------------------ the living covenant surfaces ---------------------- */
+
+test("the mother-file page carries a light beside every principle, and a readiness score", () => {
+  const { html, restore } = renderWithoutFetch("#/principles");
+  try {
+    const payload = fixtures.get("/api/v1/principles").data;
+    const { lights, principles } = payload;
+
+    // A dot per row, in the light's own class, and never colour alone.
+    assert.equal((html.match(/class="light light--/g) ?? []).length >= principles.length, true, "some principles have no light");
+    for (const light of ["green", "amber", "red", "grey"]) {
+      assert.ok(html.includes(`light--${light}`), `no ${light} light is rendered`);
+    }
+    assert.ok(html.includes(`aria-label="چراغ: `), "the dots are unnamed for a screen reader");
+
+    // The score is printed as a percentage, with the harsh weight stated openly.
+    const percent = new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 0 }).format(Math.round(lights.readiness * 100));
+    assert.ok(html.includes(percent), `the readiness score ${percent}% is missing`);
+    assert.ok(html.includes("۰٫۱"), "the amber weight is not shown");
+    assert.ok(html.includes("از مخرج خارج"), "the excluded band is not explained");
+    assert.ok(html.includes("زنده") === false || html.includes("ادعا"), "the Live claim must be qualified");
+
+    // The way out of an amber light is one link away.
+    assert.ok(html.includes('href="#/programme"'), "no route from the coverage map to the programme");
+  } finally {
+    restore();
+  }
+});
+
+test("the programme renders its queue, its gates and the ballots that refused", () => {
+  const { html, restore } = renderWithoutFetch("#/programme");
+  try {
+    const payload = fixtures.get("/api/v1/programme").data;
+    const { projects, summary, rules } = payload;
+
+    // Every project appears, with its principle and its budget.
+    for (const project of projects) {
+      assert.ok(html.includes(project.id), `${project.id} is missing from the page`);
+      assert.ok(html.includes(project.principleId), `${project.id} does not name its principle`);
+    }
+    assert.equal((html.match(/class="prj prj--/g) ?? []).length, projects.length);
+
+    // The gates are shown as computed badges, not prose.
+    assert.ok(html.includes("gate--open"), "no gate reads as open");
+    assert.ok(html.includes("مضاربه"), "the contract type is not named");
+    assert.equal((html.match(/class="gate /g) ?? []).length >= projects.length * 5, true, "not every gate is rendered");
+
+    // A refused ballot is visible as a refusal.
+    const refused = projects.filter((project) => project.ballot.result !== "passed");
+    assert.ok(refused.length > 0, "the fixture has no refused ballot");
+    assert.ok(html.includes("به نصاب نرسید"), "a quorum failure is not shown as one");
+
+    // The page admits what the queue does not cover.
+    assert.ok(html.includes("بیرون از این صف"), "the uncovered amber principles are not admitted");
+    assert.ok(html.includes(String(summary.projects)) || html.includes(new Intl.NumberFormat("fa-IR").format(summary.projects)));
+
+    // Rules come from the payload, so the list cannot drift from the API.
+    for (const rule of rules) assert.ok(html.includes(rule.id) || html.includes(rule.check.slice(0, 12)), `${rule.id} is not shown`);
+  } finally {
+    restore();
+  }
+});
+
+test("the referendum page declares its posture before it shows any arithmetic", () => {
+  const { html, restore } = renderWithoutFetch("#/referendum");
+  try {
+    const payload = fixtures.get("/api/v1/referendum").data;
+    const { sequence, rehearsals, gateList, posture } = payload;
+
+    assert.equal(posture.isElectionAuthority, false);
+    // The refusal comes first: the badge and the callout precede the numbers.
+    const postureIndex = html.indexOf("مرجع انتخاباتی نیست");
+    const firstQuestionIndex = html.indexOf(sequence[0].question.fa);
+    assert.ok(postureIndex > -1, "the posture badge is missing");
+    assert.ok(postureIndex < firstQuestionIndex, "the page shows questions before it says it holds no vote");
+
+    // Four chained questions, each with its rule and quorum.
+    for (const question of sequence) {
+      assert.ok(html.includes(question.question.fa), `question ${question.order} is missing`);
+      assert.ok(html.includes(question.options[0].label.fa), `question ${question.order} has no options`);
+    }
+
+    // Both a pass and a refusal are rendered: the calculator says no in public.
+    assert.ok(html.includes("پذیرفته"));
+    assert.ok(html.includes("به نصاب نرسید") && html.includes("دور دوم"));
+    assert.equal(rehearsals.filter((entry) => !entry.accepted).length >= 2, true);
+
+    // Every open gate is named.
+    for (const gate of gateList) assert.ok(html.includes(gate.fa.slice(0, 18)), `gate ${gate.id} is missing`);
+  } finally {
+    restore();
+  }
+});
+
+test("the two work surfaces are reachable from the hub and from the sidebar", () => {
+  const { html, restore } = renderWithoutFetch("#/hub");
+  try {
+    assert.ok(html.includes('class="hub__work"'), "the hub has no workbench");
+    assert.ok(html.includes('href="#/programme"'), "the programme is not linked from the hub");
+    assert.ok(html.includes('href="#/referendum"'), "the referendum is not linked from the hub");
+    const sidebarStart = html.indexOf('id="primary-navigation"');
+    const sidebar = html.slice(sidebarStart, html.indexOf("</nav>", sidebarStart));
+    assert.ok(sidebar.includes('href="#/programme"'), "the programme is not in the sidebar");
+    assert.ok(sidebar.includes('href="#/referendum"'), "the referendum is not in the sidebar");
+  } finally {
+    restore();
+  }
 });

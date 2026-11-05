@@ -1,19 +1,23 @@
-# Handoff — one centre and six doors, the five levels, the HMMT bank, and the mother-file coverage map
+# Handoff — the living covenant, the programme queue, the referendum instrument, one centre and six doors
 
 Replace this note when it goes stale. Scope authority: `README.md`, `docs/**`, `AGENTS.md`, `TASKS.md`.
 
 ## State
 
 - Branch: `arena/a214f05b-civilizational-emergency-proto`, branched from `main` at `b3670dc` (PR #15 merged).
-- `npm test` → **260 tests, 0 failures** (api 66, web 95 incl. the key-dock/hub checks, domain-models 68, schemas 24, localization 7).
-- `npm run build` → 526 kB JS (149 kB gzip), 76 kB CSS (15 kB gzip).
-- axe-core over **18 routes** (landing `""`, `hub`, `levels`, `levels/3`, the bank, principles, the twelve modules) × light/dark × fa/en: **0 violations**. 390 px: no horizontal page overflow, and the key dock keeps seven slots on one row.
+- `npm test` → **268 tests, 0 failures** (api 70, web 99, domain-models 68, schemas 24, localization 7).
+- `npm run build` → 557 kB JS (157 kB gzip), 85 kB CSS (16 kB gzip).
+- axe-core over **20 routes** (landing `""`, `hub`, `levels`, `levels/3`, the bank, principles, the twelve modules) × light/dark × fa/en: **0 violations**. 390 px: no horizontal page overflow, and the key dock keeps seven slots on one row.
 - No open PR. PRs are opened only when asked; never merge them.
 
 ## What exists now
 
 | Layer | Where | Note |
 |---|---|---|
+| Living covenant | `apps/api/src/data/principles.mjs` (`PRINCIPLE_LIGHTS`, `READINESS_BANDS`, `readinessOf`), `apps/web/src/components/lights.jsx`, `#/principles` | green 1.0 / amber 0.1 / red 0.0 / grey excluded; readiness **0.306 «در ساخت»**; band «زنده» unreachable in code; tested in `apps/api/test/strategy.test.mjs` |
+| Partial-coverage programme | `apps/api/src/data/programme.mjs`, `apps/web/src/modules/Programme.jsx`, `#/programme` | 12 projects, one per amber principle; ballot → level-4 cap (`checkLevelCap`) → mudarabah → audited delivery; gates computed, blocked projects reported; 12 of 47 amber principles targeted |
+| Referendum instrument | `apps/api/src/data/referendum.mjs`, `apps/web/src/modules/Referendum.jsx`, `#/referendum` | four chained questions (form → assembly → ratification → government), `computeReferendumOutcome` pure, 4 rehearsals of which 2 refuse, 7 open gates, `isElectionAuthority: false` in the payload |
+| Strategy docs | `docs/strategy/{LIVING-CONSTITUTION,IPP-RECONCILIATION,PARTY-AND-PARLIAMENT}.md` | weights and bands; IPP sources + the HMMT tension; premise register and the four stages to a party list |
 | Hub + key dock | `apps/web/src/modules/Hub.jsx`, `apps/web/src/components/KeyDock.jsx`, `apps/web/styles.css` dock block, `localeStrings().hub` | `#/hub` is the landing (`""` and `#/` resolve to it): MY.X centre, six doors (levels 1–5 + the bank), station pill, guard callout, twelve-module strip. The fixed dock is on every route, one tab stop, `aria-current` on the pressed door, RTL-mirrored arrows. Pure helpers `nextDoorIndex`, `doorStepForArrow`, `doorHref`, `isDoorActive`, `DOORS` are exported and unit-tested. Rationale + self-criticism with ratings: `docs/ux/ONE-CENTRE-SIX-DOORS.md` |
 | Influence / authority engine | `packages/domain-models/influence.mjs` (36 tests) | ballots, professional weight, endorsement reach, qualification, delegation, posthumous mandate, `authorizeAction` |
 | HMMT monetary engine | `packages/domain-models/hmmt.mjs` (68 tests) | definition, `REFERENCE_DATA`, tiers, `HAIRCUT_POLICY` (HC-DRAFT-01), basket, ceiling, convert, redeem, proof of reserve, phases, **cap policies** (`CAP_POLICIES`, `CAP_POLICY_DEFAULT_ID`, `CAP_INVARIANTS`, `resolveLevelCap`, `checkLevelCap`, `capLadder`), invariants |

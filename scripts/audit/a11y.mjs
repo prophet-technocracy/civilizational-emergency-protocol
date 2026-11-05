@@ -15,6 +15,8 @@ const routes = [
   "dashboard",
   "bank",
   "principles",
+  "programme",
+  "referendum",
   "governance",
   "transition",
   "institutions",

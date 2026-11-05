@@ -4606,7 +4606,7 @@ html[data-theme="dark"] .hub__stage {
 }
 
 .door__num {
-  font-family: var(--font-en);
+  font-family: var(--font-fa);
   font-size: 1.9rem;
   font-weight: 800;
   line-height: 1;
@@ -4669,7 +4669,7 @@ html[data-theme="dark"] .hub__stage {
 }
 
 .door__meter-value {
-  font-family: var(--font-en);
+  font-family: var(--font-fa);
   font-weight: 700;
   font-size: 1rem;
   color: var(--ink-900);
@@ -4961,7 +4961,7 @@ html[data-theme="dark"] .door__meter-ballot {
 }
 
 .module-chip__num {
-  font-family: var(--font-en);
+  font-family: var(--font-fa);
   font-size: 0.66rem;
   color: var(--ink-300);
 }
@@ -5008,4 +5008,566 @@ html[data-theme="dark"] .door__icon {
   font-size: 0.72rem;
   line-height: 1.7;
   color: var(--ink-300);
+}
+
+/* -------------------------------------------------------------------------
+   The living covenant: a light beside every principle, the readiness dial,
+   the partial-coverage programme, and the referendum instrument.
+   ------------------------------------------------------------------------- */
+
+:root {
+  --light-green: #1f7a4d;
+  --light-amber: #b26a00;
+  --light-red: #a32b2b;
+  --light-grey: #8b98a5;
+}
+
+html[data-theme="dark"] {
+  --light-green: #58c891;
+  --light-amber: #e2a44a;
+  --light-red: #ef7b7b;
+  --light-grey: #7d8b99;
+}
+
+.light {
+  display: inline-block;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12) inset;
+}
+
+.light--green { background: var(--light-green); }
+.light--amber { background: var(--light-amber); }
+.light--red { background: var(--light-red); }
+.light--grey { background: var(--light-grey); }
+
+.light-rail {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.principles-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* ------------------------------- living card ----------------------------- */
+
+.living__lede {
+  max-inline-size: 62ch;
+  margin-block-end: 1rem;
+}
+
+/* Text at the reading edge, ring at the far end: in RTL that puts the prose on
+   the right where the eye starts, and the dial closes the row. */
+.living__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 200px;
+  gap: 1.6rem;
+  align-items: start;
+}
+
+.living__dial {
+  --value: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  inline-size: 168px;
+  block-size: 168px;
+  border-radius: 50%;
+  background:
+    radial-gradient(closest-side, var(--paper-0) 78%, transparent 79%),
+    conic-gradient(var(--teal-600) calc(var(--value) * 1turn), var(--paper-3) 0);
+  border: 1px solid var(--border);
+}
+
+.living__value {
+  font-family: var(--font-fa);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--ink-900);
+}
+
+.living__caption {
+  font-size: 0.72rem;
+  color: var(--ink-500);
+}
+
+.living__body p {
+  margin-block: 0.35rem;
+}
+
+.living__formula {
+  color: var(--ink-500);
+}
+
+.light-legend {
+  display: grid;
+  gap: 0.3rem;
+  max-inline-size: 26rem;
+  margin: 0.8rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Flex, not a four-column grid: the count column used to swallow the free
+   space and threw the weight to the far edge of the card. */
+.light-legend__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+}
+
+.light-legend__weight {
+  margin-inline-start: 0.2rem;
+}
+
+.light-legend__name { font-weight: 600; }
+.light-legend__count,
+.light-legend__weight { color: var(--ink-500); font-size: 0.76rem; }
+
+.living__live {
+  max-inline-size: 46rem;
+  padding: 0.5rem 0.7rem;
+  border-inline-start: 3px solid var(--light-grey);
+  background: var(--paper-2);
+  border-radius: 0 6px 6px 0;
+}
+
+.living__cta { margin-block: 0.7rem 0.2rem !important; }
+
+html[data-theme="dark"] .living__dial {
+  background:
+    radial-gradient(closest-side, var(--navy-800) 78%, transparent 79%),
+    conic-gradient(var(--teal-500) calc(var(--value) * 1turn), rgba(238, 243, 247, 0.14) 0);
+}
+
+html[data-theme="dark"] .living__live {
+  background: rgba(238, 243, 247, 0.06);
+}
+
+/* ------------------------------ programme -------------------------------- */
+
+.prj-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-block: 1rem 1.4rem;
+}
+
+.prj {
+  display: grid;
+  gap: 0.6rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--paper-0);
+  box-shadow: var(--shadow-sm);
+}
+
+.prj--delivered { border-inline-start: 4px solid var(--light-green); }
+.prj--in-execution { border-inline-start: 4px solid var(--teal-600); }
+.prj--funded { border-inline-start: 4px solid var(--light-amber); }
+.prj--balloted { border-inline-start: 4px solid var(--ink-300); }
+.prj--proposed { border-inline-start: 4px solid var(--border); }
+
+.prj__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.prj__id {
+  font-size: 0.7rem;
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.prj__title {
+  margin: 0.1rem 0 0;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.prj__scope {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-700);
+}
+
+.prj__facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem 0.8rem;
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+.prj__facts dt {
+  color: var(--ink-500);
+  font-size: 0.7rem;
+}
+
+.prj__facts dd {
+  margin: 0.05rem 0 0;
+  color: var(--ink-800);
+}
+
+.prj__ballot {
+  padding: 0.55rem 0.65rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  background: var(--paper-2);
+}
+
+.prj__ballot-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.3rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.prj__ballot-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.8rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.74rem;
+  color: var(--ink-600);
+}
+
+.prj__gates,
+.gate-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gate {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  border: 1px solid var(--border);
+}
+
+.gate--open {
+  color: var(--light-green);
+  border-color: color-mix(in srgb, var(--light-green) 45%, var(--border));
+  background: color-mix(in srgb, var(--light-green) 10%, transparent);
+}
+
+.gate--closed {
+  color: var(--light-red);
+  border-color: color-mix(in srgb, var(--light-red) 45%, var(--border));
+  background: color-mix(in srgb, var(--light-red) 10%, transparent);
+}
+
+.prj__flips {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.prj__arrow { color: var(--ink-400); }
+
+.prj__audit summary {
+  cursor: pointer;
+  font-size: 0.76rem;
+  color: var(--ink-600);
+}
+
+.prj__audit ol {
+  margin: 0.4rem 0 0;
+  padding-inline-start: 1.1rem;
+  font-size: 0.76rem;
+  color: var(--ink-600);
+}
+
+.contract-terms,
+.rule-list,
+.gate-list--stacked {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding-inline-start: 1.2rem;
+  font-size: 0.88rem;
+}
+
+.rule-list li p { margin: 0; }
+.rule-list li { margin-block-end: 0.35rem; }
+
+html[data-theme="dark"] .prj {
+  background: var(--navy-800);
+  border-color: rgba(169, 220, 216, 0.16);
+}
+
+html[data-theme="dark"] .prj__ballot {
+  background: rgba(238, 243, 247, 0.05);
+  border-color: rgba(169, 220, 216, 0.2);
+}
+
+/* ------------------------------ referendum ------------------------------- */
+
+.ref-sequence {
+  display: grid;
+  gap: 0.9rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: none;
+}
+
+.ref-question {
+  position: relative;
+  padding: 0.9rem 1rem 0.9rem 1.1rem;
+  padding-inline-start: 3.2rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--paper-0);
+}
+
+.ref-question__order {
+  font-family: var(--font-fa);
+  position: absolute;
+  inset-inline-start: 0.8rem;
+  inset-block-start: 0.9rem;
+  margin: 0;
+  inline-size: 1.9rem;
+  block-size: 1.9rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--navy-800);
+  color: var(--paper-0);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.ref-question__title { margin: 0 0 0.25rem; font-size: 1rem; }
+
+.ref-question__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0.5rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ref-question__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.74rem;
+}
+
+.ref-question__facts dt { color: var(--ink-500); font-size: 0.68rem; }
+.ref-question__facts dd { margin: 0.05rem 0 0; }
+
+.ref-rehearsals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.ref-rehearsal {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--paper-0);
+}
+
+.ref-rehearsal--accepted { border-inline-start: 4px solid var(--light-green); }
+.ref-rehearsal--failed-quorum { border-inline-start: 4px solid var(--light-red); }
+.ref-rehearsal--runoff { border-inline-start: 4px solid var(--light-amber); }
+
+.ref-rehearsal__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.ref-rehearsal__head h3 { margin: 0; font-size: 0.92rem; line-height: 1.5; }
+
+.ref-rehearsal__shares { display: grid; gap: 0.35rem; }
+
+.ref-rehearsal__reasons {
+  margin: 0;
+  padding-inline-start: 1.1rem;
+  font-size: 0.78rem;
+  color: var(--ink-700);
+}
+
+html[data-theme="dark"] .ref-question,
+html[data-theme="dark"] .ref-rehearsal {
+  background: var(--navy-800);
+  border-color: rgba(169, 220, 216, 0.16);
+}
+
+html[data-theme="dark"] .ref-question__order {
+  font-family: var(--font-fa);
+  background: var(--teal-600);
+  color: #06121d;
+}
+
+/* --------------------------- the hub workbench --------------------------- */
+
+.hub__work { margin-block: 1.6rem; }
+
+.work-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.work-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--paper-0);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 120ms ease, transform 120ms ease;
+}
+
+.work-card:hover,
+.work-card:focus-visible {
+  border-color: var(--teal-600);
+  transform: translateY(-1px);
+}
+
+.work-card--programme { border-block-start: 3px solid var(--light-amber); }
+.work-card--referendum { border-block-start: 3px solid var(--teal-600); }
+
+.work-card__icon {
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  border-radius: 8px;
+  background: var(--paper-2);
+  color: var(--teal-text);
+}
+
+.work-card__title { font-weight: 700; font-size: 1rem; }
+.work-card__note { font-size: 0.84rem; color: var(--ink-600); }
+.work-card__meta { color: var(--ink-500); }
+
+html[data-theme="dark"] .work-card {
+  background: var(--navy-800);
+  border-color: rgba(169, 220, 216, 0.18);
+}
+
+html[data-theme="dark"] .work-card__icon {
+  background: rgba(238, 243, 247, 0.08);
+}
+
+@media (max-width: 900px) {
+  .prj-grid,
+  .ref-rehearsals,
+  .work-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .living__grid {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    text-align: start;
+  }
+
+  .living__dial {
+    inline-size: 140px;
+    block-size: 140px;
+  }
+}
+
+@media (max-width: 720px) {
+  .prj__facts,
+  .ref-question__facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .light-legend__row {
+    grid-template-columns: 14px minmax(0, 1fr);
+    row-gap: 0.1rem;
+  }
+
+  .light-legend__count,
+  .light-legend__weight {
+    grid-column: 2;
+  }
+}
+
+/* Six readings on one line when the desk is wide enough; two columns of 190px
+   left a single orphan card on the second row. */
+@media (min-width: 1100px) {
+  .grid--inline.grid--six {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 721px) and (max-width: 1099px) {
+  .grid--inline.grid--six {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* The open gates read as a list, one per row, the × in its own column. */
+.gate-list--rows {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.gate-list--rows li {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.3rem;
+  font-size: 0.86rem;
+}
+
+.prj__principle {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  color: var(--ink-600);
+}
+
+.prj__deliverable {
+  margin: 0;
+  color: var(--ink-700);
+}
+
+.rule-list__id {
+  display: inline-block;
+  margin-inline-end: 0.35rem;
+  padding: 0.05rem 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.66rem;
 }

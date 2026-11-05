@@ -99,6 +99,11 @@ function BankDoor({ lang, copy, navigate }) {
 export default function Hub({ lang, navigate, route }) {
   const copy = localeStrings(lang).hub;
   const { status, payload, reload } = useApi("/api/v1/levels");
+  // The workbench under the six doors: two surfaces that are work, not levels.
+  // They load beside the doors and degrade quietly — a slow programme endpoint
+  // must never take the landing page down with it.
+  const programme = useApi("/api/v1/programme");
+  const referendum = useApi("/api/v1/referendum");
 
   if (status !== "ready") {
     return (
@@ -179,6 +184,63 @@ export default function Hub({ lang, navigate, route }) {
             <LevelDoor key={level.id} level={level} lang={lang} copy={copy} navigate={navigate} />
           ))}
           <BankDoor lang={lang} copy={copy} navigate={navigate} />
+        </div>
+      </section>
+
+
+      <section className="hub__work" aria-labelledby="hub-work-title">
+        <div className="section-head">
+          <div>
+            <h2 id="hub-work-title" className="h2">
+              {copy.workTitle}
+            </h2>
+            <p className="lede">{copy.workLede}</p>
+          </div>
+        </div>
+        <div className="work-grid">
+          <a
+            className="work-card work-card--programme"
+            href="#/programme"
+            onClick={(event) => {
+              event.preventDefault();
+              navigate("programme");
+            }}
+          >
+            <span className="work-card__icon" aria-hidden="true">
+              <Icon name="projects" size={20} />
+            </span>
+            <span className="work-card__title">{copy.workProgramme}</span>
+            <span className="work-card__note">{copy.workProgrammeNote}</span>
+            <span className="work-card__meta small">
+              {programme.status === "ready"
+                ? copy.workProgrammeMeta
+                    .replace("{tokens}", formatNumber(programme.payload.data.summary.tokens, lang))
+                    .replace("{projects}", formatNumber(programme.payload.data.summary.projects, lang))
+                    .replace("{delivered}", formatNumber(programme.payload.data.summary.delivered, lang))
+                : copy.workOpen}
+            </span>
+          </a>
+          <a
+            className="work-card work-card--referendum"
+            href="#/referendum"
+            onClick={(event) => {
+              event.preventDefault();
+              navigate("referendum");
+            }}
+          >
+            <span className="work-card__icon" aria-hidden="true">
+              <Icon name="ballot" size={20} />
+            </span>
+            <span className="work-card__title">{copy.workReferendum}</span>
+            <span className="work-card__note">{copy.workReferendumNote}</span>
+            <span className="work-card__meta small">
+              {referendum.status === "ready"
+                ? copy.workReferendumMeta
+                    .replace("{questions}", formatNumber(referendum.payload.data.summary.questions, lang))
+                    .replace("{gates}", formatNumber(referendum.payload.data.summary.openGates, lang))
+                : copy.workOpen}
+            </span>
+          </a>
         </div>
       </section>
 

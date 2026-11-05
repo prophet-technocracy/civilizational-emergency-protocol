@@ -55,6 +55,102 @@ export const COVERAGE_STATUSES = Object.freeze([
   }
 ]);
 
+// The light beside every principle — the part that turns a coverage map into a
+// constitution that can be *read at a glance*. Four colours, four meanings, and
+// a weight that is deliberately harsh:
+//
+//   green  1.0  a working surface demonstrates the mechanism
+//   amber  0.1  present in data or design only — a tenth, not a half
+//   red    0.0  software could show it and does not
+//   grey    —   no interface can deliver it; taken out of the denominator
+//
+// The 0.1 is the whole argument of this page. A principle that is "in the
+// design" is not half done, and counting it as half would let the prototype
+// declare itself two-thirds complete while nothing is enforced anywhere.
+export const PRINCIPLE_LIGHTS = Object.freeze([
+  {
+    id: "green",
+    status: "covered",
+    tone: "good",
+    weight: 1,
+    label: { fa: "سبز", en: "Green" },
+    means: {
+      fa: "یک سطح کارکننده سازوکار اصل را نشان می‌دهد، هرچند با دادهٔ ساختگی.",
+      en: "A working surface demonstrates the mechanism, with synthetic data."
+    },
+    turnsOn: { fa: "فقط با تحویلِ داوری‌شدهٔ یک سطح کارکننده.", en: "Only by an audited delivery of a working surface." }
+  },
+  {
+    id: "amber",
+    status: "partial",
+    tone: "warn",
+    weight: 0.1,
+    label: { fa: "کهربایی", en: "Amber" },
+    means: {
+      fa: "اصل در داده یا طراحی هست و در هیچ سطحی اجرا نمی‌شود؛ یک‌دهم شمرده می‌شود.",
+      en: "The principle is present in data or design and enacted nowhere; it counts for a tenth."
+    },
+    turnsOn: { fa: "با پروژهٔ رأی‌داده‌شده و بودجه‌دار «برنامهٔ پوشش جزئی».", en: "Through a balloted, funded project in the partial-coverage programme." }
+  },
+  {
+    id: "red",
+    status: "gap",
+    tone: "danger",
+    weight: 0,
+    label: { fa: "سرخ", en: "Red" },
+    means: {
+      fa: "نرم‌افزار می‌توانست آن را نشان دهد و هنوز نمی‌دهد؛ کار بعدی است، نه ادعا.",
+      en: "Software could show it and does not yet; it is next work, not a claim."
+    },
+    turnsOn: { fa: "با ساختن همان سطح، پیش از هر چیز دیگری.", en: "By building that surface, before anything else." }
+  },
+  {
+    id: "grey",
+    status: "outside",
+    tone: "neutral",
+    weight: null,
+    excluded: true,
+    label: { fa: "خاکستری", en: "Grey" },
+    means: {
+      fa: "اجرای آن به قانون، دادگاه، نیرو یا بودجهٔ واقعی نیاز دارد؛ از مخرج خارج است و سبز شدنش ادعای بی‌مبنا می‌شود.",
+      en: "Enforcing it needs law, courts, forces or a real budget; it is out of the denominator, and calling it green would be an unsupported claim."
+    },
+    turnsOn: { fa: "هیچ‌گاه با نرم‌افزار؛ فقط با نهاد واقعی.", en: "Never with software; only with a real institution." }
+  }
+]);
+
+const LIGHT_BY_STATUS = Object.freeze(
+  Object.fromEntries(PRINCIPLE_LIGHTS.map((light) => [light.status, light]))
+);
+
+// Readiness bands. The top band is unreachable in this repository on purpose.
+export const READINESS_BANDS = Object.freeze([
+  { id: "draft", max: 0.25, label: { fa: "طرح", en: "Draft" } },
+  { id: "building", max: 0.5, label: { fa: "در ساخت", en: "Under construction" } },
+  { id: "nearing", max: 0.8, label: { fa: "نزدیک", en: "Nearing" } },
+  { id: "almost", max: 0.999, label: { fa: "تقریباً کامل", en: "Almost complete" } },
+  { id: "live", max: 1, label: { fa: "زنده", en: "Live" } }
+]);
+
+export function bandFor(readiness) {
+  const band = READINESS_BANDS.find((entry) => readiness <= entry.max);
+  return band ?? READINESS_BANDS[READINESS_BANDS.length - 1];
+}
+
+// The score a set of rows deserves, with the grey ones out of the denominator.
+export function readinessOf(rows) {
+  const counted = rows.filter((row) => LIGHT_BY_STATUS[row.coverage]?.excluded !== true);
+  const denominator = counted.length;
+  const score = denominator === 0
+    ? 0
+    : counted.reduce((sum, row) => sum + (LIGHT_BY_STATUS[row.coverage]?.weight ?? 0), 0) / denominator;
+  return {
+    readiness: Math.round(score * 1000) / 1000,
+    counted: denominator,
+    excluded: rows.length - denominator
+  };
+}
+
 // The surfaces a principle can point at. `route: null` means the whole interface.
 const SURFACES = Object.freeze({
   interface: { route: null, label: { fa: "خود رابط دوزبانه", en: "The bilingual interface" } },
@@ -454,6 +550,7 @@ export const principles = Object.freeze(
     chapter,
     title: { fa, en },
     coverage: status,
+    light: LIGHT_BY_STATUS[status].id,
     surface: surfaces(surface),
     note: { fa: noteFa, en: noteEn }
   }))
@@ -475,13 +572,39 @@ export function buildPrinciples() {
     return { ...chapter, principles: rows, counts: chapterCounts };
   });
 
+  const lightCounts = Object.fromEntries(PRINCIPLE_LIGHTS.map((light) => [light.id, 0]));
+  for (const principle of principles) lightCounts[principle.light] += 1;
+  const overall = readinessOf(principles);
+  const band = bandFor(overall.readiness);
+
   return {
     motherFile: MOTHER_FILE,
     question: PRINCIPLE_COVERAGE_QUESTION,
     statuses: COVERAGE_STATUSES,
+    // The light rail: one dot per principle, the weights that make the score
+    // honest, and the band the whole covenant currently sits in.
+    lights: {
+      order: PRINCIPLE_LIGHTS.map((light) => light.id),
+      definitions: PRINCIPLE_LIGHTS,
+      counts: lightCounts,
+      readiness: overall.readiness,
+      counted: overall.counted,
+      excluded: overall.excluded,
+      band: { id: band.id, label: band.label },
+      bands: READINESS_BANDS,
+      // What "live" would mean, stated so nobody can claim it by accident.
+      liveRequires: {
+        fa: "همهٔ اصل‌ها سبز، و تصویب واقعی بیرون از این سامانه؛ این نمونه هیچ‌گاه ادعای «زنده» نمی‌کند.",
+        en: "Every principle green and a real ratification outside this system; this prototype never claims Live."
+      }
+    },
     // Flat list for clients that filter; the chapters keep the reading order.
     principles,
-    chapters: byChapter,
+    chapters: byChapter.map((chapter) => ({
+      ...chapter,
+      readiness: readinessOf(chapter.principles).readiness,
+      band: bandFor(readinessOf(chapter.principles).readiness).label
+    })),
     summary: {
       total: principles.length,
       counts,
