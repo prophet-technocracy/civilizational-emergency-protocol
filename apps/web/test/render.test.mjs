@@ -29,6 +29,11 @@ let ENUM_LABELS;
 let formatDate;
 let formatRatio;
 let Toast;
+let nextDoorIndex;
+let doorStepForArrow;
+let doorHref;
+let isDoorActive;
+let DOORS;
 
 const server = createServer();
 let baseUrl;
@@ -41,7 +46,8 @@ before(async () => {
         'export { default as App, readRouteFromHash } from "./src/App.jsx";',
         'export { primeApiCache } from "./src/lib/api.js";',
         'export { UI, MODULES, t, formatNumber, labelFor, ENUM_LABELS, formatDate, formatRatio } from "./src/i18n.js";',
-        'export { Toast } from "./src/components/ui.jsx";'
+        'export { Toast } from "./src/components/ui.jsx";',
+        'export { nextDoorIndex, doorStepForArrow, doorHref, isDoorActive, DOORS } from "./src/components/KeyDock.jsx";'
       ].join("\n"),
       resolveDir: WEB_ROOT,
       loader: "js"
@@ -68,6 +74,11 @@ before(async () => {
   formatDate = bundle.formatDate;
   formatRatio = bundle.formatRatio;
   Toast = bundle.Toast;
+  nextDoorIndex = bundle.nextDoorIndex;
+  doorStepForArrow = bundle.doorStepForArrow;
+  doorHref = bundle.doorHref;
+  isDoorActive = bundle.isDoorActive;
+  DOORS = bundle.DOORS;
 
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   baseUrl = `http://127.0.0.1:${server.address().port}`;
@@ -135,8 +146,10 @@ function renderWithoutFetch(hash = "") {
 }
 
 test("route parsing defaults to the five-level chooser and accepts record ids", () => {
-  assert.deepEqual(readRouteFromHash(""), { view: "levels", recordId: null });
-  assert.deepEqual(readRouteFromHash("#/"), { view: "levels", recordId: null });
+  // The landing is the hub: one centre, six doors.
+  assert.deepEqual(readRouteFromHash(""), { view: "hub", recordId: null });
+  assert.deepEqual(readRouteFromHash("#/"), { view: "hub", recordId: null });
+  assert.deepEqual(readRouteFromHash("#/hub"), { view: "hub", recordId: null });
   assert.deepEqual(readRouteFromHash("#/levels"), { view: "levels", recordId: null });
   assert.deepEqual(readRouteFromHash("#/levels/3"), { view: "levels", recordId: "3" });
   // An out-of-range level falls back to the chooser instead of rendering a
@@ -227,7 +240,8 @@ test("english locale strings are complete enough to swap the whole interface", (
 });
 
 test("no dead buttons: every rendered button has an accessible name", () => {
-  const { html, restore } = renderWithoutFetch();
+  // The dashboard is the densest screen for controls; the hub is deliberately sparse.
+  const { html, restore } = renderWithoutFetch("#/dashboard");
   try {
     const buttons = html.match(/<button[^>]*>(.*?)<\/button>/gs) ?? [];
     assert.ok(buttons.length > 10, "expected many interactive controls");
@@ -780,11 +794,19 @@ test("the interactive ballot starts from the same formula as the server view", (
 
 /* --------------------------------- HMMT bank -------------------------------- */
 
-test("the shell offers the bank as its own navigation entry", () => {
+test("the bank is reachable from the key dock, not duplicated in the sidebar", () => {
   const { html, restore } = renderWithoutFetch();
   try {
-    assert.match(html, /href="#\/bank"/);
-    assert.ok(html.includes("بانک HMMT"), "the bank nav label is missing");
+    assert.match(html, /href="#\/bank"/, "the bank has no way in");
+    assert.ok(html.includes("بانک"), "the bank is never named on the page");
+    // The sidebar no longer repeats the doors: it says where they went.
+    const sidebarStart = html.indexOf('id="primary-navigation"');
+    assert.ok(sidebarStart > -1, "the sidebar is missing");
+    const sidebar = html.slice(sidebarStart, html.indexOf("</nav>", sidebarStart));
+    assert.ok(!sidebar.includes('href="#/bank"'), "the sidebar still offers the bank");
+    assert.ok(!sidebar.includes('href="#/levels/1"'), "the sidebar still offers the levels");
+    assert.match(sidebar, /href="#\/levels"/, "the level chooser must stay reachable");
+    assert.ok(sidebar.includes('class="sidebar__hint"'), "the sidebar does not say where the doors went");
   } finally {
     restore();
   }
@@ -936,4 +958,92 @@ test("the principles route is addressable and its filters are real controls", ()
   } finally {
     restore();
   }
+});
+
+test("the hub is the landing, and it opens with one centre and six doors", () => {
+  const { html, restore } = renderWithoutFetch("#/hub");
+  try {
+    const levels = fixtures.get("/api/v1/levels").data.levels;
+    // The mark is the centre of the page, in bold, and says what it is.
+    assert.ok(html.includes("MY.X"), "the monogram is missing");
+    assert.ok(html.includes("مرکز شخصی"), "the mark is unexplained");
+    assert.ok(html.includes("یک کلید، شش در"), "the hub has no promise to keep");
+
+    // Six doors: five levels and the bank, each pointed at its own route.
+    const doors = html.match(/class="door door--/g) ?? [];
+    assert.equal(doors.length, 6, "the hub must show exactly six doors");
+    for (const level of levels) {
+      assert.ok(html.includes(`href="#/levels/${level.id}"`), `door for level ${level.id} is missing`);
+      assert.ok(html.includes(level.title.fa), `door for level ${level.id} has no title`);
+      assert.ok(html.includes(level.purpose.fa), `door for level ${level.id} has no purpose`);
+    }
+    assert.ok(html.includes('href="#/bank"'), "the bank door is missing");
+
+    // Moderated per node, not six copies of one card: the counts differ, and
+    // only the participating citizen carries a ballot.
+    // SSR inserts comment markers between adjacent text nodes; flatten first.
+    const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+    const counts = [...text.matchAll(/([۰-۹]+) کنش مجاز/g)].map((match) => match[1]);
+    assert.equal(counts.length, 5, "each level door must state how many actions it allows");
+    assert.ok(new Set(counts).size >= 2, "the doors would be indistinguishable if every count were equal");
+    const ballots = (text.match(/برگهٔ رأی دارد/g) ?? []).length;
+    assert.equal(ballots, 1, "exactly one level holds a ballot");
+    assert.equal(levels.filter((level) => level.holdsBallot).length, 1);
+
+    // The station readout says where the reader is, and on the hub that is the hub.
+    assert.ok(html.includes("ایستگاه فعلی"), "no station readout");
+  } finally {
+    restore();
+  }
+});
+
+test("the key switch rides on every route and marks the pressed door", () => {
+  for (const [hash, expected] of [
+    ["#/hub", null],
+    ["#/levels/3", "level-3"],
+    ["#/levels", null],
+    ["#/bank", "bank"],
+    ["#/dashboard", null]
+  ]) {
+    const { html, restore } = renderWithoutFetch(hash);
+    try {
+      assert.ok(html.includes('class="key-dock"'), `the dock is missing on ${hash}`);
+      assert.equal((html.match(/class="dock-key /g) ?? []).length + (html.match(/class="dock-key"/g) ?? []).length, 6, `six doors expected on ${hash}`);
+      // A door is pressed only where the route matches it. On the level chooser
+      // nothing is pressed, and asserting otherwise would make the switch lie.
+      const pressed = (html.match(/is-pressed/g) ?? []).length;
+      if (expected) {
+        assert.ok(pressed >= 1, `nothing reads as pressed on ${hash}`);
+        const door = DOORS.find((item) => item.id === expected);
+        assert.ok(html.includes(doorHref(door)), `the door for ${expected} is not linked on ${hash}`);
+      } else if (hash !== "#/hub") {
+        assert.equal(pressed, 0, `${hash} should press no door`);
+      }
+    } finally {
+      restore();
+    }
+  }
+});
+
+test("the switch behaves like a switch: wrap, direction and the pressed route", () => {
+  assert.equal(DOORS.length, 6);
+  assert.deepEqual(DOORS.map((door) => door.id), ["level-1", "level-2", "level-3", "level-4", "level-5", "bank"]);
+  assert.equal(nextDoorIndex(0, 1), 1);
+  assert.equal(nextDoorIndex(5, 1), 0, "the rail wraps forward");
+  assert.equal(nextDoorIndex(0, -1), 5, "the rail wraps backward");
+  assert.equal(nextDoorIndex(2, 3), 5);
+  assert.equal(nextDoorIndex(2, -3), 5);
+  // Arrow keys follow reading order, so RTL mirrors them.
+  assert.equal(doorStepForArrow("ArrowRight", false), 1);
+  assert.equal(doorStepForArrow("ArrowLeft", false), -1);
+  assert.equal(doorStepForArrow("ArrowRight", true), -1);
+  assert.equal(doorStepForArrow("ArrowLeft", true), 1);
+  assert.equal(doorStepForArrow("Escape", true), 0);
+  // Active matching is by route, including the level record.
+  assert.equal(isDoorActive(DOORS[2], { view: "levels", recordId: "3" }), true);
+  assert.equal(isDoorActive(DOORS[2], { view: "levels", recordId: "4" }), false);
+  assert.equal(isDoorActive(DOORS[5], { view: "bank", recordId: null }), true);
+  assert.equal(isDoorActive(DOORS[5], { view: "levels", recordId: null }), false);
+  assert.equal(doorHref(DOORS[0]), "#/levels/1");
+  assert.equal(doorHref(DOORS[5]), "#/bank");
 });

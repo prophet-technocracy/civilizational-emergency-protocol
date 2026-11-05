@@ -1,19 +1,20 @@
-# Handoff — five levels, the HMMT bank, the cap ladder, and the mother-file coverage map
+# Handoff — one centre and six doors, the five levels, the HMMT bank, and the mother-file coverage map
 
 Replace this note when it goes stale. Scope authority: `README.md`, `docs/**`, `AGENTS.md`, `TASKS.md`.
 
 ## State
 
-- Branch: `arena/a8e95163-civilizational-emergency-proto`, branched from `main` at `a78a1ed` (PR #13 merged).
-- `npm test` → **257 tests, 0 failures** (api 66, web 92 incl. the 5 demo-contract checks, domain-models 68, schemas 24, localization 7).
-- `npm run build` → 514 kB JS (146 kB gzip), 65 kB CSS (12 kB gzip).
-- axe-core over `#/principles` × light/dark × fa/en at 1440 px and 390 px: **0 violations**, no horizontal page overflow (the coverage table wraps on phones). `#/bank` had the same result in the previous batch; both routes are in `scripts/audit/a11y.mjs`.
+- Branch: `arena/a214f05b-civilizational-emergency-proto`, branched from `main` at `b3670dc` (PR #15 merged).
+- `npm test` → **260 tests, 0 failures** (api 66, web 95 incl. the key-dock/hub checks, domain-models 68, schemas 24, localization 7).
+- `npm run build` → 526 kB JS (149 kB gzip), 76 kB CSS (15 kB gzip).
+- axe-core over **18 routes** (landing `""`, `hub`, `levels`, `levels/3`, the bank, principles, the twelve modules) × light/dark × fa/en: **0 violations**. 390 px: no horizontal page overflow, and the key dock keeps seven slots on one row.
 - No open PR. PRs are opened only when asked; never merge them.
 
 ## What exists now
 
 | Layer | Where | Note |
 |---|---|---|
+| Hub + key dock | `apps/web/src/modules/Hub.jsx`, `apps/web/src/components/KeyDock.jsx`, `apps/web/styles.css` dock block, `localeStrings().hub` | `#/hub` is the landing (`""` and `#/` resolve to it): MY.X centre, six doors (levels 1–5 + the bank), station pill, guard callout, twelve-module strip. The fixed dock is on every route, one tab stop, `aria-current` on the pressed door, RTL-mirrored arrows. Pure helpers `nextDoorIndex`, `doorStepForArrow`, `doorHref`, `isDoorActive`, `DOORS` are exported and unit-tested. Rationale + self-criticism with ratings: `docs/ux/ONE-CENTRE-SIX-DOORS.md` |
 | Influence / authority engine | `packages/domain-models/influence.mjs` (36 tests) | ballots, professional weight, endorsement reach, qualification, delegation, posthumous mandate, `authorizeAction` |
 | HMMT monetary engine | `packages/domain-models/hmmt.mjs` (68 tests) | definition, `REFERENCE_DATA`, tiers, `HAIRCUT_POLICY` (HC-DRAFT-01), basket, ceiling, convert, redeem, proof of reserve, phases, **cap policies** (`CAP_POLICIES`, `CAP_POLICY_DEFAULT_ID`, `CAP_INVARIANTS`, `resolveLevelCap`, `checkLevelCap`, `capLadder`), invariants |
 | Shared synthetic records | `apps/api/src/data/civic-levels.mjs` | one record set behind all five levels, workflow `WF-SYN-001` |

@@ -36,7 +36,9 @@ The repository owner currently has the technical ability to administer the GitHu
 
 ## Five-level civic operating system
 
-The prototype now opens on a **five-profile chooser** (`#/levels`); `#/bank` is the HMMT monetary design described below, and `#/principles` reads the draft national covenant principle by principle against what the prototype actually does. Each profile is a different interface over the same synthetic records — not the same dashboard recoloured. The twelve modules below remain the library behind those profiles.
+The prototype opens on the **hub** (`#/hub`): one centre, six doors. A fixed key switch on the bottom edge carries a bold **MY.X** centre — the hub, and the station readout that says which level you are standing on — flanked by six doors: levels 1–5 and the HMMT bank. Each door states only what its own node moderates (the action count that level allows, whether it holds a ballot, its one-line purpose), and the level pages behind them are different interfaces over the same synthetic records — not one dashboard recoloured. `#/levels` is the side-by-side comparison, `#/bank` the monetary design described below, `#/principles` the draft national covenant read principle by principle against what the prototype does. The twelve modules below are the library behind those doors, and the sidebar says so instead of repeating them.
+
+![The hub: one centre, six doors, and the key switch that rides on every page](docs/screenshots/hub.png)
 
 | # | Level | What it is for | Holds a ballot |
 |---|---|---|---|
@@ -146,6 +148,10 @@ Figures, sources, dates and the unverified list are in
 [docs/economics/HMMT-FACT-CHECK.md](docs/economics/HMMT-FACT-CHECK.md); the bank
 architecture, governance and threat model are in
 [docs/economics/HMMT-DESIGN.md](docs/economics/HMMT-DESIGN.md).
+
+### Why the interface is one centre and six doors
+
+The diagnosis, the per-door contract, the keyboard and screen-reader behaviour, and a self-criticism with explicit ratings are in [`docs/ux/ONE-CENTRE-SIX-DOORS.md`](docs/ux/ONE-CENTRE-SIX-DOORS.md). Short version: the prototype had twelve modules, a chooser, and no answer to *where am I standing and what may I do here*. The key dock answers both in one glance, and the hub states what it refuses to do before the reader asks.
 
 ### The mother file, principle by principle (`#/principles`)
 
