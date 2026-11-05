@@ -1,5 +1,7 @@
 # Civilizational Emergency Protocol (CEP)
 
+[![CI](https://github.com/prophet-technocracy/civilizational-emergency-protocol/actions/workflows/ci.yml/badge.svg)](https://github.com/prophet-technocracy/civilizational-emergency-protocol/actions/workflows/ci.yml)
+
 > Open civic infrastructure for peaceful, democratic, accountable and human-centred transformation.
 
 CEP is an open-source initiative exploring how people can coordinate knowledge, deliberation, public-interest projects and accountable institutions—especially during periods of profound social or political transition.
