@@ -24,6 +24,7 @@ let localeStrings;
 let SearchOverlay;
 let ErrorBoundary;
 let CrashFallback;
+let readTheme;
 let primeApiCache;
 let UI;
 let MODULES;
@@ -51,6 +52,7 @@ before(async () => {
         'export { default as App, readRouteFromHash, routeMeta } from "./src/App.jsx";',
         'export { primeApiCache } from "./src/lib/api.js";',
         'export { localeStrings } from "./src/locales/index.js";',
+        'export { readTheme } from "./src/lib/theme.js";',
         'export { UI, MODULES, t, formatNumber, labelFor, ENUM_LABELS, formatDate, formatRatio } from "./src/i18n.js";',
         'export { Toast } from "./src/components/ui.jsx";',
         'export { default as SearchOverlay } from "./src/components/SearchOverlay.jsx";',
@@ -77,6 +79,7 @@ before(async () => {
   SearchOverlay = bundle.SearchOverlay;
   ErrorBoundary = bundle.ErrorBoundary;
   CrashFallback = bundle.CrashFallback;
+  readTheme = bundle.readTheme;
   primeApiCache = bundle.primeApiCache;
   UI = bundle.UI;
   MODULES = bundle.MODULES;
@@ -1366,4 +1369,37 @@ test("a render error shows a fallback with a heading, a sentence and a way out",
     assert.match(html, /<button type="button" class="btn btn--primary"/, `${lang}: a retry control`);
     assert.ok(html.includes(home));
   }
+});
+
+/* ------------------------- theme before the first paint ------------------------ */
+
+test("the theme follows the operating system until the reader chooses", () => {
+  const originalWindow = globalThis.window;
+  let stored = null;
+  let systemDark = true;
+  globalThis.window = {
+    localStorage: { getItem: () => stored, setItem() {} },
+    matchMedia: () => ({ matches: systemDark, addEventListener() {}, removeEventListener() {} })
+  };
+  try {
+    assert.equal(readTheme(), "dark", "OS dark with nothing stored must paint dark");
+    stored = "light";
+    assert.equal(readTheme(), "light", "an explicit choice always wins over the OS");
+    stored = null;
+    systemDark = false;
+    assert.equal(readTheme(), "light", "OS light with nothing stored must paint light");
+  } finally {
+    globalThis.window = originalWindow;
+  }
+});
+
+test("index.html settles language and theme before the app script runs", () => {
+  const html = readFileSync(join(WEB_ROOT, "index.html"), "utf8");
+  const head = html.slice(0, html.indexOf('<div id="root"'));
+  assert.match(head, /localStorage\.getItem\("cep\.theme"\)/, "the pre-paint script reads the stored theme");
+  assert.match(head, /localStorage\.getItem\("cep\.lang"\)/, "the pre-paint script reads the stored language");
+  assert.match(head, /prefers-color-scheme: dark/, "with nothing stored the OS decides");
+  assert.match(head, /setAttribute\("data-theme", theme\)/);
+  assert.match(head, /<meta name="color-scheme" content="light dark" \/>/);
+  assert.match(head, /try \{/, "storage may be disabled, so the read must be guarded");
 });

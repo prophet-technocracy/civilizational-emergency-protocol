@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { UI } from "./i18n.js";
 import { useDebounced, readStored, writeStored } from "./lib/api.js";
+import { readTheme, hasStoredTheme, systemTheme, THEME_COLOR } from "./lib/theme.js";
 import { Drawer, ProvenanceBody, Badge } from "./components/ui.jsx";
 import { useFocusTrap, prefersReducedMotion } from "./lib/focus.js";
 import { localeStrings } from "./locales/index.js";
@@ -79,7 +80,9 @@ const VIEWS = {
 
 export default function App() {
   const [lang, setLang] = useState(() => readStored("cep.lang", "fa"));
-  const [theme, setTheme] = useState(() => readStored("cep.theme", "light"));
+  // The inline script in index.html has already painted this theme; the state
+  // starts from the same rule so the two never disagree (issue #34).
+  const [theme, setTheme] = useState(() => readTheme());
   const [route, setRoute] = useState(() =>
     readRouteFromHash(typeof window === "undefined" ? "" : window.location.hash)
   );
@@ -110,8 +113,23 @@ export default function App() {
     root.setAttribute("data-theme", theme);
     writeStored("cep.lang", lang);
     writeStored("cep.theme", theme);
+    // The browser chrome should follow the page, not the other way round.
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", THEME_COLOR[theme] ?? THEME_COLOR.light);
     document.title = meta.title;
   }, [lang, theme, meta]);
+
+  // Until the reader chooses, the operating system stays in charge: a laptop that
+  // flips to dark at sunset takes the interface with it.
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return undefined;
+    const query = window.matchMedia("(prefers-color-scheme: dark)");
+    const sync = () => {
+      if (!hasStoredTheme()) setTheme(systemTheme());
+    };
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
 
   // The module drawer only exists below 900px; above it the sidebar is a
   // permanent landmark and must stay reachable.

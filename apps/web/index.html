@@ -3,12 +3,41 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#f3f6f4" />
     <meta
       name="description"
       content="نمونهٔ محلی و آزمایشی زیرساخت مدنی CEP؛ بدون دادهٔ واقعی یا ادعای تأییدشده."
     />
     <title>نمونهٔ مینی‌اپ CEP</title>
+    <script>
+      // Runs before the first paint. A reader with a stored dark theme or an
+      // English interface must not see a frame of light RTL first, and with
+      // nothing stored the operating system decides. An explicit choice always
+      // wins. Keep this block inline and dependency-free; if a Content-Security
+      // Policy is added later, hash or nonce it rather than moving it out.
+      (function () {
+        try {
+          var root = document.documentElement;
+          var lang = window.localStorage.getItem("cep.lang");
+          var theme = window.localStorage.getItem("cep.theme");
+          if (lang !== "fa" && lang !== "en") lang = "fa";
+          if (theme !== "light" && theme !== "dark") {
+            theme =
+              window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light";
+          }
+          root.setAttribute("lang", lang);
+          root.setAttribute("dir", lang === "fa" ? "rtl" : "ltr");
+          root.setAttribute("data-theme", theme);
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute("content", theme === "dark" ? "#101a24" : "#f3f6f4");
+        } catch (error) {
+          /* storage or matchMedia unavailable: the markup's own defaults stand */
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
