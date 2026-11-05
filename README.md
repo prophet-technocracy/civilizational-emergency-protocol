@@ -36,7 +36,7 @@ The repository owner currently has the technical ability to administer the GitHu
 
 ## Five-level civic operating system
 
-The prototype now opens on a **five-profile chooser** (`#/levels`). Each profile is a different interface over the same synthetic records — not the same dashboard recoloured. The twelve modules below remain the library behind those profiles.
+The prototype now opens on a **five-profile chooser** (`#/levels`); `#/bank` is the HMMT monetary design described below. Each profile is a different interface over the same synthetic records — not the same dashboard recoloured. The twelve modules below remain the library behind those profiles.
 
 | # | Level | What it is for | Holds a ballot |
 |---|---|---|---|
@@ -78,6 +78,75 @@ Nothing is persisted: no request is written back to the API, nothing goes to `lo
 
 ![Level 3: the ballot recomputed from live delegation toggles](docs/screenshots/level-3-interactive.png)
 
+## HMMT: a toman-denominated unit (design proposal)
+
+`#/bank` is a second entry point beside the five levels, and it answers one
+question: **what would it take to issue a transparent national unit, and what is
+the arithmetic that stops it from being a poster?**
+
+One unit is defined as **1 HMMT = 1,000,000,000,000 toman** («هزار میلیارد تومان»).
+The screen puts three numbers next to each other:
+
+| Number | Value | Status of the underlying figure |
+|---|---|---|
+| Gross in-situ resource wealth | USD 27.3 tn | source-reported (official Iranian estimate), **not backing** |
+| Net backing after the haircut chain | USD 703.8 bn | 2.58 % of the headline survives |
+| Supply ceiling | **189,544 HMMT** | = net backing ÷ USD value of one unit |
+
+The popular guess of "20–30 trillion dollars of national wealth" is that
+27.3 tn figure. It is a gross in-situ valuation, and treating it as backing
+would produce a 7,352,027 HMMT ceiling — 39× the defensible number. What the
+design does instead:
+
+- **Three rules that are not configurable.** No token without a matching toman
+  deposit (no premine, pre-sale or airdrop); circulating supply never exceeds
+  the asset-backed ceiling; a gross figure is never used as backing.
+- **A visible haircut chain** (recovery ×0.25, extraction cost −45 %, time value
+  ×0.75, legal transferability ×0.5, verification ×0.5), with each step's factor
+  and reason on screen, and unverified tiers contributing exactly zero.
+- **Two ratios kept apart.** `reserveRatio` (toman per circulating token, ≥ 1)
+  answers "can holders be paid today?"; `assetCoverage` answers "is the ceiling
+  honest?".
+- **Redemption that queues, never freezes.** An emergency pause stops new
+  issuance only; a queued request is paid in timestamp order with its funds
+  earmarked.
+- **Ceiling asymmetry.** Lowering the ceiling is immediate; raising it needs a
+  supermajority and a 30-day timelock, so a rial collapse cannot silently expand
+  the supply.
+- **A cap that follows the civic level.** One flat per-person figure would let an
+  observer hold units and tax a registered entity at a private individual's
+  ceiling. Three draft policies are in the code (`DEC-SYN-0042`, none adopted):
+  `0 / 0.05 / 0.05 / 1,000 / 0.05` HMMT across levels 1–5, a default variant
+  that scales level 4 as 20 % of an audited budget (bounded by a 1,000 HMMT hard
+  cap and 25 % of the ceiling) and a pilot variant at a fifth of that. Levels 2
+  and 3 are equal in every policy, so participation never buys headroom, and an
+  observer's cap is zero. Caps limit acquisition only — redemption is never
+  capped by a level.
+- **A published exit path off TON.** Stage one is a TON Jetton (TEP-74); the move
+  to a sovereign chain happens only after a dual-chain proof-of-reserve root, a
+  unilateral exit for holders, and an independent contract review.
+
+The simulator on the page takes an amount, a civic level and a cap policy, and
+performs four operations against synthetic fixtures: a conversion inside the
+level cap, a conversion past it (refused, with the cap and the headroom stated),
+a redemption inside the daily cash window, and one that must queue. Nothing is minted, no wallet is used, no payment is made, and
+no identity data is written anywhere.
+
+![The haircut chain: 27.3 tn in the ground becomes 703.8 bn of backing](docs/screenshots/hmmt-haircut-chain.png)
+
+![The cap ladder: five levels, three draft policies, and the proof each level needs](docs/screenshots/hmmt-cap-ladder.png)
+
+![The simulator refusing a conversion past the level cap](docs/screenshots/hmmt-level-cap-refusal.png)
+
+![Level 4 for a registered body: the cap comes from its audited budget, and 500 HMMT is refused at 240](docs/screenshots/hmmt-entity-cap-refusal.png)
+
+![The simulator refusing a conversion past the ceiling](docs/screenshots/hmmt-simulator.png)
+
+Figures, sources, dates and the unverified list are in
+[docs/economics/HMMT-FACT-CHECK.md](docs/economics/HMMT-FACT-CHECK.md); the bank
+architecture, governance and threat model are in
+[docs/economics/HMMT-DESIGN.md](docs/economics/HMMT-DESIGN.md).
+
 ### Persian-first localization
 
 Copy lives in `apps/web/src/locales/fa/` and `apps/web/src/locales/en/`; the terminology authority is [`docs/localization/PERSIAN-GLOSSARY.md`](docs/localization/PERSIAN-GLOSSARY.md) with the rules in [`docs/localization/PERSIAN-STYLE-GUIDE.md`](docs/localization/PERSIAN-STYLE-GUIDE.md). `apps/web/test/localization.test.mjs` fails the build on an Arabic `ي`/`ك`, a missing half-space, an untranslated string, a missing English key, or a discouraged synonym. The machine-readable glossary is `packages/localization/glossary.mjs`, so the document and the tests cannot drift apart.
@@ -108,12 +177,12 @@ npm install
 npm run dev
 ```
 
-The web app is served by Vite on port 5173 (Persian RTL by default, English LTR switchable) and proxies read-only `/api` requests to the local Node API on port 3001. If a preview environment needs the application on a fixed port, set `WEB_PORT` (Vite) and `API_PORT`/`PORT` (Node API) — for example `PORT=3002 WEB_PORT=3001 API_PORT=3002 npm run dev` serves the app on 3001 and the API on 3002, with the proxy following automatically. Port 3001 alone serves JSON, so it is not a usable app preview on its own. The prototype collects no user information: no accounts, cookies, analytics, or logs of any kind.
+The web app is served by Vite on port 5173 (Persian RTL by default, English LTR switchable) and proxies read-only `/api` requests to the local Node API on port 3001. If a preview environment needs the application on a fixed port, set `WEB_PORT` (Vite) and `API_PORT`/`PORT` (Node API) — the value the preview proxies must be the **web** port, because the API only serves JSON. For example `PORT=3003 WEB_PORT=3002 API_PORT=3003 npm run dev` serves the app on 3002 and the API on 3003, with Vite proxying `/api` and `/health` to it. Pointing a preview at the API port shows `{"error":"not_found"}` and is not a usable app preview. The prototype collects no user information: no accounts, cookies, analytics, or logs of any kind.
 
 Verification:
 
 ```sh
-npm test         # 203 tests: API contract/security, response-envelope contract,
+npm test         # 254 tests: API contract/security, response-envelope contract,
                  # domain models, schemas, localization, SSR render + a11y guards
 npm run validate:csv   # 77-column historical-dossier gate validator
 npm run build    # production bundle check
@@ -133,11 +202,15 @@ Interface checks that run inside `npm test` (no browser required):
 - the same proposal qualifying under one weighting policy and failing the other,
 - an interactive panel on every level whose honesty note and reset control are asserted in server-side rendering,
 - a label for every interactive form field,
-- a deliberately refused action on levels 4 and 5, so the authority boundary stays testable in the interface.
+- a deliberately refused action on levels 4 and 5, so the authority boundary stays testable in the interface,
+- the bank rendering its ceiling, its net backing and its "not legal tender" statement with `fetch` disabled, and never rendering the no-haircut ceiling the gross headline would produce,
+- a label for every bank simulator field, and the API refusing an unknown action or a non-positive amount instead of guessing,
+- the per-level cap ladder: every policy named, all five levels named, the six invariants rendered, and the data-level properties (an observer's cap is zero, levels 2 and 3 are equal, an entity's cap never sits below a person's) asserted for each policy.
 
-The same twelve views were additionally audited in a real headless Chromium with axe-core (WCAG 2.1 A/AA + best practice) in light and dark mode, plus the open mobile navigation drawer at 390 px; the result is zero violations. A keyboard-only walkthrough drives the same build: skip link, focus trap and Escape in the search overlay and the provenance drawer, focus return to the control that opened them, an inert off-canvas navigation when closed, and focus moving to the new view after a route change (15/15 checks). A layout sweep of all twelve views in both languages, both themes and four viewport widths (1440 / 1024 / 768 / 390 px) found no horizontal scrolling, no offscreen elements and no clipped text. Contrast failures and undersized hit areas found that way are now part of the render tests so they cannot return.
+The same twelve views and `#/bank` were additionally audited in a real headless Chromium with axe-core (WCAG 2.1 A/AA + best practice) in light and dark mode, in both languages, plus the open mobile navigation drawer and the bank at 390 px; the result is zero violations. A keyboard-only walkthrough drives the same build: skip link, focus trap and Escape in the search overlay and the provenance drawer, focus return to the control that opened them, an inert off-canvas navigation when closed, and focus moving to the new view after a route change (15/15 checks). A layout sweep of all twelve views in both languages, both themes and four viewport widths (1440 / 1024 / 768 / 390 px) found no horizontal scrolling, no offscreen elements and no clipped text. Contrast failures and undersized hit areas found that way are now part of the render tests so they cannot return.
 
-See [docs/architecture/](docs/architecture/) for the architecture, module map, data flow and decisions, and [docs/security/THREAT-MODEL-AND-AUDIT.md](docs/security/THREAT-MODEL-AND-AUDIT.md) for the independent audit. Public deployment remains **gated** pending human review.
+See [docs/architecture/](docs/architecture/) for the architecture, module map, data flow and decisions,
+[docs/economics/](docs/economics/) for the HMMT fact-check and design, and [docs/security/THREAT-MODEL-AND-AUDIT.md](docs/security/THREAT-MODEL-AND-AUDIT.md) for the independent audit. Public deployment remains **gated** pending human review.
 
 ## Agent task board
 

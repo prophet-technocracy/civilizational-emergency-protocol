@@ -413,3 +413,6 @@ export function validateEntityShape(entityName, record) {
 
 // Influence, authority and qualification engine (Phase D).
 export * from "./influence.mjs";
+
+// HMMT supply, backing and conversion arithmetic (monetary design).
+export * from "./hmmt.mjs";

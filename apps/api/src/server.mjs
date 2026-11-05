@@ -10,6 +10,7 @@ import { archiveBoundary, archivePeriods, archiveDisciplines, archiveRegions, ar
 import { sourceDocuments, evidenceClaims, unresolvedQuestions } from "./data/evidence.mjs";
 import { verificationBands, accessPolicies, rejectedProofCatalogue } from "./data/assurance.mjs";
 import { buildLevelDashboard, buildLevelsIndex, buildInfluenceOverview, buildInfluenceGuards, authorizeAction } from "./data/civic-levels.mjs";
+import { buildHmmtOverview, buildHmmtSupply, buildHmmtBacking, buildHmmtReserve, buildHmmtLedger, buildHmmtCaps, simulateHmmt } from "./data/hmmt.mjs";
 import { evaluateAssurancePolicy, validateClaimProvenance, calculateTimelineMetrics, validateHistoricalDossierCsv, computeSafeguardProfile } from "@cep/schemas";
 import { matchesBilingualQuery, normalizeSearchText } from "@cep/localization";
 
@@ -589,6 +590,24 @@ function routeTable(params, pathname) {
     case "/api/v1/influence":
       return { status: 200, body: envelope(buildInfluenceOverview()) };
 
+    case "/api/v1/hmmt":
+      return { status: 200, body: envelope(buildHmmtOverview()) };
+
+    case "/api/v1/hmmt/supply":
+      return { status: 200, body: envelope(buildHmmtSupply()) };
+
+    case "/api/v1/hmmt/backing":
+      return { status: 200, body: envelope(buildHmmtBacking()) };
+
+    case "/api/v1/hmmt/reserve":
+      return { status: 200, body: envelope(buildHmmtReserve()) };
+
+    case "/api/v1/hmmt/ledger":
+      return { status: 200, body: envelope(buildHmmtLedger()) };
+
+    case "/api/v1/hmmt/caps":
+      return { status: 200, body: envelope(buildHmmtCaps()) };
+
     case "/api/v1/accountability":
       return {
         status: 200,
@@ -818,6 +837,51 @@ export function createServer() {
       }
       const result = proposal.results.find((item) => item.policyId === policyId);
       sendJson(response, 200, envelope({ proposal: { id: proposal.id, title: proposal.title, domain: proposal.domain, contributions: proposal.contributions }, result }));
+      return;
+    }
+
+    // /api/v1/hmmt/simulate?action=convert|redeem&amount=&level=&policy=&entity=
+    //
+    // A conversion carries a civic level because the cap depends on it; a
+    // redemption does not, because an exit is never gated by a level.
+    const hmmtMatch = pathname.match(/^\/api\/v1\/hmmt\/simulate$/);
+    if (hmmtMatch) {
+      const action = String(query.action ?? "");
+      if (!["convert", "redeem"].includes(action)) {
+        sendJson(response, 400, { error: "unknown_action", allowed: ["convert", "redeem"] });
+        return;
+      }
+      const amount = Number(query.amount);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        sendJson(response, 400, { error: "invalid_amount", hint: "amount must be a positive number" });
+        return;
+      }
+      const caps = buildHmmtCaps();
+      const policyId = query.policy ? String(query.policy) : caps.defaultPolicyId;
+      if (!caps.policies.some((policy) => policy.id === policyId)) {
+        sendJson(response, 400, { error: "unknown_policy", allowed: caps.policies.map((policy) => policy.id) });
+        return;
+      }
+      let level = null;
+      if (action === "convert") {
+        level = Number(query.level);
+        if (!Number.isInteger(level) || level < 1 || level > 5) {
+          sendJson(response, 400, { error: "invalid_level", allowed: [1, 2, 3, 4, 5], hint: "a conversion must name its civic level" });
+          return;
+        }
+      }
+      if (query.entity && !caps.entities.some((entity) => entity.id === String(query.entity))) {
+        sendJson(response, 400, { error: "unknown_entity", known: caps.entities.map((entity) => entity.id) });
+        return;
+      }
+      const simulation = simulateHmmt({
+        action,
+        amount,
+        level,
+        policyId,
+        entityId: query.entity ? String(query.entity) : undefined
+      });
+      sendJson(response, 200, envelope({ ...simulation, simulationOnly: true }));
       return;
     }
 

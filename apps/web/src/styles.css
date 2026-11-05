@@ -838,6 +838,10 @@ html[lang="en"] .stat__value--num {
 .btn--ghost.is-active {
   background: var(--teal-200);
   border-color: var(--teal-500);
+  /* The selected state keeps its light teal fill in both themes, so the text
+     colour is pinned dark instead of inheriting --ink-900 (light in dark mode,
+     which failed contrast). */
+  color: #0b2b3a;
 }
 
 .btn--block {
@@ -3831,6 +3835,21 @@ html[dir="rtl"] .drawer {
   min-width: 0;
 }
 
+.bank .badge {
+  white-space: nowrap;
+}
+
+/* Row headers on this page are sentences, not column labels: the global
+   uppercase + letter-spacing treatment would shout them. */
+.bank .data-table tbody th {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.8rem;
+  color: var(--ink-900);
+  background: transparent;
+  border-block-end: 1px solid var(--border);
+}
+
 .btn--sm {
   padding: 0.2rem 0.5rem;
   font-size: 0.75rem;
@@ -3854,5 +3873,199 @@ html[dir="rtl"] .drawer {
 
   .sim__grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ==========================================================================
+   HMMT bank screen (#/bank)
+   The page is deliberately number-forward: supply ceiling, net backing and the
+   reserve ratios are the first thing read, and the simulator sits below them.
+   ========================================================================== */
+
+.bank {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
+.bank .section-head {
+  margin-block-end: 0;
+}
+
+.haircut-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.haircut-stack .card {
+  margin-block-end: 0;
+}
+
+.sim-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.9rem;
+  align-items: start;
+}
+
+.sim-form > .btn-row {
+  grid-column: 1 / -1;
+}
+
+/* The preset row fills the width left over by the selectors, so the form does
+   not leave a hole next to three short buttons. */
+.sim-form > .field--presets {
+  grid-column: span 2;
+}
+
+.sim__result {
+  margin-block-start: 1rem;
+  padding-block-start: 0.9rem;
+  border-block-start: 1px solid var(--border);
+}
+
+.sim__result:empty {
+  display: none;
+}
+
+.sim__result .kv {
+  margin-block-start: 0.5rem;
+}
+
+.bank .badge {
+  white-space: nowrap;
+}
+
+/* Row headers on this page are sentences, not column labels: the global
+   uppercase + letter-spacing treatment would shout them. */
+.bank .data-table tbody th {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.8rem;
+  color: var(--ink-900);
+  background: transparent;
+  border-block-end: 1px solid var(--border);
+}
+
+.btn--sm {
+  min-height: 30px;
+  padding-inline: 0.6rem;
+  font-size: 0.76rem;
+}
+
+.bank .data-table td.small,
+.bank .data-table th.small {
+  font-weight: 400;
+}
+
+@media print {
+  .bank .data-table {
+    font-size: 0.7rem;
+  }
+}
+
+/* ---------------------- per-level caps (سقف هر سطح) ---------------------- */
+
+.bank .caps-policy-head {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.78rem;
+}
+
+.caps-policy-head__name {
+  display: block;
+  color: var(--ink-900);
+}
+
+.caps-policy-head__meta {
+  display: block;
+  margin-block-start: 0.15rem;
+  font-size: 0.66rem;
+  font-weight: 400;
+  color: var(--ink-300);
+}
+
+.caps-level {
+  white-space: nowrap;
+}
+
+.caps-value {
+  display: block;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.caps-req {
+  display: block;
+  margin-block-start: 0.2rem;
+  max-inline-size: 26ch;
+}
+
+.caps-inline {
+  white-space: nowrap;
+}
+
+.caps-note {
+  margin-block-start: 0.6rem;
+}
+
+/* Under 720px a four-column comparison table would only scroll sideways, so the
+   same ladder is stacked per level instead. Both views read from the same data. */
+.caps-mobile {
+  display: none;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 0.75rem;
+}
+
+@media (max-width: 720px) {
+  section[aria-labelledby="bank-caps"] .table-wrap {
+    display: none;
+  }
+
+  .caps-mobile {
+    display: grid;
+  }
+
+  .caps-mobile__level {
+    border: 1px solid var(--line-200);
+    border-radius: 0.6rem;
+    background: var(--surface-200);
+    padding: 0.7rem 0.8rem;
+  }
+
+  .caps-mobile__title {
+    margin: 0 0 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .caps-mobile__rows {
+    margin: 0;
+  }
+
+  .caps-mobile__row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.25rem 0.75rem;
+    padding-block: 0.4rem;
+    border-block-start: 1px solid var(--line-200);
+  }
+
+  .caps-mobile__row:first-child {
+    border-block-start: 0;
+  }
+
+  .caps-mobile__row dt {
+    font-size: 0.78rem;
+    color: var(--ink-500);
+    padding-inline-end: 0.5rem;
+    text-wrap: pretty;
+  }
+
+  .caps-mobile__row dd {
+    margin: 0;
+    text-align: end;
   }
 }

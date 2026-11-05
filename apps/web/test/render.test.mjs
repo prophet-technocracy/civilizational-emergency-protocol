@@ -89,6 +89,7 @@ before(async () => {
     "/api/v1/digital-legacy",
     "/api/v1/levels",
     "/api/v1/influence",
+    "/api/v1/hmmt",
     ...["1", "2", "3", "4", "5"].flatMap((id) => [
       `/api/v1/levels/${id}?policy=P-OPEN-DRAFT`,
       `/api/v1/levels/${id}?policy=P-RESTRICTIVE-DRAFT`
@@ -147,6 +148,9 @@ test("route parsing defaults to the five-level chooser and accepts record ids", 
     recordId: "SYN-HIST-001"
   });
   assert.deepEqual(readRouteFromHash("#/not-a-module"), { view: "dashboard", recordId: null });
+  // The bank is its own surface, not a module and not a level.
+  assert.deepEqual(readRouteFromHash("#/bank"), { view: "bank", recordId: null });
+  assert.deepEqual(readRouteFromHash("#/bank/anything"), { view: "bank", recordId: null });
 });
 
 test("the shell renders Persian RTL by default with the demo banner and all twelve sections", () => {
@@ -770,5 +774,103 @@ test("the interactive ballot starts from the same formula as the server view", (
     assert.match(html, /ثبت‌نشده/);
   } finally {
     restore();
+  }
+});
+
+/* --------------------------------- HMMT bank -------------------------------- */
+
+test("the shell offers the bank as its own navigation entry", () => {
+  const { html, restore } = renderWithoutFetch();
+  try {
+    assert.match(html, /href="#\/bank"/);
+    assert.ok(html.includes("بانک HMMT"), "the bank nav label is missing");
+  } finally {
+    restore();
+  }
+});
+
+test("the bank renders the ceiling, the haircut chain and the refusals without network access", () => {
+  const { html, restore } = renderWithoutFetch("#/bank");
+  try {
+    const bank = fixtures.get("/api/v1/hmmt").data;
+    const ceilingText = new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 0 }).format(bank.supply.ceiling.tokens);
+    // Supply ceiling in tokens, and circulating supply as a separate number.
+    assert.ok(html.includes(ceilingText), "the supply ceiling number is missing");
+    assert.ok(html.includes("HMMT"), "units are missing");
+    // The gross figure and the net backing figure must both be visible, so the
+    // 27.3 trillion headline can never be read as backing.
+    assert.ok(html.includes("۲۷.۳ تریلیون") || html.includes("۲۷٫۳ تریلیون"), "the gross resource figure is missing");
+    assert.ok(html.includes("۷۰۳.۸ میلیارد") || html.includes("۷۰۳٫۸ میلیارد"), "the net backing figure is missing");
+    // The proposal posture is stated on the page, not only in the payload.
+    assert.ok(html.includes("پول قانونی"), "the not-legal-tender statement is missing");
+    assert.ok(html.includes("طراحی پیشنهادی"), "the design-proposal badge is missing");
+    // Proof of reserve keeps two ratios apart.
+    assert.ok(html.includes("نسبت ذخیرهٔ تومانی"));
+    assert.ok(html.includes("پوشش دارایی"));
+    // Every simulator field has a matching label.
+    for (const id of ["bank-action", "bank-amount"]) {
+      assert.ok(html.includes(`id="${id}"`), `missing field ${id}`);
+      assert.ok(html.includes(`for="${id}"`), `field ${id} has no label`);
+    }
+    // The ledger is visibly synthetic.
+    assert.ok(html.includes("دفتر کل ساختگی"));
+  } finally {
+    restore();
+  }
+});
+
+test("the bank never presents a gross resource figure as backing", () => {
+  const bank = fixtures.get("/api/v1/hmmt").data;
+  const { html, restore } = renderWithoutFetch("#/bank");
+  try {
+    // 7,352,027 is the ceiling a no-haircut reading of 27.3 tn would produce.
+    assert.equal(html.includes("7,352,027"), false);
+    assert.equal(html.includes("۷٬۳۵۲٬۰۲۷"), false);
+    assert.ok(bank.supply.ceiling.tokens < 200000);
+    // The excluded figures are named, with the reason they are excluded.
+    const flat = JSON.stringify(bank.backing.excluded);
+    assert.match(flat, /flow|جریان/);
+    assert.match(flat, /private|خصوصی/);
+  } finally {
+    restore();
+  }
+});
+
+test("the bank publishes a cap ladder across the five levels and several policies", () => {
+  const { html, restore } = renderWithoutFetch("#/bank");
+  try {
+    const caps = fixtures.get("/api/v1/hmmt").data.caps;
+    assert.ok(caps.policies.length >= 3, "one hard-coded cap would not be flexible");
+    // Every policy is named, and the default is marked.
+    for (const policy of caps.policies) {
+      assert.ok(html.includes(policy.id), `policy ${policy.id} is missing from the table`);
+      assert.ok(policy.summary.fa.length > 20 && policy.summary.en.length > 20);
+    }
+    // All five levels appear, with their civic names, not just numbers.
+    for (const level of caps.levels) {
+      assert.ok(html.includes(level.title.fa), `level ${level.level} has no name`);
+    }
+    // The invariants that make the ladder honest are on the page, not only in data.
+    assert.ok(html.includes("مشارکت در حکمرانی هرگز سقف مالی نمی‌خرد"), "the participation invariant is missing");
+    assert.ok(html.includes("بازخرید هرگز به سطح وابسته نیست"), "the redemption invariant is missing");
+    // The simulator exposes level and policy as labelled controls.
+    for (const id of ["bank-level", "bank-policy"]) {
+      assert.ok(html.includes(`id="${id}"`), `missing control ${id}`);
+      assert.ok(html.includes(`for="${id}"`), `control ${id} has no label`);
+    }
+  } finally {
+    restore();
+  }
+});
+
+test("the ladder never pays for participation and never lets an observer hold units", () => {
+  const caps = fixtures.get("/api/v1/hmmt").data.caps;
+  for (const policy of caps.policies) {
+    const [l1, l2, l3, l4, l5] = policy.cells;
+    assert.equal(l1.capTokens, 0, `${policy.id} lets an observer hold units`);
+    assert.equal(l2.capTokens, l3.capTokens, `${policy.id} pays for participation`);
+    assert.equal(l5.capTokens, l2.capTokens, `${policy.id} gives decision-makers more`);
+    assert.equal(l5.disclosure, true, `${policy.id} lets a decision-maker hide a holding`);
+    assert.ok(l4.capTokens >= l2.capTokens, `${policy.id} caps an entity below a person`);
   }
 });
