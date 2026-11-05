@@ -3,7 +3,8 @@
 // overlay and the tests can read the same shapes without importing the whole
 // shell (issue #49). Rendering components stay in App.jsx: importing them here
 // would make a cycle, and the map of view -> component is the shell's job.
-import { MODULES } from "../i18n.js";
+import { MODULES, t, formatNumber } from "../i18n.js";
+import { localeStrings } from "../locales/index.js";
 
 // The five civic levels are the entry point; the twelve modules remain the
 // library behind them. `#/levels` is the profile chooser, `#/levels/3` one level.
@@ -18,6 +19,9 @@ export const HUB_VIEW = "hub";
 // not off the six doors — the doors are levels, these are work.
 export const PROGRAMME_VIEW = "programme";
 export const REFERENDUM_VIEW = "referendum";
+// An address that resolves to nothing gets a page that says so, instead of a
+// plausible-looking wrong page (issue #39).
+export const NOT_FOUND_VIEW = "not-found";
 
 export const BANK_MODULE = {
   id: BANK_VIEW,
@@ -77,10 +81,14 @@ export function readRouteFromHash(hash) {
   const raw = String(hash ?? "").replace(/^#\/?/, "");
   const [viewId, recordId] = raw.split("/");
   if (viewId === LEVELS_VIEW) {
-    return { view: LEVELS_VIEW, recordId: levelIdFromRecord(recordId) };
+    const id = levelIdFromRecord(recordId);
+    // `#/levels/9` names a level that does not exist: say so rather than
+    // quietly rendering the chooser the reader did not ask for.
+    if (recordId && !id) return { view: NOT_FOUND_VIEW, recordId: null };
+    return { view: LEVELS_VIEW, recordId: id };
   }
   if (viewId === BANK_VIEW) {
-    return { view: BANK_VIEW, recordId: null };
+    return recordId ? { view: NOT_FOUND_VIEW, recordId: null } : { view: BANK_VIEW, recordId: null };
   }
   if (viewId === PRINCIPLES_VIEW) {
     return { view: PRINCIPLES_VIEW, recordId: null };
@@ -89,17 +97,31 @@ export function readRouteFromHash(hash) {
     return { view: HUB_VIEW, recordId: null };
   }
   if (viewId === PROGRAMME_VIEW) {
-    return { view: PROGRAMME_VIEW, recordId: recordId ? decodeURIComponent(recordId) : null };
+    // Programme records are not addressable yet: a deep link would land on a
+    // page it cannot open, so it is a not-found rather than a silent success.
+    return recordId
+      ? { view: NOT_FOUND_VIEW, recordId: null }
+      : { view: PROGRAMME_VIEW, recordId: null };
   }
   if (viewId === REFERENDUM_VIEW) {
     return { view: REFERENDUM_VIEW, recordId: null };
   }
+  if (raw === "") return { view: HUB_VIEW, recordId: null };
   const known = MODULES.some((module) => module.id === viewId);
+  if (!known) return { view: NOT_FOUND_VIEW, recordId: null };
   return {
-    view: known ? viewId : raw === "" ? HUB_VIEW : "dashboard",
+    view: viewId,
     recordId: recordId ? decodeURIComponent(recordId) : null
   };
 }
+
+export const NOT_FOUND_MODULE = {
+  id: NOT_FOUND_VIEW,
+  number: null,
+  icon: "search",
+  title: { fa: "صفحهٔ یافت‌نشده", en: "Page not found" },
+  short: { fa: "یافت نشد", en: "Not found" }
+};
 
 /** The descriptor (number, icon, bilingual title) for a parsed route. */
 export function moduleFor(route) {
@@ -109,10 +131,62 @@ export function moduleFor(route) {
   if (route.view === HUB_VIEW) return HUB_MODULE;
   if (route.view === PROGRAMME_VIEW) return PROGRAMME_MODULE;
   if (route.view === REFERENDUM_VIEW) return REFERENDUM_MODULE;
+  if (route.view === NOT_FOUND_VIEW) return NOT_FOUND_MODULE;
   return MODULES.find((module) => module.id === route.view) ?? MODULES[0];
 }
 
 /** An in-app URL for a view (and optional record), used by every link. */
 export function hrefFor(viewId, recordId) {
   return recordId ? `#/${viewId}/${encodeURIComponent(recordId)}` : `#/${viewId}`;
+}
+
+/**
+ * Everything the frame says about where the reader is: the label used in the
+ * breadcrumb and the document title, the crumbs themselves (last one is the
+ * current page), and the composed <title>. Pure, so the shapes can be tested
+ * without rendering (issue #31).
+ */
+export function routeMeta(route, lang) {
+  const strings = localeStrings(lang);
+  const shell = strings.shell;
+  const suffix = lang === "fa" ? "سامانهٔ عامل مدنی CEP" : "CEP Civilizational Operating System";
+  const num = (value) => formatNumber(value, lang);
+  const home = { label: shell.home, href: hrefFor(HUB_VIEW) };
+  const page = (label, crumbs) => ({ label, title: `${label} · ${suffix}`, crumbs });
+  const view = route?.view ?? HUB_VIEW;
+
+  if (view === HUB_VIEW) {
+    // The hub is home: a crumb pointing at itself would be noise.
+    return page(strings.hub.navLabel, [{ label: strings.hub.navLabel }]);
+  }
+  if (view === NOT_FOUND_VIEW) {
+    const label = shell.notFound.title;
+    return { label, title: `${label} · ${suffix}`, crumbs: [home, { label }] };
+  }
+  if (view === LEVELS_VIEW) {
+    if (!route.recordId) {
+      return page(strings.levels.navLabel, [home, { label: strings.levels.navLabel }]);
+    }
+    const label = `${strings.hub.levelWord} ${num(route.recordId)} · ${strings.levels.titles[route.recordId] ?? ""}`.trim();
+    return page(label, [
+      home,
+      { label: strings.levels.navLabel, href: hrefFor(LEVELS_VIEW) },
+      { label }
+    ]);
+  }
+  if (view === BANK_VIEW) {
+    return page(strings.bank.navLabel, [home, { label: strings.bank.navLabel }]);
+  }
+  if (view === PRINCIPLES_VIEW) {
+    return page(strings.principles.navLabel, [home, { label: strings.principles.navLabel }]);
+  }
+  if (view === PROGRAMME_VIEW) {
+    return page(strings.programme.navLabel, [home, { label: strings.programme.navLabel }]);
+  }
+  if (view === REFERENDUM_VIEW) {
+    return page(strings.referendum.navLabel, [home, { label: strings.referendum.navLabel }]);
+  }
+  const module = moduleFor(route);
+  const label = `${num(String(module.number).padStart(2, "0"))} · ${t(module.title, lang)}`;
+  return page(label, [home, { label }]);
 }

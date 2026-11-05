@@ -1,5 +1,5 @@
-import { t, formatNumber } from "../i18n.js";
 import { Icon } from "./icons.jsx";
+import { hrefFor, HUB_VIEW } from "../lib/routes.js";
 
 // The application header: brand, language and theme, the demo banner and the
 // breadcrumb. Extracted from App.jsx (issue #49) so the shell only owns state.
@@ -15,8 +15,8 @@ export default function Header({
   onNavToggle,
   navToggleRef,
   onSearch,
-  onNavigate,
-  activeModule,
+  crumbs,
+  crumbLabel,
   inert
 }) {
   return (
@@ -34,7 +34,7 @@ export default function Header({
           <Icon name="menu" size={18} />
         </button>
 
-        <button type="button" className="brand" onClick={() => onNavigate("dashboard")}>
+        <a className="brand" href={hrefFor(HUB_VIEW)}>
           <span className="brand__mark" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.7">
               <circle cx="12" cy="12" r="3.1" />
@@ -47,7 +47,7 @@ export default function Header({
             </span>
             <span className="brand__sub">{dict.subtitle}</span>
           </span>
-        </button>
+        </a>
 
         <div className="app-header__tools">
           <button type="button" className="search-trigger" onClick={onSearch}>
@@ -109,17 +109,24 @@ export default function Header({
         </button>
       )}
 
-      <nav className="breadcrumbs" aria-label="Breadcrumb">
+      {/* Every crumb but the last is a real anchor: the browser's copy-link and
+          open-in-new-tab work, and the last one is the current page. */}
+      <nav className="breadcrumbs" aria-label={crumbLabel}>
         <ol>
-          <li>
-            <button type="button" className="crumb" onClick={() => onNavigate("dashboard")}>
-              {dict.breadcrumbHome}
-            </button>
-          </li>
-          <li aria-current="page">
-            {activeModule.number ? `${formatNumber(activeModule.number, lang)} · ` : ""}
-            {t(activeModule.title, lang)}
-          </li>
+          {crumbs.map((crumb, index) => {
+            const last = index === crumbs.length - 1;
+            return (
+              <li key={`${crumb.label}-${index}`} aria-current={last ? "page" : undefined}>
+                {last ? (
+                  <span className="crumb crumb--current">{crumb.label}</span>
+                ) : (
+                  <a className="crumb" href={crumb.href}>
+                    {crumb.label}
+                  </a>
+                )}
+              </li>
+            );
+          })}
         </ol>
       </nav>
     </header>

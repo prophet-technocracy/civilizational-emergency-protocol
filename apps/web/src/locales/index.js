@@ -12,7 +12,9 @@ import { hubEn } from "./en/hub.js";
 import { programmeFa } from "./fa/programme.js";
 import { programmeEn } from "./en/programme.js";
 import { referendumFa } from "./fa/referendum.js";
+import { shellFa } from "./fa/shell.js";
 import { referendumEn } from "./en/referendum.js";
+import { shellEn } from "./en/shell.js";
 
 export const LOCALES = Object.freeze({
   fa: Object.freeze({
@@ -22,7 +24,8 @@ export const LOCALES = Object.freeze({
     principles: principlesFa,
     hub: hubFa,
     programme: programmeFa,
-    referendum: referendumFa
+    referendum: referendumFa,
+    shell: shellFa
   }),
   en: Object.freeze({
     levels: levelsEn,
@@ -31,7 +34,8 @@ export const LOCALES = Object.freeze({
     principles: principlesEn,
     hub: hubEn,
     programme: programmeEn,
-    referendum: referendumEn
+    referendum: referendumEn,
+    shell: shellEn
   })
 });
 

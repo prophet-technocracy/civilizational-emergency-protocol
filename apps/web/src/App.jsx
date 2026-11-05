@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { UI, MODULES, t, formatNumber } from "./i18n.js";
+import { UI } from "./i18n.js";
 import { useDebounced, readStored, writeStored } from "./lib/api.js";
 import { Drawer, ProvenanceBody, Badge } from "./components/ui.jsx";
 import { useFocusTrap, prefersReducedMotion } from "./lib/focus.js";
@@ -23,6 +23,7 @@ import Principles from "./modules/Principles.jsx";
 import Programme from "./modules/Programme.jsx";
 import Referendum from "./modules/Referendum.jsx";
 import Hub from "./modules/Hub.jsx";
+import NotFound from "./modules/NotFound.jsx";
 import KeyDock from "./components/KeyDock.jsx";
 import Header from "./components/Header.jsx";
 import Sidebar from "./components/Sidebar.jsx";
@@ -34,8 +35,9 @@ import {
   HUB_VIEW,
   PROGRAMME_VIEW,
   REFERENDUM_VIEW,
-  moduleFor,
+  NOT_FOUND_VIEW,
   readRouteFromHash,
+  routeMeta,
   hrefFor
 } from "./lib/routes.js";
 
@@ -48,7 +50,9 @@ export {
   HUB_VIEW,
   PROGRAMME_VIEW,
   REFERENDUM_VIEW,
-  readRouteFromHash
+  NOT_FOUND_VIEW,
+  readRouteFromHash,
+  routeMeta
 };
 
 const VIEWS = {
@@ -68,7 +72,8 @@ const VIEWS = {
   bank: Bank,
   principles: Principles,
   programme: Programme,
-  referendum: Referendum
+  referendum: Referendum,
+  "not-found": NotFound
 };
 
 export default function App() {
@@ -92,7 +97,8 @@ export default function App() {
   const debouncedSearch = useDebounced(searchTerm, 220);
 
   const dict = UI[lang];
-  const activeModule = useMemo(() => moduleFor(route), [route]);
+  // Where the reader is, named once and shared by the title and the breadcrumb.
+  const meta = useMemo(() => routeMeta(route, lang), [route, lang]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -101,11 +107,8 @@ export default function App() {
     root.setAttribute("data-theme", theme);
     writeStored("cep.lang", lang);
     writeStored("cep.theme", theme);
-    document.title =
-      lang === "fa"
-        ? `${t(activeModule.title, "fa")} · سامانهٔ عامل مدنی CEP`
-        : `${t(activeModule.title, "en")} · CEP Civilizational Operating System`;
-  }, [lang, theme, activeModule]);
+    document.title = meta.title;
+  }, [lang, theme, meta]);
 
   // The module drawer only exists below 900px; above it the sidebar is a
   // permanent landmark and must stay reachable.
@@ -227,8 +230,8 @@ export default function App() {
         onNavToggle={() => setNavOpen((value) => !value)}
         navToggleRef={navToggleRef}
         onSearch={() => setSearchOpen(true)}
-        onNavigate={navigate}
-        activeModule={activeModule}
+        crumbs={meta.crumbs}
+        crumbLabel={localeStrings(lang).shell.breadcrumb}
         inert={overlayOpen}
       />
 
@@ -268,6 +271,7 @@ export default function App() {
               navigate={navigate}
               route={route}
               openProvenance={openProvenance}
+              onSearch={() => setSearchOpen(true)}
               initialRecordId={route.recordId}
             />
           )}

@@ -234,6 +234,9 @@ button {
   cursor: pointer;
   text-align: start;
   color: inherit;
+  /* The logo is a real link to the hub: no underline, but the anchor's own
+     affordances (new tab, copy link) stay. */
+  text-decoration: none;
 }
 
 .brand__mark {
@@ -453,6 +456,19 @@ button {
 
 .crumb:hover {
   text-decoration: underline;
+}
+
+/* The last crumb is the page the reader is on: it stays text, so it must not
+   carry the link colour that promises a destination. */
+.crumb--current,
+.crumb--current:hover {
+  color: inherit;
+  text-decoration: none;
+  cursor: default;
+}
+
+a.crumb {
+  text-decoration: none;
 }
 
 .app-body {

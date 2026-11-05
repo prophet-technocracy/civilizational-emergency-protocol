@@ -19,6 +19,8 @@ const BUNDLE = join(BUILD_DIR, "app.mjs");
 
 let App;
 let readRouteFromHash;
+let routeMeta;
+let localeStrings;
 let primeApiCache;
 let UI;
 let MODULES;
@@ -43,8 +45,9 @@ before(async () => {
   await build({
     stdin: {
       contents: [
-        'export { default as App, readRouteFromHash } from "./src/App.jsx";',
+        'export { default as App, readRouteFromHash, routeMeta } from "./src/App.jsx";',
         'export { primeApiCache } from "./src/lib/api.js";',
+        'export { localeStrings } from "./src/locales/index.js";',
         'export { UI, MODULES, t, formatNumber, labelFor, ENUM_LABELS, formatDate, formatRatio } from "./src/i18n.js";',
         'export { Toast } from "./src/components/ui.jsx";',
         'export { nextDoorIndex, doorStepForArrow, doorHref, isDoorActive, DOORS } from "./src/components/KeyDock.jsx";'
@@ -64,6 +67,8 @@ before(async () => {
   const bundle = await import(`${BUNDLE}?t=${Date.now()}`);
   App = bundle.App;
   readRouteFromHash = bundle.readRouteFromHash;
+  routeMeta = bundle.routeMeta;
+  localeStrings = bundle.localeStrings;
   primeApiCache = bundle.primeApiCache;
   UI = bundle.UI;
   MODULES = bundle.MODULES;
@@ -132,11 +137,20 @@ after(async () => {
  * Renders <App /> at a given hash with network access disabled, proving that
  * every view is fully driven by the read-only API payloads we captured.
  */
-function renderWithoutFetch(hash = "") {
+function renderWithoutFetch(hash = "", lang = null) {
   const originalFetch = globalThis.fetch;
   const originalWindow = globalThis.window;
   globalThis.fetch = () => Promise.reject(new Error("network access is forbidden in render tests"));
-  globalThis.window = { location: { hash }, scrollTo() {}, addEventListener() {}, removeEventListener() {} };
+  // The shell reads its preferences from localStorage on the first render; the
+  // stub lets a test render in English (the fa default is the fallback).
+  const stored = lang ? new Map([["cep.lang", lang]]) : new Map();
+  globalThis.window = {
+    location: { hash },
+    localStorage: { getItem: (key) => stored.get(key) ?? null, setItem: (key, value) => stored.set(key, value) },
+    scrollTo() {},
+    addEventListener() {},
+    removeEventListener() {}
+  };
   const html = renderToString(createElement(App));
   return {
     html,
@@ -154,19 +168,120 @@ test("route parsing defaults to the five-level chooser and accepts record ids", 
   assert.deepEqual(readRouteFromHash("#/hub"), { view: "hub", recordId: null });
   assert.deepEqual(readRouteFromHash("#/levels"), { view: "levels", recordId: null });
   assert.deepEqual(readRouteFromHash("#/levels/3"), { view: "levels", recordId: "3" });
-  // An out-of-range level falls back to the chooser instead of rendering a
-  // dashboard the reader did not ask for.
-  assert.deepEqual(readRouteFromHash("#/levels/9"), { view: "levels", recordId: null });
   assert.deepEqual(readRouteFromHash("#/dashboard"), { view: "dashboard", recordId: null });
   assert.deepEqual(readRouteFromHash("#/research"), { view: "research", recordId: null });
   assert.deepEqual(readRouteFromHash("#/historical-archive/SYN-HIST-001"), {
     view: "historical-archive",
     recordId: "SYN-HIST-001"
   });
-  assert.deepEqual(readRouteFromHash("#/not-a-module"), { view: "dashboard", recordId: null });
-  // The bank is its own surface, not a module and not a level.
+  // An address that names nothing real is a not-found, not a plausible-looking
+  // wrong page: a level outside 1-5, an unknown module, a record id on a view
+  // that has no addressable records.
+  assert.deepEqual(readRouteFromHash("#/levels/9"), { view: "not-found", recordId: null });
+  assert.deepEqual(readRouteFromHash("#/levels/abc"), { view: "not-found", recordId: null });
+  assert.deepEqual(readRouteFromHash("#/not-a-module"), { view: "not-found", recordId: null });
+  assert.deepEqual(readRouteFromHash("#/programme/PRG-SYN-001"), { view: "not-found", recordId: null });
+  assert.deepEqual(readRouteFromHash("#/bank/anything"), { view: "not-found", recordId: null });
   assert.deepEqual(readRouteFromHash("#/bank"), { view: "bank", recordId: null });
-  assert.deepEqual(readRouteFromHash("#/bank/anything"), { view: "bank", recordId: null });
+});
+
+test("every route is named once, and a level names itself in the title and the crumbs", () => {
+  const en = routeMeta({ view: "levels", recordId: "3" }, "en");
+  assert.equal(en.title, "Level 3 · Participating Citizen · CEP Civilizational Operating System");
+  assert.deepEqual(en.crumbs.map((crumb) => crumb.label), [
+    "Hub",
+    "Five civic levels",
+    "Level 3 · Participating Citizen"
+  ]);
+  assert.equal(en.crumbs[0].href, "#/hub");
+  assert.equal(en.crumbs[1].href, "#/levels");
+  assert.equal(en.crumbs[2].href, undefined, "the last crumb is the current page, not a link");
+
+  const fa = routeMeta({ view: "levels", recordId: "3" }, "fa");
+  assert.equal(fa.title, "سطح ۳ · شهروند مشارکت‌کننده · سامانهٔ عامل مدنی CEP");
+  assert.equal(fa.crumbs[0].label, "مرکز");
+
+  // The hub is home: no crumb pointing at itself.
+  for (const lang of ["fa", "en"]) {
+    const hub = routeMeta({ view: "hub", recordId: null }, lang);
+    assert.equal(hub.crumbs.length, 1);
+    assert.ok(hub.title.endsWith("CEP") || hub.title.includes("CEP"));
+  }
+
+  // No route may fall through to an unnamed page.
+  const routes = [
+    { view: "hub", recordId: null },
+    { view: "levels", recordId: null },
+    { view: "levels", recordId: "1" },
+    { view: "levels", recordId: "5" },
+    { view: "bank", recordId: null },
+    { view: "principles", recordId: null },
+    { view: "programme", recordId: null },
+    { view: "referendum", recordId: null },
+    { view: "not-found", recordId: null },
+    ...MODULES.map((module) => ({ view: module.id, recordId: null }))
+  ];
+  for (const lang of ["fa", "en"]) {
+    for (const route of routes) {
+      const meta = routeMeta(route, lang);
+      assert.ok(meta.label && meta.label.trim().length > 0, `${route.view} has no label in ${lang}`);
+      assert.ok(meta.title.includes(meta.label), `${route.view} title does not contain its label`);
+      assert.ok(meta.crumbs.length >= 1, `${route.view} has no crumbs`);
+    }
+  }
+
+  // Level pages must not all read the same, which was the bug.
+  const distinct = new Set(["1", "2", "3", "4", "5"].map((id) => routeMeta({ view: "levels", recordId: id }, "en").title));
+  assert.equal(distinct.size, 5, "five levels must produce five different titles");
+});
+
+test("the crumb trail is made of links, and home is the hub rather than the dashboard", () => {
+  const { html, restore } = renderWithoutFetch("#/levels/3");
+  try {
+    assert.match(html, /<a class="brand" href="#\/hub">/, "the logo must link to the hub");
+    assert.match(html, /<nav class="breadcrumbs" aria-label="مسیر صفحه">/);
+    assert.match(html, /<a class="crumb" href="#\/hub">مرکز<\/a>/, "Home points at the hub");
+    assert.match(html, /<a class="crumb" href="#\/levels">پنج سطح شهروندی<\/a>/);
+    assert.match(
+      html,
+      /aria-current="page"><span class="crumb crumb--current">سطح ۳ · شهروند مشارکت‌کننده<\/span>/,
+      "the current crumb names the level, and is text rather than a link"
+    );
+    assert.doesNotMatch(html, /<button[^>]*class="crumb"/, "crumbs are anchors, not buttons");
+  } finally {
+    restore();
+  }
+});
+
+test("an address that resolves to nothing gets a page that says so, in both languages", () => {
+  for (const [lang, title, homeLabel] of [
+    ["fa", "این صفحه را نیافتیم", "بازگشت به مرکز"],
+    ["en", "We could not find that page", "Back to the hub"]
+  ]) {
+    const { html, restore } = renderWithoutFetch("#/levels/9", lang);
+    try {
+      assert.match(html, new RegExp(`<h1[^>]*>${title}<\/h1>`), `${lang}: not-found needs its own h1`);
+      assert.ok(html.includes(homeLabel), `${lang}: not-found needs a way back to the hub`);
+      assert.match(html, /href="#\/hub"/);
+      assert.match(html, /href="#\/levels"/);
+      // It must not render some other page's content under a wrong address.
+      const main = html.slice(html.indexOf("<main"));
+      assert.doesNotMatch(main, /پیشخوان تمدنی|Civilization Dashboard/);
+    } finally {
+      restore();
+    }
+  }
+});
+
+test("the static door copy is the API's own words, not a second opinion", () => {
+  const levels = fixtures.get("/api/v1/levels").data.levels;
+  for (const lang of ["fa", "en"]) {
+    const copy = localeStrings(lang).levels;
+    for (const level of levels) {
+      assert.equal(copy.titles[String(level.id)], level.title[lang], `${lang}: level ${level.id} name drifted`);
+      assert.equal(copy.purposes[String(level.id)], level.purpose[lang], `${lang}: level ${level.id} purpose drifted`);
+    }
+  }
 });
 
 test("the shell renders Persian RTL by default with the demo banner and all twelve sections", () => {

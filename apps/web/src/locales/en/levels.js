@@ -3,6 +3,23 @@
 
 export const levelsEn = {
   navLabel: "Five civic levels",
+  // The five doors are static: the names and purposes are the design's own
+  // definitions, mirrored from packages/domain-models so the hub can paint
+  // before /api/v1/levels answers (a test asserts the two stay equal).
+  titles: {
+    "1": "Public Observer",
+    "2": "Private Citizen",
+    "3": "Participating Citizen",
+    "4": "Organizational Node",
+    "5": "Public Decision-Maker",
+  },
+  purposes: {
+    "1": "Unrestricted access to approved public information and the ability to examine institutions, budgets and decisions.",
+    "2": "Privacy-first personal services: prove one specific qualification without creating a public profile.",
+    "3": "Broader civic participation: political ballots, polls, citizen proposals and delegation.",
+    "4": "Perform defined work: contracts, deliverables, synthetic budgets and public accountability.",
+    "5": "Review within a defined scope, with a stated reason, an auditable history and separation of duties.",
+  },
   home: {
     eyebrow: "Access architecture",
     title: "Five levels, five responsibility contexts",
