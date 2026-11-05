@@ -27,6 +27,7 @@ let CrashFallback;
 let readTheme;
 let Meter;
 let BarRow;
+let visibleAudit;
 let primeApiCache;
 let clearApiCache;
 let UI;
@@ -61,7 +62,8 @@ before(async () => {
         'export { Toast, Meter, BarRow } from "./src/components/ui.jsx";',
         'export { default as SearchOverlay } from "./src/components/SearchOverlay.jsx";',
         'export { default as ErrorBoundary, CrashFallback } from "./src/components/ErrorBoundary.jsx";',
-        'export { nextDoorIndex, doorStepForArrow, doorHref, isDoorActive, DOORS } from "./src/components/KeyDock.jsx";'
+        'export { nextDoorIndex, doorStepForArrow, doorHref, isDoorActive, DOORS } from "./src/components/KeyDock.jsx";',
+        'export { visibleAudit } from "./src/modules/levels/panels.jsx";'
       ].join("\n"),
       resolveDir: WEB_ROOT,
       loader: "js"
@@ -86,6 +88,7 @@ before(async () => {
   readTheme = bundle.readTheme;
   Meter = bundle.Meter;
   BarRow = bundle.BarRow;
+  visibleAudit = bundle.visibleAudit;
   primeApiCache = bundle.primeApiCache;
   clearApiCache = bundle.clearApiCache;
   UI = bundle.UI;
@@ -1567,5 +1570,35 @@ test("a project and the principle it targets link to each other, once each", () 
     assert.match(missing.html, /این اصل در این سند نیست/);
   } finally {
     missing.restore();
+  }
+});
+
+/* ---------------------- level simulator outcomes (#30) ---------------------- */
+
+test("each of the five level panels announces its last outcome", () => {
+  for (const id of ["1", "2", "3", "4", "5"]) {
+    const { html, restore } = renderWithoutFetch(`#/levels/${id}`);
+    try {
+      assert.match(html, /class="sim__outcome/, `level ${id} has no outcome region`);
+      assert.match(html, /role="status"[^>]*aria-live="polite"|aria-live="polite"/, `level ${id} outcome is not live`);
+      assert.match(html, /نتیجهٔ آخرین کنش این‌جا می‌آید/, `level ${id} does not say what the region is for`);
+      assert.equal((html.match(/class="sim__outcome/g) ?? []).length, 1, `level ${id} must have exactly one live region`);
+    } finally {
+      restore();
+    }
+  }
+});
+
+test("the audit log says when it is showing only part of the session", () => {
+  const audit = Array.from({ length: 12 }, (_, index) => ({ id: `SIM-${index}` }));
+  assert.equal(visibleAudit(audit, false).length, 8, "collapsed shows eight");
+  assert.equal(visibleAudit(audit, true).length, 12, "expanded shows the whole history");
+  assert.equal(visibleAudit(audit.slice(0, 3), false).length, 3, "a short history is not padded");
+  // The copy for both states exists in both languages.
+  for (const lang of ["fa", "en"]) {
+    const copy = localeStrings(lang).levels.sim;
+    assert.ok(copy.auditShowing.includes("{shown}") && copy.auditShowing.includes("{total}"));
+    assert.ok(copy.auditShowAll.includes("{total}"));
+    assert.ok(copy.auditCollapse.length > 0);
   }
 });

@@ -132,6 +132,26 @@ export default function App() {
     return () => query.removeEventListener("change", sync);
   }, []);
 
+  // Sticky things need to know how tall the sticky header currently is (it grows
+  // when the demo banner is open), so the measurement is published as a CSS
+  // variable instead of guessed at in a stylesheet.
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof document === "undefined") return undefined;
+    const header = document.querySelector(".app-header");
+    if (!header) return undefined;
+    const publish = () => {
+      document.documentElement.style.setProperty("--header-h", `${Math.round(header.getBoundingClientRect().height)}px`);
+    };
+    publish();
+    if (typeof ResizeObserver !== "function") {
+      window.addEventListener("resize", publish);
+      return () => window.removeEventListener("resize", publish);
+    }
+    const observer = new ResizeObserver(publish);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
+
   // The module drawer only exists below 900px; above it the sidebar is a
   // permanent landmark and must stay reachable.
   useEffect(() => {

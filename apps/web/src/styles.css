@@ -5664,3 +5664,37 @@ html[data-theme="dark"] .work-card__icon {
   display: block;
   margin-block-start: 0.2rem;
 }
+
+/* The outcome of the last action, kept in view while the reader scrolls through
+   a tall panel: a refusal that happens below the fold taught nobody anything.
+   --header-h is measured by the shell, so the strip never hides under the
+   sticky header. */
+.sim__outcome {
+  position: sticky;
+  inset-block-start: calc(var(--header-h, 0px) + 0.4rem);
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  margin-block: 0.7rem;
+  padding: 0.5rem 0.7rem;
+  min-block-size: 2.4rem;
+  border: 1px solid var(--border);
+  border-inline-start: 3px solid var(--good);
+  border-radius: 10px;
+  background: var(--paper-1);
+}
+
+.sim__outcome.is-blocked {
+  border-inline-start-color: var(--danger);
+  background: color-mix(in oklab, var(--danger) 7%, var(--paper-1));
+}
+
+.sim__outcome-msg {
+  font-weight: 600;
+}
+
+.sim__audit-count {
+  margin: 0;
+}

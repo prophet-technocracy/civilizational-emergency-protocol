@@ -9,8 +9,23 @@ import { Badge, Callout, Stat, Toggle } from "../../components/ui.jsx";
 const dateOnly = (iso) => (iso ? String(iso).slice(0, 10) : "—");
 const num = (value, lang) => formatNumber(value, lang);
 
+/**
+ * Which audit entries the log shows. The reducer keeps the full history (newest
+ * first, capped at 60); the panel used to slice(0, 8) and drop the rest without
+ * saying so (issue #30).
+ */
+export function visibleAudit(audit, expanded, limit = 8) {
+  return expanded ? audit : audit.slice(0, limit);
+}
+
 function SimShell({ lang, copy, session, level, children, title, hint }) {
   const audit = session.state.audit.filter((entry) => entry.level === level);
+  // The newest entry is the answer to the button the reader just pressed. It is
+  // announced from a region that stays visible while the panel scrolls, because
+  // a refusal below the fold teaches nobody anything.
+  const latest = audit[0] ?? null;
+  const [expanded, setExpanded] = useState(false);
+  const shown = visibleAudit(audit, expanded);
   return (
     <section className="sim" aria-labelledby={`sim-heading-${level}`}>
       <header className="sim__head">
@@ -26,6 +41,25 @@ function SimShell({ lang, copy, session, level, children, title, hint }) {
 
       <Callout tone="info">{copy.note}</Callout>
 
+      <div
+        className={`sim__outcome ${latest?.blocked ? "is-blocked" : ""}`}
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {latest ? (
+          <>
+            <Badge tone={latest.blocked ? "danger" : "good"}>
+              {latest.blocked ? copy.blocked : copy.recorded}
+            </Badge>
+            <span className="sim__outcome-action mono small">{latest.action}</span>
+            <span className="sim__outcome-msg">{t(latest.message, lang)}</span>
+          </>
+        ) : (
+          <span className="muted small">{copy.outcomeIdle}</span>
+        )}
+      </div>
+
       <div className="sim__grid">{children}</div>
 
       <div className="sim__audit">
@@ -33,16 +67,30 @@ function SimShell({ lang, copy, session, level, children, title, hint }) {
         {audit.length === 0 ? (
           <p className="muted small">{copy.auditEmpty}</p>
         ) : (
-          <ol className="sim-log">
-            {audit.slice(0, 8).map((entry) => (
-              <li key={entry.id} className={`sim-log__item ${entry.blocked ? "is-blocked" : "is-recorded"}`}>
-                <span className="mono muted small">{entry.id} · {dateOnly(entry.at)}</span>
-                <span className="sim-log__action mono">{entry.action}</span>
-                <Badge tone={entry.blocked ? "danger" : "good"}>{entry.blocked ? copy.blocked : copy.recorded}</Badge>
-                <span className="sim-log__msg small">{t(entry.message, lang)}</span>
-              </li>
-            ))}
-          </ol>
+          <>
+            <p className="sim__audit-count small muted">
+              {copy.auditShowing
+                .replace("{shown}", num(shown.length, lang))
+                .replace("{total}", num(audit.length, lang))}
+            </p>
+            <ol className="sim-log">
+              {shown.map((entry) => (
+                <li key={entry.id} className={`sim-log__item ${entry.blocked ? "is-blocked" : "is-recorded"}`}>
+                  <span className="mono muted small">{entry.id} · {dateOnly(entry.at)}</span>
+                  <span className="sim-log__action mono">{entry.action}</span>
+                  <Badge tone={entry.blocked ? "danger" : "good"}>{entry.blocked ? copy.blocked : copy.recorded}</Badge>
+                  <span className="sim-log__msg small">{t(entry.message, lang)}</span>
+                </li>
+              ))}
+            </ol>
+            {audit.length > 8 ? (
+              <button type="button" className="btn btn--ghost btn--sm" onClick={() => setExpanded((value) => !value)}>
+                {expanded
+                  ? copy.auditCollapse
+                  : copy.auditShowAll.replace("{total}", num(audit.length, lang))}
+              </button>
+            ) : null}
+          </>
         )}
       </div>
     </section>
