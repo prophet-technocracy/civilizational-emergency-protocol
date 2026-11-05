@@ -8,8 +8,14 @@ export const bankEn = {
     "One HMMT is exactly one thousand billion toman. Circulating supply never exceeds the audited backing ceiling, and every new token is minted only against deposited toman.",
   proposalBadge: "Design proposal, not legal tender",
   asOf: "Data as of",
+  currency: "USD",
+  networks: {
+    TON: "TON",
+    "permissioned sovereign chain": "Permissioned sovereign chain"
+  },
   syntheticLedger: "Synthetic ledger",
   notTender: "This screen shows a design: no token exists on any chain and no deposit is accepted.",
+  notTenderTitle: "This screen is a design, not a financial system",
   statuses: {
     audited: "Audited",
     "source-reported": "Source-reported",

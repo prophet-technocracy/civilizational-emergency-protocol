@@ -36,7 +36,14 @@ function compact(value, lang) {
 
 const STATUS_TONE = { audited: "good", "source-reported": "info", "unverified-estimate": "warn" };
 const RESERVE_TONE = { healthy: "good", "reserve-shortfall": "danger", "asset-shortfall": "warn" };
-const dateOnly = (iso, lang) => (iso ? formatDate(String(iso), lang) : "—");
+const dateOnly = (iso, lang) => {
+  if (!iso) return "—";
+  const value = String(iso);
+  // A bare year is not an ISO date, and leaving it Latin would break the
+  // Persian-numeral rule for one column only.
+  if (/^\d{4}$/.test(value)) return formatNumber(Number(value), lang);
+  return formatDate(value, lang);
+};
 
 function StatusLabel({ status, copy }) {
   return <Badge tone={STATUS_TONE[status] ?? "neutral"}>{copy.statuses[status] ?? status}</Badge>;
@@ -76,7 +83,7 @@ function DefinitionCard({ definition, copy, lang }) {
         </div>
         <div className="kv__row">
           <dt>{copy.definition.networkTarget}</dt>
-          <dd>{network.targetStage.chain}</dd>
+          <dd>{copy.networks[network.targetStage.chain] ?? network.targetStage.chain}</dd>
         </div>
       </dl>
       <p className="card__subtitle">{copy.definition.pegNote}</p>
@@ -102,12 +109,12 @@ function SupplySection({ supply, copy, lang }) {
         <Stat
           label={copy.supply.ceiling}
           value={`${numberFormat(ceiling.tokens, lang, 0)} HMMT`}
-          note={`${compact(ceiling.usdValue, lang)} · ${copy.supply.ceilingNote}`}
+          note={`${compact(ceiling.usdValue, lang)} ${copy.currency} · ${copy.supply.ceilingNote}`}
         />
         <Stat
           label={copy.supply.circulating}
           value={`${numberFormat(circulating.tokens, lang, 2)} HMMT`}
-          note={`${compact(circulating.usdValue, lang)} · ${copy.supply.circulatingNote}`}
+          note={`${compact(circulating.usdValue, lang)} ${copy.currency} · ${copy.supply.circulatingNote}`}
           tone="info"
         />
         <Stat
@@ -723,14 +730,14 @@ function DesignSection({ design, copy, lang }) {
             <div className="kv__row">
               <dt>{copy.design.firstStage}</dt>
               <dd>
-                {network.firstStage.chain} · {network.firstStage.standard}
+                {copy.networks[network.firstStage.chain] ?? network.firstStage.chain} · {network.firstStage.standard}
                 <span className="small muted"> — {t(network.firstStage.reason, lang)}</span>
               </dd>
             </div>
             <div className="kv__row">
               <dt>{copy.design.targetStage}</dt>
               <dd>
-                {network.targetStage.chain}
+                {copy.networks[network.targetStage.chain] ?? network.targetStage.chain}
                 <span className="small muted"> — {t(network.targetStage.reason, lang)}</span>
               </dd>
             </div>
@@ -785,7 +792,7 @@ export default function Bank({ lang }) {
         actions={<Badge tone="warn">{copy.proposalBadge}</Badge>}
       />
 
-      <Callout tone="warn" title={copy.notTender}>
+      <Callout tone="warn" title={copy.notTenderTitle}>
         {t(notice, lang)}
         <span className="small muted">
           {" "}
