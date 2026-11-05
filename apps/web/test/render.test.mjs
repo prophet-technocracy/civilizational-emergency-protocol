@@ -286,7 +286,7 @@ test("an address that resolves to nothing gets a page that says so, in both lang
   ]) {
     const { html, restore } = renderWithoutFetch("#/levels/9", lang);
     try {
-      assert.match(html, new RegExp(`<h1[^>]*>${title}<\/h1>`), `${lang}: not-found needs its own h1`);
+      assert.match(html, new RegExp(`<h1[^>]*>${title}</h1>`), `${lang}: not-found needs its own h1`);
       assert.ok(html.includes(homeLabel), `${lang}: not-found needs a way back to the hub`);
       assert.match(html, /href="#\/hub"/);
       assert.match(html, /href="#\/levels"/);
@@ -1095,9 +1095,8 @@ test("the principles route is addressable and its filters are real controls", ()
   try {
     assert.ok(html.includes('aria-pressed="true"'), "the default filter has to show its pressed state");
     assert.ok(html.includes('role="group"'), "the filter needs a labelled group");
-    for (const status of fixtures.get("/api/v1/principles").data.statuses) {
-      assert.ok(html.includes(`aria-pressed`), "filters must be toggle buttons");
-    }
+    const statuses = fixtures.get("/api/v1/principles").data.statuses;
+    assert.equal((html.match(/aria-pressed/g) ?? []).length >= statuses.length + 1, true, "filters must be toggle buttons");
   } finally {
     restore();
   }
@@ -1600,5 +1599,28 @@ test("the audit log says when it is showing only part of the session", () => {
     assert.ok(copy.auditShowing.includes("{shown}") && copy.auditShowing.includes("{total}"));
     assert.ok(copy.auditShowAll.includes("{total}"));
     assert.ok(copy.auditCollapse.length > 0);
+  }
+});
+
+test("every view keeps a level-one heading even when its data fails (issue #19)", () => {
+  const VIEWS = [
+    "#/hub", "#/dashboard", "#/governance", "#/transition", "#/institutions",
+    "#/historical-archive", "#/research", "#/verification", "#/accountability",
+    "#/public-services", "#/projects", "#/simulations", "#/digital-legacy",
+    "#/bank", "#/principles", "#/programme", "#/referendum", "#/levels", "#/levels/3"
+  ];
+  clearApiCache();
+  try {
+    for (const hash of VIEWS) {
+      const { html, restore } = renderWithoutFetch(hash);
+      try {
+        const main = html.slice(html.indexOf("<main"));
+        assert.match(main, /<h1[^>]*>[^<]/, `${hash} has no h1 while its data is loading or failed`);
+      } finally {
+        restore();
+      }
+    }
+  } finally {
+    primeApiCache(allEntries);
   }
 });

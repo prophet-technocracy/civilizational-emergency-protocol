@@ -177,7 +177,7 @@ function AdvocacyTable({ breakdown, copy, lang }) {
   );
 }
 
-function ModuleBody({ module, copy, lang, navigate, policy }) {
+function ModuleBody({ module, copy, lang, policy }) {
   const data = module;
 
   switch (module.kind) {
@@ -894,7 +894,7 @@ function ModuleBody({ module, copy, lang, navigate, policy }) {
   }
 }
 
-export default function Level({ lang, dict, navigate, levelId, policyId, onPolicyChange }) {
+export default function Level({ lang, navigate, levelId, policyId, onPolicyChange }) {
   const copy = localeStrings(lang).levels.level;
   const state = useApi(`/api/v1/levels/${levelId}?policy=${policyId}`);
   const levelNumber = Number(levelId);
@@ -922,7 +922,25 @@ export default function Level({ lang, dict, navigate, levelId, policyId, onPolic
   }, [state, levelNumber, session.state, policyId]);
 
   if (state.status !== "ready") {
-    return <StateBlock status={state.status} lang={lang} onRetry={state.reload} />;
+    // The level's name is static copy, so a slow or failed payload must not
+    // leave the page without its only <h1> (issue #19).
+    const staticTitle = localeStrings(lang).levels.titles[String(levelNumber)] ?? "";
+    return (
+      <div className="level-view">
+        <nav className="level-back" aria-label={copy.back}>
+          <button type="button" className="btn btn--ghost" onClick={() => navigate("levels")}>
+            ← {copy.back}
+          </button>
+        </nav>
+        <header className="level-head">
+          <div>
+            <p className="eyebrow">{formatNumber(levelNumber, lang)}</p>
+            <h1 className="h1">{staticTitle}</h1>
+          </div>
+        </header>
+        <StateBlock status={state.status} lang={lang} onRetry={state.reload} />
+      </div>
+    );
   }
 
   const data = state.payload.data;

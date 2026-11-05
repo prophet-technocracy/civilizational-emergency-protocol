@@ -1,8 +1,9 @@
 # CEP Master Task Board — Civilizational Operating System Prototype
 
 **Status:** Active Execution & Review Register  
-**Session Branch:** `arena/4c526f6a-civilizational-emergency-proto` (Base commit: `f0d724d`)  
-**Last Updated:** 2026-11-04  
+**Session Branch:** none — this register is branch-agnostic; each row names its own PR.  
+**Backlog of record:** [`agent/tasks.json`](../agent/tasks.json), read with `node scripts/agent/tasks.mjs list`. This board keeps the dependency graph and the review narrative; the JSON keeps the executable specs, and the two must agree.  
+**Last Updated:** 2026-11-06  
 
 > **Governance & Review Notice:** Completion of a task on this board indicates that the engineering deliverable has been implemented, verified by automated tests, and cross-reviewed by an independent agent department. It does **not** constitute community ratification, public mandate, or authorization to merge into `main` without explicit human maintainer approval.
 

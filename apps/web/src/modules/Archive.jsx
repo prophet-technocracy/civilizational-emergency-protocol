@@ -35,8 +35,6 @@ export default function Archive({ lang, dict, openProvenance, navigate, initialR
     setDetailId(initialRecordId ?? null);
   }, [initialRecordId]);
 
-  const applied = payload?.data.filters.applied;
-
   return (
     <>
       <SectionHeader

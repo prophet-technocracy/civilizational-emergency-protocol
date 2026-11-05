@@ -3,7 +3,7 @@
 // result together with the session audit trail. Nothing leaves the tab.
 import { useMemo, useState } from "react";
 import { t, formatNumber } from "../../i18n.js";
-import { localeStrings, policyLabel } from "../../locales/index.js";
+import { policyLabel } from "../../locales/index.js";
 import { Badge, Callout, Stat, Toggle } from "../../components/ui.jsx";
 
 const dateOnly = (iso) => (iso ? String(iso).slice(0, 10) : "—");

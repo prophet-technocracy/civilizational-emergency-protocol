@@ -1,0 +1,118 @@
+name: Agent task
+description: Propose work that an autonomous agent could execute end to end, with a bounded input, a checkable output and a command that proves it.
+title: "ENG-000: "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A task is executable when a stranger with no context can tell **what goes in**, **what comes out** and **how to prove it**. If you cannot fill those three, it is a question, not a task — open a discussion instead.
+
+        Read [AGENT.md](../blob/main/AGENT.md) first. Tasks that already exist are in [`agent/tasks.json`](../blob/main/agent/tasks.json); check for duplicates with `node scripts/agent/tasks.mjs list`.
+
+        A task confers no authority, and opening one is not a claim about the project's legitimacy.
+
+  - type: input
+    id: task-id
+    attributes:
+      label: Task id
+      description: The id this would get in agent/tasks.json, in the form ENG-000. Use the next free number.
+      placeholder: ENG-061
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind of work
+      description: What kind of artefact the task produces.
+      options:
+        - code — behaviour in apps/ or packages/
+        - audit — a check that can be automated
+        - docs — a document that is wrong, missing or unverified
+        - data — a fixture, a payload or a derived value
+        - infra — CI, scripts, tooling
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why this exists
+      description: One paragraph. What is wrong today, or what is missing, and what breaks because of it. Name the symptom a user or a reader sees.
+      placeholder: The bank key shows a rial glyph for a toman-denominated unit, so the navigation prints a 10:1 error.
+    validations:
+      required: true
+
+  - type: textarea
+    id: input
+    attributes:
+      label: Input
+      description: What the task starts from — the file, the data, the current behaviour, the failing command. Be specific enough that two agents would start from the same place.
+      placeholder: The bank key in components/KeyDock.jsx and the bank door in modules/Hub.jsx, plus the copy in locales/{fa,en}/bank.js.
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Output
+      description: What the repository looks like when this is done. Describe the artefact, not the effort.
+      placeholder: One symbol and one label for the bank in both places, toman-correct, read from the locale files, with a test asserting the two agree.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: A checkbox list a reviewer can verify without interpretation. Each item should be provable by reading a diff or running a command.
+      value: |
+        - [ ] 
+        - [ ] 
+        - [ ] 
+    validations:
+      required: true
+
+  - type: textarea
+    id: verify
+    attributes:
+      label: How to prove it
+      description: The commands that must exit 0. Use existing npm scripts or scripts in the repository; do not invent a command.
+      render: shell
+      placeholder: |
+        npm test
+        npm run lint
+        node scripts/audit/a11y.mjs
+    validations:
+      required: true
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: Effort
+      description: S is one file and one test; M is one module and several tests; L is a refactor that touches many files or needs a design decision.
+      options: [S, M, L]
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Constraints and dead ends
+      description: Anything an agent would otherwise try and regret — a dependency not to add, a test seam to use, a decision a maintainer must make first.
+      placeholder: Use parseDecimalInput; do not add a second parser.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Before you submit
+      options:
+        - label: I checked `agent/tasks.json` and the open issues for duplicate work.
+          required: true
+        - label: The acceptance criteria can be verified by a command or a diff, not by opinion.
+          required: true
+        - label: This task does not require inventing data, a source or a claim about legitimacy.
+          required: true

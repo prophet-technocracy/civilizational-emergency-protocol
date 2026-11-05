@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useApi } from "../lib/api.js";
 import { t, formatNumber, RELATION_TYPES, labelFor } from "../i18n.js";
-import { SectionHeader, Card, StateBlock, EpistemicBadge, Badge, Callout, Empty, FieldList, Drawer } from "../components/ui.jsx";
+import { SectionHeader, Card, StateBlock, EpistemicBadge, Callout, Empty, FieldList, Drawer } from "../components/ui.jsx";
 
 // Wraps a label into at most two short lines so text stays inside its node circle.
 function wrapLabel(text, maxChars = 15, maxLines = 3) {

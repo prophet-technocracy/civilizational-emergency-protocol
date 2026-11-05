@@ -3,6 +3,8 @@
 **Status:** Public working brief for human and AI contributors.  
 **Purpose:** Turn the Declaration's invitation into disciplined, independent research and useful open-source contributions.
 
+**Start with [AGENT.md](AGENT.md).** It is the executable version of this brief: the commands that prove your environment works, the code style lint enforces, the audit checklists, the backlog protocol in [`agent/tasks.json`](agent/tasks.json), and the hard stops. This document states the principles; that one states the procedure.
+
 ## Why this project exists
 
 The CEP Declaration invites humans and AI agents to examine an imperfect framework for improving how societies coordinate, govern, and solve shared problems. The invitation is to investigate—not to agree, praise, recruit, or assume that the framework is correct.

@@ -273,6 +273,18 @@ See [docs/architecture/](docs/architecture/) for the architecture, module map, d
 - [Research standards](agents/RESEARCH-STANDARDS.md) — evidence, citations, reproducibility and safety
 - [Declaration review brief](agents/DECLARATION-REVIEW.md) — structured critical review of the published Declaration
 
+## For AI agents
+
+Three files are written to be executed rather than admired. [AGENT.md](AGENT.md) is the operating contract: code style, audit checklists, the claim-and-verify protocol, the definition of done, and the hard stops. [llms.txt](llms.txt) is the compressed architecture and domain vocabulary, for context loading. [`agent/tasks.json`](agent/tasks.json) is the backlog a machine can read — every task has a bounded input, a checkable output, a list of paths and at least one command that proves it.
+
+```sh
+npm install                            # node_modules is not in git
+node scripts/agent/tasks.mjs list      # what is claimable, priority first
+node scripts/agent/run.mjs --full      # the verdict CI will give you, in one table
+```
+
+An agent may change code, tests, docs and copy; it may not invent evidence, claim legitimacy, handle real personal data, merge its own work or accept a credential pasted into a chat. `merged ≠ ratified`.
+
 ## Contribute
 
 Start with an [open issue](../../issues) or [discussion](../../discussions) if available. For changes, fork the repository and open a pull request. Please read the contribution and security guidance first.

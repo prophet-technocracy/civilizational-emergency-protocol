@@ -1,0 +1,668 @@
+{
+  "version": 1,
+  "about": "The engineering backlog for autonomous agents. Every entry has a bounded input, a checkable output and at least one command that proves the output. Research and governance tasks live in TASKS.md; this file is code, data, docs and CI only. Validate with: node scripts/agent/tasks.mjs validate",
+  "conventions": {
+    "claim": "comment on the linked issue with the task id, or open one with: node scripts/agent/tasks.mjs issue <id>",
+    "one_task_per_pr": true,
+    "branch": "agent/<task-id>-<slug>",
+    "pr_title": "ENG-043: <the task title>",
+    "done": "npm run check && node scripts/audit/a11y.mjs && node scripts/audit/keyboard.mjs"
+  },
+  "tasks": [
+    {
+      "id": "ENG-043",
+      "title": "Search overlay: make it a combobox with an announced listbox and Enter-to-open",
+      "status": "ready",
+      "kind": "code",
+      "priority": 1,
+      "issue": 43,
+      "labels": [
+        "ux",
+        "accessibility",
+        "P2"
+      ],
+      "effort": "M",
+      "paths": [
+        "apps/web/src/components/SearchOverlay.jsx",
+        "apps/web/src/App.jsx"
+      ],
+      "why": "The palette is a real search but announces nothing and cannot be driven from the keyboard beyond typing.",
+      "spec": {
+        "input": "A trimmed query of two or more characters and a search state of idle | loading | ready | error (see SearchOverlay props).",
+        "output": "role=combobox on the input with aria-expanded, aria-controls and aria-activedescendant; role=listbox with role=option per result; ArrowUp/ArrowDown move the active option; Enter opens the active option through onPick; the result count is announced in the existing polite region.",
+        "acceptance": [
+          "Escape still closes and returns focus to the trigger (keyboard.mjs check 5 stays green).",
+          "Focus never leaves the input while arrowing.",
+          "The active option is visually distinguishable in both themes.",
+          "Render tests cover: no active option before arrowing, wrapping at both ends, Enter calling onPick once."
+        ]
+      },
+      "verify": [
+        "npm test",
+        "node scripts/audit/keyboard.mjs",
+        "node scripts/audit/a11y.mjs"
+      ],
+      "notes": "Copy is already in locales/{fa,en}/shell.js under search.*. Do not re-add strings to i18n.js."
+    },
+    {
+      "id": "ENG-037",
+      "title": "Principles page: search, filter by light, URL state, one anchor per principle",
+      "status": "ready",
+      "kind": "code",
+      "priority": 1,
+      "issue": 37,
+      "labels": [
+        "ux",
+        "data-integrity",
+        "P2"
+      ],
+      "effort": "M",
+      "paths": [
+        "apps/web/src/modules/Principles.jsx",
+        "apps/web/src/lib/routes.js",
+        "apps/web/src/locales/fa/principles.js"
+      ],
+      "why": "113 principles in four tables are readable but not searchable; the anchors exist (principleAnchor) and the coverage filter exists, but a reader cannot address a filtered view.",
+      "spec": {
+        "input": "Free text from the reader and an optional light filter (green | amber | red | grey).",
+        "output": "A search box filtering on principle id, label, title and note in the active language; a light filter beside the existing coverage filter; both reflected in the hash (#/principles?q=...&light=...) and restored on load; the count of matches announced politely; an empty state that names the query.",
+        "acceptance": [
+          "Filters combine (coverage AND light AND query).",
+          "Reloading a filtered URL restores the exact view.",
+          "No slash ratios, Persian digits through formatNumber, copy in both locales.",
+          "Render tests: query narrows the table; light filter excludes the other lights; an impossible combination shows an empty state naming the query."
+        ]
+      },
+      "verify": [
+        "npm test",
+        "npm run lint"
+      ],
+      "notes": "parse query with URLSearchParams; keep readRouteFromHash returning recordId for #/principles/<id> and do not break ENG-038's links."
+    },
+    {
+      "id": "ENG-048",
+      "title": "Forms: inline validation, error association and character counters on Levels 2-5 and the bank",
+      "status": "ready",
+      "kind": "code",
+      "priority": 1,
+      "issue": 48,
+      "labels": [
+        "accessibility",
+        "ux",
+        "P2"
+      ],
+      "effort": "L",
+      "paths": [
+        "apps/web/src/modules/levels/panels.jsx",
+        "apps/web/src/modules/Bank.jsx",
+        "apps/web/src/lib/decimal.mjs"
+      ],
+      "why": "A rejected form today reports the refusal in the audit log, not next to the field that caused it.",
+      "spec": {
+        "input": "A field value and its rule (minimum length, positive decimal, within budget).",
+        "output": "aria-invalid on the field, aria-describedby pointing at a message element with role=alert rendered beside the field, the message naming the rule that failed, and a live character counter for the two text fields (proposal title, decision reason).",
+        "acceptance": [
+          "The bank amount field keeps its existing interpret-as-you-type line and its ambiguous-separator refusal (see parseDecimalInput).",
+          "Numeric fields reuse parseDecimalInput; no second parser is added.",
+          "A submitted invalid form moves focus to the first invalid field.",
+          "Render tests cover one text field, one numeric field and one budget field in fa and en."
+        ]
+      },
+      "verify": [
+        "npm test",
+        "node scripts/audit/a11y.mjs"
+      ],
+      "notes": "Copy goes in locales/{fa,en}/levels.js (sim.*) and bank.js (sim.amountProblem.*), not inline."
+    },
+    {
+      "id": "ENG-044",
+      "title": "Network resilience: request timeouts, cache expiry and an error state that gives a reason",
+      "status": "ready",
+      "kind": "code",
+      "priority": 2,
+      "issue": 44,
+      "labels": [
+        "ux",
+        "performance",
+        "P2"
+      ],
+      "effort": "M",
+      "paths": [
+        "apps/web/src/lib/api.js"
+      ],
+      "why": "useApi has an in-memory cache with no expiry, no timeout and one anonymous error state, so a stalled request hangs a view forever and a 404 reads like a 500.",
+      "spec": {
+        "input": "A path, an AbortSignal-driven deadline (default 8000 ms) and a cache entry with a timestamp.",
+        "output": "State carries {status, payload, error: {kind: 'timeout' | 'http' | 'contract' | 'network', status?}}; entries older than the TTL are refetched; StateBlock renders a localized sentence per kind and keeps the retry.",
+        "acceptance": [
+          "A pending request is aborted at the deadline and lands in error.kind=timeout.",
+          "cache entries expire (default 60 s) without breaking the render tests' primeApiCache seam.",
+          "StateBlock's copy exists in both locales and never claims the data is missing when it is only late.",
+          "Unit tests with a fake fetch for each error kind."
+        ]
+      },
+      "verify": [
+        "npm test",
+        "npm run lint"
+      ],
+      "notes": "Do not add a retry loop or analytics; one retry is a user action in this project."
+    },
+    {
+      "id": "ENG-052",
+      "title": "Route-level code splitting and a bundle budget in CI",
+      "status": "ready",
+      "kind": "code",
+      "priority": 2,
+      "issue": 52,
+      "labels": [
+        "performance",
+        "P3"
+      ],
+      "effort": "M",
+      "paths": [
+        "apps/web/src/App.jsx",
+        "apps/web/src/main.jsx",
+        "apps/web/vite.config.js",
+        "scripts/agent/run.mjs"
+      ],
+      "why": "Every view ships in one 557 kB chunk; a reader on a slow connection downloads twelve modules to see one.",
+      "spec": {
+        "input": "The VIEWS map in App.jsx.",
+        "output": "React.lazy + Suspense per view with a skeleton fallback that respects prefers-reduced-motion; the hub and the not-found view stay in the main chunk; a build-time assertion that no chunk exceeds 250 kB gzipped except the entry, failing with the chunk's name.",
+        "acceptance": [
+          "First paint of #/hub does not load any module chunk.",
+          "Suspense fallback has an accessible name and does not shift the layout.",
+          "The budget check is wired into npm run check and CI.",
+          "All existing render tests pass (they render App through esbuild, so lazy views must still resolve)."
+        ]
+      },
+      "verify": [
+        "npm test",
+        "npm run build"
+      ],
+      "notes": "If lazy loading breaks the SSR render tests, make the loader injectable instead of disabling the test."
+    },
+    {
+      "id": "ENG-053",
+      "title": "Split the 5.7k-line styles.css so parallel UX work stops colliding",
+      "status": "ready",
+      "kind": "code",
+      "priority": 3,
+      "issue": 53,
+      "labels": [
+        "ux",
+        "P3"
+      ],
+      "effort": "L",
+      "paths": [
+        "apps/web/src/styles.css",
+        "apps/web/src/main.jsx"
+      ],
+      "why": "One file, 5700 lines, four owners. Every UX PR touches it and conflicts.",
+      "spec": {
+        "input": "styles.css, sectioned by the comments already inside it.",
+        "output": "CSS split into ordered layers under apps/web/src/styles/ (tokens, base, shell, hub, levels, modules, tables, utilities) imported by one entry file in a documented order; @layer used so order is explicit and specificity does not change.",
+        "acceptance": [
+          "Byte-for-byte visual parity: the three audit scripts stay clean at all four widths and both themes.",
+          "No selector loses specificity: verified by the audits, not by eye.",
+          "The import order is documented at the top of the entry file.",
+          "Bundle CSS size grows by no more than 2%."
+        ]
+      },
+      "verify": [
+        "npm run build",
+        "node scripts/audit/layout.mjs",
+        "node scripts/audit/a11y.mjs"
+      ],
+      "notes": "Mechanical but risky: do it alone, with no copy or logic changes in the same PR."
+    },
+    {
+      "id": "ENG-046",
+      "title": "Opt-in browser-audit workflow that attaches axe, keyboard and layout output to a PR",
+      "status": "ready",
+      "kind": "infra",
+      "priority": 3,
+      "issue": 46,
+      "labels": [
+        "ci",
+        "P2"
+      ],
+      "effort": "M",
+      "paths": [
+        ".github/workflows/",
+        "scripts/audit/README.md"
+      ],
+      "why": "The three audit scripts are the evidence for every accessibility claim in the README, but they only run on a developer's machine.",
+      "spec": {
+        "input": "A PR labelled ux-audit, or a workflow_dispatch with a URL to the preview.",
+        "output": "A workflow that installs the browser dependency (see scripts/audit/README.md), boots npm run dev, runs a11y.mjs, keyboard.mjs and layout.mjs, uploads their output as an artifact and posts a single comment with the three results.",
+        "acceptance": [
+          "It does not run on every PR (cost) and cannot block merges by itself.",
+          "A failure prints the offending selector and the rule id, not just a non-zero exit.",
+          "The workflow has permissions: contents: read and pull-requests: write only.",
+          "Documented in scripts/audit/README.md."
+        ]
+      },
+      "verify": [
+        "npm run lint",
+        "npm test"
+      ],
+      "notes": "Chromium in CI needs the @sparticuz/chromium extraction described in scripts/audit/README.md."
+    },
+    {
+      "id": "ENG-035",
+      "title": "Migrate one batch of 25 inline { fa, en } strings into the locale files",
+      "status": "ready",
+      "kind": "code",
+      "priority": 2,
+      "issue": 35,
+      "labels": [
+        "i18n",
+        "P2"
+      ],
+      "effort": "M",
+      "paths": [
+        "apps/web/src/modules/",
+        "apps/web/src/locales/fa/",
+        "apps/web/src/locales/en/"
+      ],
+      "why": "462 bilingual literals bypass the locale files, the glossary tests and the parity test, so a missing translation is invisible.",
+      "spec": {
+        "input": "Inline t({ fa: '...', en: '...' }, lang) calls in one module.",
+        "output": "The same strings read from locales/{fa,en}/<module>.js through localeStrings(lang), key for key, with no change to rendered text.",
+        "acceptance": [
+          "Exactly one module per PR (start with Archive.jsx, 59 literals).",
+          "No rendered string changes: diff the strings before and after in a script, not by eye.",
+          "Key parity between fa and en (localization.test.mjs enforces it).",
+          "The count of inline literals drops by the announced number."
+        ]
+      },
+      "verify": [
+        "npm test",
+        "npm run lint"
+      ],
+      "notes": "Keep identifiers Latin; run apps/web/test/localization.test.mjs after each batch."
+    },
+    {
+      "id": "ENG-020",
+      "title": "Name the door a library module sits behind, on the twelve library pages",
+      "status": "ready",
+      "kind": "code",
+      "priority": 2,
+      "issue": 20,
+      "labels": [
+        "ux",
+        "accessibility",
+        "P2"
+      ],
+      "effort": "S",
+      "paths": [
+        "apps/web/src/lib/routes.js",
+        "apps/web/src/components/Header.jsx"
+      ],
+      "why": "routeMeta names the module but never says that the module sits behind one of the six doors, so a reader in the library loses the map.",
+      "spec": {
+        "input": "A parsed route for one of the twelve modules.",
+        "output": "A crumb between home and the module naming the door it belongs to (module 7 belongs to which door is a data question: add a door field to the module descriptors in i18n.js and mirror it in routeMeta).",
+        "acceptance": [
+          "Every one of the twelve modules has an explicit door in the descriptor table; no module is left unassigned.",
+          "Crumbs stay one line at 390 px.",
+          "routeMeta tests cover all twelve modules plus the six special views."
+        ]
+      },
+      "verify": [
+        "npm test",
+        "npm run lint"
+      ],
+      "notes": "Extend moduleFor/routeMeta in lib/routes.js; do not add a second route table."
+    },
+    {
+      "id": "ENG-050",
+      "title": "Door CTA arrow is a text glyph flipped by CSS: prove it in English (LTR)",
+      "status": "ready",
+      "kind": "code",
+      "priority": 3,
+      "issue": 50,
+      "labels": [
+        "ux",
+        "i18n",
+        "P3"
+      ],
+      "effort": "S",
+      "paths": [
+        "apps/web/src/modules/Hub.jsx",
+        "apps/web/src/styles.css"
+      ],
+      "why": "‹ is a glyph whose direction depends on the CSS flip, not on the reading direction; in en it may point the wrong way.",
+      "spec": {
+        "input": "The door CTA in fa (RTL) and en (LTR).",
+        "output": "Either an inline SVG chevron mirrored with logical properties, or a CSS rule that is direction-aware by construction. One of the two, with the reason recorded.",
+        "acceptance": [
+          "Screenshots at 1440 px in both languages show the arrow pointing toward the door in both.",
+          "The arrow stays aria-hidden and out of the accessible name.",
+          "No new dependency."
+        ]
+      },
+      "verify": [
+        "npm test",
+        "node scripts/audit/layout.mjs"
+      ],
+      "notes": "Also check KeyDock's arrows; they share the glyph."
+    },
+    {
+      "id": "ENG-051",
+      "title": "Toasts: pause on focus/hover, and give the theme toggles real names",
+      "status": "ready",
+      "kind": "code",
+      "priority": 3,
+      "issue": 51,
+      "labels": [
+        "accessibility",
+        "P3"
+      ],
+      "effort": "S",
+      "paths": [
+        "apps/web/src/components/ui.jsx"
+      ],
+      "why": "A toast disappears after 5.2 s while a screen-reader user is still reading it, and the two theme buttons are named only by title (not exposed on touch).",
+      "spec": {
+        "input": "A toast with a message, and the two theme buttons in the header.",
+        "output": "The toast timer pauses on focus and on hover and resumes on blur/leave; the theme buttons carry aria-label and aria-pressed instead of title only, with the visible icon kept aria-hidden.",
+        "acceptance": [
+          "A toast with keyboard focus inside it never disappears.",
+          "Both buttons have a name in fa and en; no duplicate announcement of the icon.",
+          "Render tests for both behaviours (fake timers or an injected clock)."
+        ]
+      },
+      "verify": [
+        "npm test",
+        "node scripts/audit/a11y.mjs"
+      ],
+      "notes": "Timer control must not depend on wall-clock in tests: inject the delay."
+    },
+    {
+      "id": "ENG-042",
+      "title": "The Bank key shows the rial sign for a toman-denominated unit",
+      "status": "ready",
+      "kind": "code",
+      "priority": 3,
+      "issue": 42,
+      "labels": [
+        "ux",
+        "i18n",
+        "P2"
+      ],
+      "effort": "S",
+      "paths": [
+        "apps/web/src/components/KeyDock.jsx",
+        "apps/web/src/modules/Hub.jsx"
+      ],
+      "why": "One unit is a thousand billion toman; a rial glyph is a 10:1 error printed on the navigation.",
+      "spec": {
+        "input": "The bank key in the dock and the bank door in the hub.",
+        "output": "One symbol and one label for the bank in both places, toman-correct, from the locale files.",
+        "acceptance": [
+          "The same glyph appears in both places (assert it in a render test).",
+          "No rial sign anywhere in the rendered interface (grep the payload and the copy).",
+          "The accessible name says HMMT, not the glyph."
+        ]
+      },
+      "verify": [
+        "npm test",
+        "npm run lint"
+      ],
+      "notes": "The glyph is decorative: keep it out of the accessible name."
+    },
+    {
+      "id": "ENG-019",
+      "title": "Regression guard: no view may lose its h1 when data fails",
+      "status": "complete",
+      "kind": "code",
+      "priority": 1,
+      "issue": 19,
+      "labels": [
+        "accessibility",
+        "bug"
+      ],
+      "effort": "S",
+      "paths": [
+        "apps/web/test/render.test.mjs"
+      ],
+      "why": "StateBlock replaced whole views, taking the only h1 with it (axe page-has-heading-one).",
+      "spec": {
+        "input": "Every route, with the API cache emptied.",
+        "output": "A test that renders 19 routes with no data and asserts an h1 inside main.",
+        "acceptance": [
+          "The test fails if a view's error path drops its heading."
+        ]
+      },
+      "verify": [
+        "npm test"
+      ],
+      "notes": "Landed with the hub/level static-hero change; kept here so the guard is discoverable."
+    },
+    {
+      "id": "ENG-058",
+      "title": "Clear the two react-hooks/exhaustive-deps warnings",
+      "status": "ready",
+      "kind": "code",
+      "priority": 3,
+      "issue": null,
+      "labels": [
+        "ci",
+        "P3"
+      ],
+      "effort": "S",
+      "paths": [
+        "apps/web/src/modules/Verification.jsx",
+        "apps/web/src/modules/levels/panels.jsx"
+      ],
+      "why": "npm run lint is warning-free except two unstable useMemo dependencies, which means a real re-render churn is hidden in the noise.",
+      "spec": {
+        "input": "The two reported sites: Verification.jsx:31 and levels/panels.jsx:113.",
+        "output": "Each derived value wrapped in its own useMemo (or hoisted out of render), with the dependency array narrowed to what the value actually reads.",
+        "acceptance": [
+          "npx eslint . prints zero problems.",
+          "No behaviour change: npm test green, and the Level 1 and Verification render tests unchanged."
+        ]
+      },
+      "verify": [
+        "npm run lint",
+        "npm test"
+      ],
+      "notes": "Small and self-contained; good first task for a new agent."
+    },
+    {
+      "id": "ENG-059",
+      "title": "Script that proves every table has a caption and scoped headers",
+      "status": "ready",
+      "kind": "audit",
+      "priority": 2,
+      "issue": null,
+      "labels": [
+        "accessibility",
+        "data-integrity",
+        "P3"
+      ],
+      "effort": "S",
+      "paths": [
+        "scripts/audit/",
+        "package.json"
+      ],
+      "why": "The UX checklist claims captions and scopes; nothing checks it, so the claim will rot.",
+      "spec": {
+        "input": "The rendered build at http://127.0.0.1:5173, every route in both languages.",
+        "output": "A script that fails with file:route, table index and the missing attribute, and passes with a one-line summary; wired into npm run check as audit:tables.",
+        "acceptance": [
+          "Every table in every route is visited, including collapsed disclosures where possible.",
+          "Wired as audit:tables in package.json and named in the acceptance of this task, so the claim has a command.",
+          "Runs without the browser dependency if it can be done by parsing the SSR render tests' HTML; prefer that, it keeps CI browser-free."
+        ]
+      },
+      "verify": [
+        "npm test",
+        "npm run lint"
+      ],
+      "notes": "The SSR path (render tests) is preferred: no Chromium, runs in CI."
+    },
+    {
+      "id": "ENG-060",
+      "title": "Property tests for parseDecimalInput",
+      "status": "ready",
+      "kind": "code",
+      "priority": 3,
+      "issue": null,
+      "labels": [
+        "data-integrity",
+        "P3"
+      ],
+      "effort": "S",
+      "paths": [
+        "apps/web/test/decimal.test.mjs",
+        "apps/web/src/lib/decimal.mjs"
+      ],
+      "why": "The amount parser guards a 1000x error and is covered by eleven hand-written cases.",
+      "spec": {
+        "input": "A deterministic pseudo-random generator (seeded, no dependency) producing digit strings in the three scripts with separators.",
+        "output": "Two properties over 2000 generated cases: (1) ok === true implies value > 0 and Number(normalized) === value; (2) an accepted string never parses to a different value when a separator is removed from a grouping-only input.",
+        "acceptance": [
+          "The seed is fixed so a failure is reproducible and printable.",
+          "The suite adds under 200 ms.",
+          "Any real counter-example found is fixed in decimal.mjs in the same PR, with the case added by hand."
+        ]
+      },
+      "verify": [
+        "npm test"
+      ],
+      "notes": "No faker dependency; a 32-bit LCG is enough."
+    },
+    {
+      "id": "ENG-018",
+      "title": "Derive a principle's light from the audit chain instead of a writable state field",
+      "status": "proposed",
+      "kind": "data",
+      "priority": 1,
+      "issue": 18,
+      "labels": [
+        "data-integrity",
+        "strategy"
+      ],
+      "effort": "L",
+      "paths": [
+        "apps/api/src/data/principles.mjs",
+        "packages/domain-models/"
+      ],
+      "why": "A light that can be written is a claim that can be made; a light that is derived is a claim that can be audited.",
+      "spec": {
+        "input": "The coverage records for each principle (surface, evidence, review state) and the audit trail that admits them.",
+        "output": "A pure function lightFor(principleId, auditChain) with a table of rules, a test proving a light cannot be set without a matching accepted audit entry, and the API rendering the derived value.",
+        "acceptance": [
+          "No route accepts a light as input.",
+          "Changing an audit entry changes the light; removing one reverts it.",
+          "The 21/47/16/29 distribution is unchanged when the fixture chain is fed in.",
+          "Needs maintainer sign-off on the rule table before implementation (open the discussion first)."
+        ]
+      },
+      "verify": [
+        "npm test",
+        "npm run audit:guardrails"
+      ],
+      "notes": "Status is proposed on purpose: the rule table is a governance question, not a coding one."
+    },
+    {
+      "id": "ENG-021",
+      "title": "Referendum thresholds are drafts: label them, or source them",
+      "status": "ready",
+      "kind": "docs",
+      "priority": 2,
+      "issue": 21,
+      "labels": [
+        "strategy",
+        "data-integrity"
+      ],
+      "effort": "S",
+      "paths": [
+        "apps/api/src/data/referendum.mjs",
+        "docs/strategy/",
+        "apps/web/src/locales/fa/referendum.js"
+      ],
+      "why": "A quorum printed without a source reads as a decision that was taken.",
+      "spec": {
+        "input": "Every threshold, quorum and gate constant in the referendum payload.",
+        "output": "Either a source (citation, with the docs/ convention) or the word draft in the payload and on the screen, per constant, with one sentence saying what would make it binding.",
+        "acceptance": [
+          "No number is left unlabelled.",
+          "The guardrail script's 'not an election authority' payload assertion still passes.",
+          "A reader can tell a sourced number from a proposed one without leaving the page."
+        ]
+      },
+      "verify": [
+        "npm test",
+        "npm run audit:guardrails"
+      ],
+      "notes": "Prefer labelling over inventing a source; an invented citation is a hard stop in this project."
+    },
+    {
+      "id": "ENG-041",
+      "title": "Station readout: the hub's where-am-I-standing logic is dead outside the hub",
+      "status": "proposed",
+      "kind": "code",
+      "priority": 3,
+      "issue": 41,
+      "labels": [
+        "ux",
+        "needs-decision",
+        "P3"
+      ],
+      "effort": "S",
+      "paths": [
+        "apps/web/src/modules/Hub.jsx",
+        "apps/web/src/components/KeyDock.jsx"
+      ],
+      "why": "The label is computed for routes that never render it, which reads as a feature that exists.",
+      "spec": {
+        "input": "A route.",
+        "output": "Either the readout moves into the shell (one line, visible on every route) or the dead branches are removed. The decision is the maintainer's; the implementation is small either way.",
+        "acceptance": [
+          "No branch computes a value nothing renders.",
+          "Whichever way it goes, the key dock and the readout agree."
+        ]
+      },
+      "verify": [
+        "npm test"
+      ],
+      "notes": "Blocked on a product decision; ask in the issue before coding."
+    },
+    {
+      "id": "ENG-025",
+      "title": "Charter vs. party: reconcile the README's non-partisan claim with the party layer",
+      "status": "proposed",
+      "kind": "docs",
+      "priority": 1,
+      "issue": 25,
+      "labels": [
+        "strategy",
+        "documentation",
+        "needs-decision"
+      ],
+      "effort": "S",
+      "paths": [
+        "README.md",
+        "docs/strategy/PARTY-AND-PARLIAMENT.md"
+      ],
+      "why": "Two front-door documents disagree about what the project is. An agent cannot resolve this without a maintainer decision.",
+      "spec": {
+        "input": "The README's 'non-partisan' paragraph and the party list in PARTY-AND-PARLIAMENT.md.",
+        "output": "One precedence statement, in both files, that says which governs and why. No softened language that leaves both claims standing.",
+        "acceptance": [
+          "The contradiction is gone, not phrased around.",
+          "The guardrail script's no-government/no-election assertions still pass."
+        ]
+      },
+      "verify": [
+        "npm run audit:guardrails"
+      ],
+      "notes": "Documentation-only, but a governance decision: propose wording, do not decide it."
+    }
+  ]
+}

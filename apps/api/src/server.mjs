@@ -65,6 +65,8 @@ export function parseQuery(searchParams) {
       return { ok: false, error: "query_too_long" };
     }
     // Reject control characters and common injection probes; allow Persian text.
+    // The control characters are the point of the rule, not an accident.
+    // eslint-disable-next-line no-control-regex
     if (/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(rawValue)) {
       return { ok: false, error: "invalid_characters" };
     }

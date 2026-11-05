@@ -99,27 +99,38 @@ const copyOutcome = {
   below: { fa: "زیر آستانه", en: "Below threshold" }
 };
 
-export default function LevelHome({ lang, dict, navigate }) {
+export default function LevelHome({ lang, navigate }) {
   const levelsState = useApi("/api/v1/levels");
   const copy = localeStrings(lang).levels.home;
 
+  // The heading is static copy: a slow or failed /api/v1/levels must not take
+  // the page's only <h1> with it (issue #19).
+  const hero = (
+    <header className="level-hero">
+      <p className="eyebrow">{copy.eyebrow}</p>
+      <h1 className="h1">{copy.title}</h1>
+      <p className="lede">{copy.lede}</p>
+      <ul className="hero-chips">
+        <li><Badge tone="synthetic">{copy.syntheticBadge}</Badge></li>
+        <li className="muted small">{copy.noRankNotice}</li>
+      </ul>
+    </header>
+  );
+
   if (levelsState.status !== "ready") {
-    return <StateBlock status={levelsState.status} lang={lang} onRetry={levelsState.reload} />;
+    return (
+      <div className="level-home">
+        {hero}
+        <StateBlock status={levelsState.status} lang={lang} onRetry={levelsState.reload} />
+      </div>
+    );
   }
 
   const { levels, workflow, policies, comparison, guards } = levelsState.payload.data;
 
   return (
     <div className="level-home">
-      <header className="level-hero">
-        <p className="eyebrow">{copy.eyebrow}</p>
-        <h1 className="h1">{copy.title}</h1>
-        <p className="lede">{copy.lede}</p>
-        <ul className="hero-chips">
-          <li><Badge tone="synthetic">{copy.syntheticBadge}</Badge></li>
-          <li className="muted small">{copy.noRankNotice}</li>
-        </ul>
-      </header>
+      {hero}
 
       <ul className="level-grid">
         {levels.map((level, index) => (

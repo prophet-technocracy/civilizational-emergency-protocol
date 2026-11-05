@@ -24,6 +24,8 @@
 - [Checklist](../docs/ux/AGENT-UX-CHECKLIST.md)
 
 ## Validation
+- [ ] `node scripts/agent/run.mjs --full` exits 0 (the same check CI runs).
+- [ ] The task id is in the title (`ENG-043: …`) and a test fails without this change.
 - [ ] I checked links, spelling and formatting.
 - [ ] I ran relevant tests (or explained why none apply).
 - [ ] I disclosed meaningful AI assistance.
