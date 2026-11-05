@@ -13,7 +13,8 @@
     "@fontsource/inter": "^5.3.0",
     "@fontsource/vazirmatn": "^5.3.0",
     "react": "19.3.1",
-    "react-dom": "19.3.1"
+    "react-dom": "19.3.1",
+    "@cep/domain-models": "*"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "4.7.0",

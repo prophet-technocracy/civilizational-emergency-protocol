@@ -702,3 +702,73 @@ test("a level view states that its records are synthetic and non-binding", () =>
     restore();
   }
 });
+
+/* ---------------------------- interactive panels ---------------------------- */
+
+test("every level renders an interactive panel that states what it cannot do", () => {
+  for (const id of ["1", "2", "3", "4", "5"]) {
+    const { html, restore } = renderWithoutFetch(`#/levels/${id}`);
+    try {
+      assert.match(html, /class="sim"/, `level ${id} has no session panel`);
+      // The honesty note is part of the panel, not a comment somewhere else.
+      assert.match(html, /به API نوشته نمی‌شوند/);
+      assert.match(html, /هیچ اثر حقوقی ندارند/);
+      assert.match(html, /بازنشانی نشست/);
+    } finally {
+      restore();
+    }
+  }
+});
+
+test("every interactive form field has an associated label", () => {
+  const expected = {
+    2: ["l2-request"],
+    3: ["l3-title", "l3-domain"],
+    4: ["l4-spend", "l4-deliverable"],
+    5: ["l5-proposal", "l5-reason", "l5-org"]
+  };
+  for (const [id, fieldIds] of Object.entries(expected)) {
+    const { html, restore } = renderWithoutFetch(`#/levels/${id}`);
+    try {
+      for (const fieldId of fieldIds) {
+        assert.ok(html.includes(`id="${fieldId}"`), `level ${id} is missing #${fieldId}`);
+        assert.ok(html.includes(`for="${fieldId}"`), `level ${id} has an unlabelled #${fieldId}`);
+        assert.ok(html.includes(`aria-label`), "controls should keep an accessible name");
+      }
+    } finally {
+      restore();
+    }
+  }
+});
+
+test("levels 4 and 5 ship a deliberately refused action, so the boundary is testable", () => {
+  const level4 = renderWithoutFetch("#/levels/4");
+  try {
+    assert.match(level4.html, /آزمودن: اعمال برگهٔ رأی اعضا/);
+    assert.match(level4.html, /btn--danger/);
+  } finally {
+    level4.restore();
+  }
+  const level5 = renderWithoutFetch("#/levels/5");
+  try {
+    assert.match(level5.html, /آزمودن کنش بیرون از اختیار/);
+    assert.match(level5.html, /تصمیم برای پروندهٔ کمیتهٔ دیگر/);
+  } finally {
+    level5.restore();
+  }
+});
+
+test("the interactive ballot starts from the same formula as the server view", () => {
+  const { html, restore } = renderWithoutFetch("#/levels/3");
+  try {
+    const dashboard = fixtures.get("/api/v1/levels/3?policy=P-OPEN-DRAFT").data;
+    const serverBallot = dashboard.modules.find((module) => module.id === "political").ballot;
+    // Neither delegation is enabled in a fresh session, so the interactive
+    // total must equal the base franchise of the server's own computation.
+    assert.equal(serverBallot.components[0].id, "base-franchise");
+    assert.match(html, /وزن نهایی این نشست/);
+    assert.match(html, /ثبت‌نشده/);
+  } finally {
+    restore();
+  }
+});

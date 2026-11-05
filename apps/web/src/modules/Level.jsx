@@ -1,4 +1,8 @@
+import { useMemo } from "react";
 import { useApi } from "../lib/api.js";
+import { useDemoSession } from "../lib/useDemoSession.js";
+import { selectBallot } from "../lib/demoSession.mjs";
+import { Panels } from "./levels/panels.jsx";
 import { t, formatNumber } from "../i18n.js";
 import { localeStrings, policyLabel } from "../locales/index.js";
 import { Badge, Callout, StateBlock, Empty, Card, Stat, Disclosure } from "../components/ui.jsx";
@@ -893,12 +897,37 @@ function ModuleBody({ module, copy, lang, navigate, policy }) {
 export default function Level({ lang, dict, navigate, levelId, policyId, onPolicyChange }) {
   const copy = localeStrings(lang).levels.level;
   const state = useApi(`/api/v1/levels/${levelId}?policy=${policyId}`);
+  const levelNumber = Number(levelId);
+
+  // Fixtures the reducer needs to decide; it never reads them from module scope.
+  const baseContext = useMemo(() => {
+    if (state.status !== "ready") return {};
+    const modules = state.payload.data.modules;
+    const committee = modules.find((module) => module.id === "committee")?.committee;
+    return {
+      franchise: true,
+      citizenId: "CIT-SYN-004",
+      committeeId: committee?.id ?? "COM-SYN-01",
+      delegations: modules.find((module) => module.id === "delegations")?.items ?? [],
+      tasks: modules.find((module) => module.id === "tasks")?.items ?? []
+    };
+  }, [state]);
+
+  const session = useDemoSession(levelNumber, baseContext);
+
+  const sessionBallot = useMemo(() => {
+    if (state.status !== "ready" || levelNumber !== 3) return null;
+    const delegations = state.payload.data.modules.find((module) => module.id === "delegations")?.items ?? [];
+    return selectBallot(session.state, { franchise: true, delegations }, policyId);
+  }, [state, levelNumber, session.state, policyId]);
 
   if (state.status !== "ready") {
     return <StateBlock status={state.status} lang={lang} onRetry={state.reload} />;
   }
 
-  const { level, modules, policy, posthumous, workflow, guards } = state.payload.data;
+  const data = state.payload.data;
+  const { level, modules, policy, posthumous, workflow, guards } = data;
+  const Panel = Panels[levelNumber];
 
   return (
     <div className="level-view">
@@ -939,6 +968,17 @@ export default function Level({ lang, dict, navigate, levelId, policyId, onPolic
           </p>
         </div>
       </header>
+
+      {Panel ? (
+        <Panel
+          lang={lang}
+          copy={localeStrings(lang).levels.sim}
+          session={session}
+          data={data}
+          ballot={sessionBallot}
+          franchise
+        />
+      ) : null}
 
       <div className="module-grid">
         {modules.map((module) => (

@@ -62,6 +62,22 @@ Endorsement reach, professional authority and political ballots are three differ
 
 Authority is also enforced at the **API boundary**, not only in the interface: `/api/v1/influence/authorize` answers 403 with a reason when a level asks for something outside its scope, and checks that a level-2 request targets the caller's own record.
 
+### Interactive sample session
+
+Each level is not just a read-only dashboard: it carries a small, honest simulator. The behaviour lives in `apps/web/src/lib/demoSession.mjs` as a pure reducer (23 tests), so every refusal is tested without a browser.
+
+| Level | What you can actually do |
+|---|---|
+| ۱ Observer | Filter proposals by domain, open one proposal and read its score, margin and outcome under both policies |
+| ۲ Private citizen | Choose which attributes a selective proof discloses and watch the recipient's view change; grant or withdraw consent; file a private request |
+| ۳ Participating citizen | Enable valid delegations and watch the ballot total recompute from the same engine the API uses; cast, try to cast twice, withdraw; answer polls; submit a citizen proposal |
+| ۴ Organizational node | Accept a task, log synthetic spend within budget, submit a deliverable — and press the button that tries to exercise the members' ballots, which must be refused |
+| ۵ Decision-maker | Record a scoped decision (a reason under 20 characters is refused), declare a conflict that recuses the member, commission a task, and attempt two out-of-scope actions that both fail with a reason |
+
+Nothing is persisted: no request is written back to the API, nothing goes to `localStorage`, and every entry in the session log is labelled recorded or refused with the reason. A refusal changes nothing except that log entry — a property the tests assert directly.
+
+![Level 3: the ballot recomputed from live delegation toggles](docs/screenshots/level-3-interactive.png)
+
 ### Persian-first localization
 
 Copy lives in `apps/web/src/locales/fa/` and `apps/web/src/locales/en/`; the terminology authority is [`docs/localization/PERSIAN-GLOSSARY.md`](docs/localization/PERSIAN-GLOSSARY.md) with the rules in [`docs/localization/PERSIAN-STYLE-GUIDE.md`](docs/localization/PERSIAN-STYLE-GUIDE.md). `apps/web/test/localization.test.mjs` fails the build on an Arabic `ي`/`ك`, a missing half-space, an untranslated string, a missing English key, or a discouraged synonym. The machine-readable glossary is `packages/localization/glossary.mjs`, so the document and the tests cannot drift apart.
@@ -97,7 +113,7 @@ The web app is served by Vite on port 5173 (Persian RTL by default, English LTR 
 Verification:
 
 ```sh
-npm test         # 176 tests: API contract/security, response-envelope contract,
+npm test         # 203 tests: API contract/security, response-envelope contract,
                  # domain models, schemas, localization, SSR render + a11y guards
 npm run validate:csv   # 77-column historical-dossier gate validator
 npm run build    # production bundle check
@@ -114,7 +130,10 @@ Interface checks that run inside `npm test` (no browser required):
 - the five-profile chooser rendering exactly five cards with ballot ownership stated per level,
 - each level rendering its own module set from the shared records (the same `PROP-SYN-001`, `DEC-SYN-014` and workflow appear at every level),
 - a ballot breakdown whose declared components sum to the total, zero ballots created from advocacy reach, and the posthumous ballot prohibition on every level,
-- the same proposal qualifying under one weighting policy and failing the other.
+- the same proposal qualifying under one weighting policy and failing the other,
+- an interactive panel on every level whose honesty note and reset control are asserted in server-side rendering,
+- a label for every interactive form field,
+- a deliberately refused action on levels 4 and 5, so the authority boundary stays testable in the interface.
 
 The same twelve views were additionally audited in a real headless Chromium with axe-core (WCAG 2.1 A/AA + best practice) in light and dark mode, plus the open mobile navigation drawer at 390 px; the result is zero violations. A keyboard-only walkthrough drives the same build: skip link, focus trap and Escape in the search overlay and the provenance drawer, focus return to the control that opened them, an inert off-canvas navigation when closed, and focus moving to the new view after a route change (15/15 checks). A layout sweep of all twelve views in both languages, both themes and four viewport widths (1440 / 1024 / 768 / 390 px) found no horizontal scrolling, no offscreen elements and no clipped text. Contrast failures and undersized hit areas found that way are now part of the render tests so they cannot return.
 
