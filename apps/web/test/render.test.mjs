@@ -1513,3 +1513,17 @@ test("a build without git says dev instead of inventing a hash", () => {
     restore();
   }
 });
+
+test("the bank states the amount it actually read, before the form is submitted", () => {
+  const { html, restore } = renderWithoutFetch("#/bank");
+  try {
+    assert.match(html, /مقدار خوانده‌شده/, "the field says how it read what was typed");
+    assert.match(html, /۰٫۰۵ HMMT/, "the default amount is echoed back as 0.05, not as 0");
+    // The old parser turned "1,000" into 1; the page must not contain that path.
+    const source = readFileSync(join(WEB_ROOT, "src/modules/Bank.jsx"), "utf8");
+    assert.doesNotMatch(source, /replace\(\/\[٫,\]\/g/, "the lossy amount parser is gone");
+    assert.match(source, /parseDecimalInput/);
+  } finally {
+    restore();
+  }
+});

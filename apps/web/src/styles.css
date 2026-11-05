@@ -5642,3 +5642,14 @@ html[data-theme="dark"] .work-card__icon {
   margin-block: 0.9rem 0;
   color: var(--ink-500);
 }
+
+/* A typed amount that cannot be read: the reason sits where the number would. */
+.field__hint--problem {
+  color: var(--danger);
+}
+
+.sim__problem {
+  margin-block: 0.4rem 0;
+  color: var(--danger);
+  font-weight: 600;
+}
