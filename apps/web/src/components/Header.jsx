@@ -52,7 +52,9 @@ export default function Header({
         </a>
 
         <div className="app-header__tools">
-          <button type="button" className="search-trigger" onClick={onSearch} aria-label={searchCopy.label}>
+          {/* No aria-label here: the visible placeholder is the name, and a
+              label that does not contain it fails label-content-name-mismatch. */}
+          <button type="button" className="search-trigger" onClick={onSearch}>
             <Icon name="search" size={15} />
             <span className="search-trigger__label">{searchCopy.placeholder}</span>
             {/* The shortcut hint is decorative: keeping it out of the

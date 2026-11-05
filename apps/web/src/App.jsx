@@ -115,8 +115,10 @@ export default function App() {
     writeStored("cep.lang", lang);
     writeStored("cep.theme", theme);
     // The browser chrome should follow the page, not the other way round.
-    const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", THEME_COLOR[theme] ?? THEME_COLOR.light);
+    // (Not named `meta`: that would shadow the route metadata above, and
+    // document.title would quietly become the <meta> element's title attribute.)
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeMeta) themeMeta.setAttribute("content", THEME_COLOR[theme] ?? THEME_COLOR.light);
     document.title = meta.title;
   }, [lang, theme, meta]);
 
