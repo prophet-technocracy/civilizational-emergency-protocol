@@ -57,7 +57,7 @@ test("the canonical spellings actually appear where the concept is used", () => 
   const fa = flattenStrings(UI.fa).map((pair) => pair[1]).join(" ");
   assert.ok(fa.includes("برگهٔ رأی") || GLOSSARY.some((entry) => entry.fa === "برگهٔ رأی"));
   const ownCopy = flattenStrings(LOCALES.fa).map((pair) => pair[1]).join(" ");
-  for (const term of ["برگهٔ رأی", "غیرالزام‌آور", "ساختگی", "وزن‌دهی"]) {
+  for (const term of ["برگهٔ رأی", "غیرالزام‌آور", "ساختگی", "وزن‌دهی", "پشتوانه", "سقف عرضه", "عرضهٔ در گردش", "بازخرید", "اثبات ذخیره"]) {
     assert.ok(ownCopy.includes(term), `the level copy never uses the canonical term «${term}»`);
   }
   // Terms that belong to the API payloads (level titles, module titles) are

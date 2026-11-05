@@ -4,6 +4,7 @@ import { useDebounced, readStored, writeStored } from "./lib/api.js";
 import { Drawer, ProvenanceBody, Badge } from "./components/ui.jsx";
 import { useFocusTrap, prefersReducedMotion } from "./lib/focus.js";
 import { Icon } from "./components/icons.jsx";
+import { localeStrings } from "./locales/index.js";
 import Dashboard from "./modules/Dashboard.jsx";
 import Governance from "./modules/Governance.jsx";
 import Transition from "./modules/Transition.jsx";
@@ -18,6 +19,7 @@ import Simulations from "./modules/Simulations.jsx";
 import DigitalLegacy from "./modules/DigitalLegacy.jsx";
 import LevelHome from "./modules/LevelHome.jsx";
 import Level from "./modules/Level.jsx";
+import Bank from "./modules/Bank.jsx";
 
 const VIEWS = {
   dashboard: Dashboard,
@@ -31,12 +33,22 @@ const VIEWS = {
   "public-services": PublicServices,
   projects: Projects,
   simulations: Simulations,
-  "digital-legacy": DigitalLegacy
+  "digital-legacy": DigitalLegacy,
+  bank: Bank
 };
 
 // The five civic levels are the entry point; the twelve modules remain the
 // library behind them. `#/levels` is the profile chooser, `#/levels/3` one level.
 export const LEVELS_VIEW = "levels";
+export const BANK_VIEW = "bank";
+
+const BANK_MODULE = {
+  id: BANK_VIEW,
+  number: null,
+  icon: "bank",
+  title: { fa: "بانک HMMT", en: "HMMT Bank" },
+  short: { fa: "بانک", en: "Bank" }
+};
 
 const LEVEL_HOME_MODULE = {
   id: LEVELS_VIEW,
@@ -52,6 +64,9 @@ export function readRouteFromHash(hash) {
   if (viewId === LEVELS_VIEW) {
     const id = recordId ? decodeURIComponent(recordId) : null;
     return { view: LEVELS_VIEW, recordId: id && /^[1-5]$/.test(id) ? id : null };
+  }
+  if (viewId === BANK_VIEW) {
+    return { view: BANK_VIEW, recordId: null };
   }
   const known = MODULES.some((module) => module.id === viewId);
   return {
@@ -83,6 +98,7 @@ export default function App() {
   const dict = UI[lang];
   const activeModule = useMemo(() => {
     if (route.view === LEVELS_VIEW) return LEVEL_HOME_MODULE;
+    if (route.view === BANK_VIEW) return BANK_MODULE;
     return MODULES.find((module) => module.id === route.view) ?? MODULES[0];
   }, [route.view]);
 
@@ -331,6 +347,21 @@ export default function App() {
                 <span className="nav-item__num" aria-hidden="true">۵</span>
                 <span className="nav-item__glyph" aria-hidden="true"><Icon name="layers" size={15} /></span>
                 <span className="nav-item__title">{dict.levelsNav}</span>
+              </a>
+            </li>
+          </ul>
+          <p className="sidebar__label">{localeStrings(lang).bank.navLabel}</p>
+          <ul>
+            <li>
+              <a
+                href={`#/${BANK_VIEW}`}
+                className={`nav-item nav-item--levels ${route.view === BANK_VIEW ? "is-active" : ""}`}
+                aria-current={route.view === BANK_VIEW ? "page" : undefined}
+                onClick={() => setNavOpen(false)}
+              >
+                <span className="nav-item__num" aria-hidden="true" />
+                <span className="nav-item__glyph" aria-hidden="true"><Icon name="bank" size={15} /></span>
+                <span className="nav-item__title">{t(BANK_MODULE.title, lang)}</span>
               </a>
             </li>
           </ul>

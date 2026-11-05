@@ -36,7 +36,7 @@ The repository owner currently has the technical ability to administer the GitHu
 
 ## Five-level civic operating system
 
-The prototype now opens on a **five-profile chooser** (`#/levels`). Each profile is a different interface over the same synthetic records — not the same dashboard recoloured. The twelve modules below remain the library behind those profiles.
+The prototype now opens on a **five-profile chooser** (`#/levels`); `#/bank` is the HMMT monetary design described below. Each profile is a different interface over the same synthetic records — not the same dashboard recoloured. The twelve modules below remain the library behind those profiles.
 
 | # | Level | What it is for | Holds a ballot |
 |---|---|---|---|
@@ -78,6 +78,60 @@ Nothing is persisted: no request is written back to the API, nothing goes to `lo
 
 ![Level 3: the ballot recomputed from live delegation toggles](docs/screenshots/level-3-interactive.png)
 
+## HMMT: a toman-denominated unit (design proposal)
+
+`#/bank` is a second entry point beside the five levels, and it answers one
+question: **what would it take to issue a transparent national unit, and what is
+the arithmetic that stops it from being a poster?**
+
+One unit is defined as **1 HMMT = 1,000,000,000,000 toman** («هزار میلیارد تومان»).
+The screen puts three numbers next to each other:
+
+| Number | Value | Status of the underlying figure |
+|---|---|---|
+| Gross in-situ resource wealth | USD 27.3 tn | source-reported (official Iranian estimate), **not backing** |
+| Net backing after the haircut chain | USD 703.8 bn | 2.58 % of the headline survives |
+| Supply ceiling | **189,544 HMMT** | = net backing ÷ USD value of one unit |
+
+The popular guess of "20–30 trillion dollars of national wealth" is that
+27.3 tn figure. It is a gross in-situ valuation, and treating it as backing
+would produce a 7,352,027 HMMT ceiling — 39× the defensible number. What the
+design does instead:
+
+- **Three rules that are not configurable.** No token without a matching toman
+  deposit (no premine, pre-sale or airdrop); circulating supply never exceeds
+  the asset-backed ceiling; a gross figure is never used as backing.
+- **A visible haircut chain** (recovery ×0.25, extraction cost −45 %, time value
+  ×0.75, legal transferability ×0.5, verification ×0.5), with each step's factor
+  and reason on screen, and unverified tiers contributing exactly zero.
+- **Two ratios kept apart.** `reserveRatio` (toman per circulating token, ≥ 1)
+  answers "can holders be paid today?"; `assetCoverage` answers "is the ceiling
+  honest?".
+- **Redemption that queues, never freezes.** An emergency pause stops new
+  issuance only; a queued request is paid in timestamp order with its funds
+  earmarked.
+- **Ceiling asymmetry.** Lowering the ceiling is immediate; raising it needs a
+  supermajority and a 30-day timelock, so a rial collapse cannot silently expand
+  the supply.
+- **A published exit path off TON.** Stage one is a TON Jetton (TEP-74); the move
+  to a sovereign chain happens only after a dual-chain proof-of-reserve root, a
+  unilateral exit for holders, and an independent contract review.
+
+The simulator on the page performs four operations against synthetic fixtures:
+a per-person conversion, a conversion past the ceiling (refused, with the
+remaining capacity stated), a redemption inside the daily cash window, and one
+that must queue. Nothing is minted, no wallet is used, no payment is made, and
+no identity data is written anywhere.
+
+![The haircut chain: 27.3 tn in the ground becomes 703.8 bn of backing](docs/screenshots/hmmt-haircut-chain.png)
+
+![The simulator refusing a conversion past the ceiling](docs/screenshots/hmmt-simulator.png)
+
+Figures, sources, dates and the unverified list are in
+[docs/economics/HMMT-FACT-CHECK.md](docs/economics/HMMT-FACT-CHECK.md); the bank
+architecture, governance and threat model are in
+[docs/economics/HMMT-DESIGN.md](docs/economics/HMMT-DESIGN.md).
+
 ### Persian-first localization
 
 Copy lives in `apps/web/src/locales/fa/` and `apps/web/src/locales/en/`; the terminology authority is [`docs/localization/PERSIAN-GLOSSARY.md`](docs/localization/PERSIAN-GLOSSARY.md) with the rules in [`docs/localization/PERSIAN-STYLE-GUIDE.md`](docs/localization/PERSIAN-STYLE-GUIDE.md). `apps/web/test/localization.test.mjs` fails the build on an Arabic `ي`/`ك`, a missing half-space, an untranslated string, a missing English key, or a discouraged synonym. The machine-readable glossary is `packages/localization/glossary.mjs`, so the document and the tests cannot drift apart.
@@ -113,7 +167,7 @@ The web app is served by Vite on port 5173 (Persian RTL by default, English LTR 
 Verification:
 
 ```sh
-npm test         # 203 tests: API contract/security, response-envelope contract,
+npm test         # 237 tests: API contract/security, response-envelope contract,
                  # domain models, schemas, localization, SSR render + a11y guards
 npm run validate:csv   # 77-column historical-dossier gate validator
 npm run build    # production bundle check
@@ -133,11 +187,14 @@ Interface checks that run inside `npm test` (no browser required):
 - the same proposal qualifying under one weighting policy and failing the other,
 - an interactive panel on every level whose honesty note and reset control are asserted in server-side rendering,
 - a label for every interactive form field,
-- a deliberately refused action on levels 4 and 5, so the authority boundary stays testable in the interface.
+- a deliberately refused action on levels 4 and 5, so the authority boundary stays testable in the interface,
+- the bank rendering its ceiling, its net backing and its "not legal tender" statement with `fetch` disabled, and never rendering the no-haircut ceiling the gross headline would produce,
+- a label for every bank simulator field, and the API refusing an unknown action or a non-positive amount instead of guessing.
 
 The same twelve views were additionally audited in a real headless Chromium with axe-core (WCAG 2.1 A/AA + best practice) in light and dark mode, plus the open mobile navigation drawer at 390 px; the result is zero violations. A keyboard-only walkthrough drives the same build: skip link, focus trap and Escape in the search overlay and the provenance drawer, focus return to the control that opened them, an inert off-canvas navigation when closed, and focus moving to the new view after a route change (15/15 checks). A layout sweep of all twelve views in both languages, both themes and four viewport widths (1440 / 1024 / 768 / 390 px) found no horizontal scrolling, no offscreen elements and no clipped text. Contrast failures and undersized hit areas found that way are now part of the render tests so they cannot return.
 
-See [docs/architecture/](docs/architecture/) for the architecture, module map, data flow and decisions, and [docs/security/THREAT-MODEL-AND-AUDIT.md](docs/security/THREAT-MODEL-AND-AUDIT.md) for the independent audit. Public deployment remains **gated** pending human review.
+See [docs/architecture/](docs/architecture/) for the architecture, module map, data flow and decisions,
+[docs/economics/](docs/economics/) for the HMMT fact-check and design, and [docs/security/THREAT-MODEL-AND-AUDIT.md](docs/security/THREAT-MODEL-AND-AUDIT.md) for the independent audit. Public deployment remains **gated** pending human review.
 
 ## Agent task board
 

@@ -643,3 +643,122 @@ test("the posthumous mandate block always prohibits a ballot transfer", async ()
     assert.equal(posthumous.memoirAttempt.allowed, true);
   }
 });
+
+/* ------------------------------- HMMT bank -------------------------------- */
+
+test("the HMMT payload states its legal posture before any number", async () => {
+  const response = await fetch(`${baseUrl}/api/v1/hmmt`);
+  const payload = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(payload.mode, "synthetic-demo");
+  assert.match(payload.data.notice.en, /not legal tender/i);
+  assert.match(payload.data.notice.fa, /پول قانونی/);
+  assert.equal(payload.data.design.status, "proposed-design");
+  assert.ok(payload.data.design.invariants.length >= 6);
+});
+
+test("supply reports ceiling and circulating supply as different numbers", async () => {
+  const { data } = await (await fetch(`${baseUrl}/api/v1/hmmt/supply`)).json();
+  assert.equal(data.definition.tomanPerToken, 1e12);
+  assert.ok(data.ceiling.tokens > 100000 && data.ceiling.tokens < 300000);
+  assert.ok(data.circulating.tokens > 0);
+  assert.ok(data.circulating.tokens < data.ceiling.tokens);
+  assert.ok(data.circulating.utilisation < 0.05);
+  assert.equal(data.ceiling.formula.fa.length > 20, true);
+  // A phase is named, and each phase carries a gate rather than a date.
+  assert.ok(data.phases.some((phase) => phase.id === data.currentPhaseId));
+  assert.ok(data.phases.every((phase) => phase.gate.fa && phase.gate.en));
+});
+
+test("backing exposes every haircut step and refuses the gross headline", async () => {
+  const { data } = await (await fetch(`${baseUrl}/api/v1/hmmt/backing`)).json();
+  const inSitu = data.basket.lines.find((line) => line.tierId === "T3");
+  assert.equal(data.basket.grossUsd, 27.435e12);
+  assert.ok(data.basket.netUsd < data.basket.grossUsd / 30);
+  // Four policy steps plus the verification multiplier: the whole chain, in order.
+  assert.ok(inSitu.steps.length >= 5);
+  for (const step of inSitu.steps) {
+    assert.ok(step.label.fa && step.label.en, `${step.id} is not bilingual`);
+    assert.ok(step.after <= step.before, `${step.id} increased the figure`);
+  }
+  // Unverified tiers are reported but contribute nothing.
+  assert.deepEqual(data.basket.excludedTiers, ["T1", "T2"]);
+  for (const line of data.basket.lines.filter((item) => item.status === "unverified-estimate")) {
+    assert.equal(line.netUsd, 0);
+  }
+  // GDP and private wealth are named and excluded, not silently dropped.
+  assert.equal(data.excluded.length, 2);
+});
+
+test("proof of reserve reports both invariants and the queue", async () => {
+  const { data } = await (await fetch(`${baseUrl}/api/v1/hmmt/reserve`)).json();
+  assert.equal(data.status, "healthy");
+  assert.equal(data.reserveRatio >= 1, true);
+  assert.equal(data.assetCoverage >= 1, true);
+  assert.ok(data.queuedTokens > 0);
+  const ids = data.invariants.map((item) => item.id);
+  for (const required of ["reserve-at-least-one", "no-unbacked-mint", "redemption-never-frozen"]) {
+    assert.ok(ids.includes(required), `missing invariant ${required}`);
+  }
+  assert.ok(data.invariants.every((item) => item.statement.fa && item.statement.en));
+});
+
+test("a conversion beyond the ceiling is refused, with the capacity named", async () => {
+  const response = await fetch(`${baseUrl}/api/v1/hmmt/simulate?action=convert&amount=${2e17}`);
+  const { data } = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(data.simulationOnly, true);
+  assert.equal(data.result.allowed, false);
+  assert.equal(data.result.code, "ceiling-reached");
+  assert.ok(data.result.capacity > 0);
+  assert.equal(data.after, null);
+});
+
+test("a small conversion performs and reports the reserve state it leaves", async () => {
+  const { data } = await (await fetch(`${baseUrl}/api/v1/hmmt/simulate?action=convert&amount=${5e10}`)).json();
+  assert.equal(data.result.allowed, true);
+  // 0.05 gross minus 20 bps: the fee survives rounding at this size.
+  assert.equal(data.result.netTokens, 0.0499);
+  assert.equal(data.result.feeTokens, 0.0001);
+  assert.equal(data.result.feeBps, 20);
+  assert.ok(data.after.reserveRatio >= 1);
+  assert.ok(data.after.circulatingTokens > data.result.newCirculatingTokens - 1);
+});
+
+test("a redemption larger than the daily window queues instead of being refused", async () => {
+  const { data } = await (await fetch(`${baseUrl}/api/v1/hmmt/simulate?action=redeem&amount=100`)).json();
+  assert.equal(data.result.allowed, false);
+  assert.equal(data.result.code, "queue");
+  assert.equal(data.result.limit, "cash-window");
+  assert.ok(data.result.queuedToman > 0);
+  assert.match(data.result.reason.en, /queue/i);
+});
+
+test("the simulator rejects bad input instead of guessing", async () => {
+  const unknown = await fetch(`${baseUrl}/api/v1/hmmt/simulate?action=airdrop&amount=1`);
+  assert.equal(unknown.status, 400);
+  assert.equal((await unknown.json()).error, "unknown_action");
+  const negative = await fetch(`${baseUrl}/api/v1/hmmt/simulate?action=redeem&amount=-2`);
+  assert.equal(negative.status, 400);
+  assert.equal((await negative.json()).error, "invalid_amount");
+  const missing = await fetch(`${baseUrl}/api/v1/hmmt/simulate?action=convert`);
+  assert.equal(missing.status, 400);
+});
+
+test("the synthetic ledger totals are derived from its own rows", async () => {
+  const { data } = await (await fetch(`${baseUrl}/api/v1/hmmt/ledger`)).json();
+  assert.equal(data.synthetic, true);
+  const deposits = data.entries.filter((entry) => entry.kind === "deposit" && entry.status === "settled");
+  const redemptions = data.entries.filter((entry) => entry.kind === "redemption" && entry.status === "settled");
+  const deposited = deposits.reduce((sum, entry) => sum + entry.toman, 0);
+  const burned = redemptions.reduce((sum, entry) => sum + entry.tokens, 0);
+  assert.equal(data.totals.depositsSettledToman, Math.round(deposited * 100) / 100);
+  assert.equal(data.totals.burnedTokens, burned);
+  // Minted minus burned is exactly the circulating supply the supply view reports.
+  const supply = (await (await fetch(`${baseUrl}/api/v1/hmmt/supply`)).json()).data;
+  assert.equal(Math.round((data.totals.mintedTokens - data.totals.burnedTokens) * 100) / 100, supply.circulating.tokens);
+  // A queued redemption is a queue, not a refusal, and it says so.
+  const queued = data.entries.find((entry) => entry.status === "queued");
+  assert.ok(queued);
+  assert.ok(queued.reason.fa && queued.reason.en);
+});

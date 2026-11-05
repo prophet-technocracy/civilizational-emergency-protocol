@@ -109,6 +109,66 @@ export const GLOSSARY = Object.freeze([
     }
   },
   {
+    id: "backing",
+    fa: "پشتوانه",
+    en: "Backing",
+    avoid: ["ضمانت", "تضمین ارزش"],
+    note: {
+      fa: "پشتوانه دارایی‌ای است که توکن در برابر آن ساخته می‌شود؛ «ضمانت» یک تعهد حقوقی است و اینجا وجود ندارد.",
+      en: "Backing is the asset a token is minted against; «ضمانت» would be a legal guarantee, which does not exist here."
+    }
+  },
+  {
+    id: "supply-ceiling",
+    fa: "سقف عرضه",
+    en: "Supply ceiling",
+    avoid: ["حداکثر عرضه", "سقف کل"],
+    note: {
+      fa: "سقف عرضه از پشتوانهٔ خالص می‌آید و هدف رشد نیست.",
+      en: "The ceiling follows from the net backing; it is not a growth target."
+    }
+  },
+  {
+    id: "circulating-supply",
+    fa: "عرضهٔ در گردش",
+    en: "Circulating supply",
+    avoid: ["عرضه در گردش", "عرضهٔ جاری"],
+    note: {
+      fa: "همیشه با همزه و کسرهٔ اضافه؛ فقط از واریز تسویه‌شده ساخته می‌شود.",
+      en: "Always written with the ezafe; it exists only because settled toman was deposited."
+    }
+  },
+  {
+    id: "redemption",
+    fa: "بازخرید",
+    en: "Redemption",
+    avoid: ["بازخریداری", "خرید مجدد"],
+    note: {
+      fa: "بازخرید در صف می‌نشیند و هرگز تعلیق نمی‌شود؛ توقف اضطراری فقط صدور تازه را می‌بندد.",
+      en: "Redemption queues; it is never suspended. An emergency pause stops new issuance only."
+    }
+  },
+  {
+    id: "proof-of-reserve",
+    fa: "اثبات ذخیره",
+    en: "Proof of reserve",
+    avoid: ["گواهی ذخیره", "اثبات پشتوانه"],
+    note: {
+      fa: "اثبات ذخیره فقط یک ریشهٔ هش منتشر می‌کند؛ هیچ دادهٔ هویتی روی زنجیره نوشته نمی‌شود.",
+      en: "Proof of reserve publishes one hash root; no identity data is written on-chain."
+    }
+  },
+  {
+    id: "haircut-chain",
+    fa: "زنجیرهٔ کسر",
+    en: "Haircut chain",
+    avoid: ["تخفیف ارزش"],
+    note: {
+      fa: "هر کسر ضریب و دلیل خودش را دارد و ترتیب آن‌ها ثابت است.",
+      en: "Every haircut carries its own factor and reason, and the order is fixed."
+    }
+  },
+  {
     id: "non-binding",
     fa: "غیرالزام‌آور",
     en: "Non-binding",

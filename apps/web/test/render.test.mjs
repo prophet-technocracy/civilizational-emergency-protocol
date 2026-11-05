@@ -89,6 +89,7 @@ before(async () => {
     "/api/v1/digital-legacy",
     "/api/v1/levels",
     "/api/v1/influence",
+    "/api/v1/hmmt",
     ...["1", "2", "3", "4", "5"].flatMap((id) => [
       `/api/v1/levels/${id}?policy=P-OPEN-DRAFT`,
       `/api/v1/levels/${id}?policy=P-RESTRICTIVE-DRAFT`
@@ -147,6 +148,9 @@ test("route parsing defaults to the five-level chooser and accepts record ids", 
     recordId: "SYN-HIST-001"
   });
   assert.deepEqual(readRouteFromHash("#/not-a-module"), { view: "dashboard", recordId: null });
+  // The bank is its own surface, not a module and not a level.
+  assert.deepEqual(readRouteFromHash("#/bank"), { view: "bank", recordId: null });
+  assert.deepEqual(readRouteFromHash("#/bank/anything"), { view: "bank", recordId: null });
 });
 
 test("the shell renders Persian RTL by default with the demo banner and all twelve sections", () => {
@@ -768,6 +772,65 @@ test("the interactive ballot starts from the same formula as the server view", (
     assert.equal(serverBallot.components[0].id, "base-franchise");
     assert.match(html, /وزن نهایی این نشست/);
     assert.match(html, /ثبت‌نشده/);
+  } finally {
+    restore();
+  }
+});
+
+/* --------------------------------- HMMT bank -------------------------------- */
+
+test("the shell offers the bank as its own navigation entry", () => {
+  const { html, restore } = renderWithoutFetch();
+  try {
+    assert.match(html, /href="#\/bank"/);
+    assert.ok(html.includes("بانک HMMT"), "the bank nav label is missing");
+  } finally {
+    restore();
+  }
+});
+
+test("the bank renders the ceiling, the haircut chain and the refusals without network access", () => {
+  const { html, restore } = renderWithoutFetch("#/bank");
+  try {
+    const bank = fixtures.get("/api/v1/hmmt").data;
+    const ceilingText = new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 0 }).format(bank.supply.ceiling.tokens);
+    // Supply ceiling in tokens, and circulating supply as a separate number.
+    assert.ok(html.includes(ceilingText), "the supply ceiling number is missing");
+    assert.ok(html.includes("HMMT"), "units are missing");
+    // The gross figure and the net backing figure must both be visible, so the
+    // 27.3 trillion headline can never be read as backing.
+    assert.ok(html.includes("۲۷.۳ تریلیون") || html.includes("۲۷٫۳ تریلیون"), "the gross resource figure is missing");
+    assert.ok(html.includes("۷۰۳.۸ میلیارد") || html.includes("۷۰۳٫۸ میلیارد"), "the net backing figure is missing");
+    // The proposal posture is stated on the page, not only in the payload.
+    assert.ok(html.includes("پول قانونی"), "the not-legal-tender statement is missing");
+    assert.ok(html.includes("طراحی پیشنهادی"), "the design-proposal badge is missing");
+    // Proof of reserve keeps two ratios apart.
+    assert.ok(html.includes("نسبت ذخیرهٔ تومانی"));
+    assert.ok(html.includes("پوشش دارایی"));
+    // Every simulator field has a matching label.
+    for (const id of ["bank-action", "bank-amount"]) {
+      assert.ok(html.includes(`id="${id}"`), `missing field ${id}`);
+      assert.ok(html.includes(`for="${id}"`), `field ${id} has no label`);
+    }
+    // The ledger is visibly synthetic.
+    assert.ok(html.includes("دفتر کل ساختگی"));
+  } finally {
+    restore();
+  }
+});
+
+test("the bank never presents a gross resource figure as backing", () => {
+  const bank = fixtures.get("/api/v1/hmmt").data;
+  const { html, restore } = renderWithoutFetch("#/bank");
+  try {
+    // 7,352,027 is the ceiling a no-haircut reading of 27.3 tn would produce.
+    assert.equal(html.includes("7,352,027"), false);
+    assert.equal(html.includes("۷٬۳۵۲٬۰۲۷"), false);
+    assert.ok(bank.supply.ceiling.tokens < 200000);
+    // The excluded figures are named, with the reason they are excluded.
+    const flat = JSON.stringify(bank.backing.excluded);
+    assert.match(flat, /flow|جریان/);
+    assert.match(flat, /private|خصوصی/);
   } finally {
     restore();
   }

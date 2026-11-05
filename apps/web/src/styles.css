@@ -838,6 +838,10 @@ html[lang="en"] .stat__value--num {
 .btn--ghost.is-active {
   background: var(--teal-200);
   border-color: var(--teal-500);
+  /* The selected state keeps its light teal fill in both themes, so the text
+     colour is pinned dark instead of inheriting --ink-900 (light in dark mode,
+     which failed contrast). */
+  color: #0b2b3a;
 }
 
 .btn--block {
@@ -3831,6 +3835,21 @@ html[dir="rtl"] .drawer {
   min-width: 0;
 }
 
+.bank .badge {
+  white-space: nowrap;
+}
+
+/* Row headers on this page are sentences, not column labels: the global
+   uppercase + letter-spacing treatment would shout them. */
+.bank .data-table tbody th {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.8rem;
+  color: var(--ink-900);
+  background: transparent;
+  border-block-end: 1px solid var(--border);
+}
+
 .btn--sm {
   padding: 0.2rem 0.5rem;
   font-size: 0.75rem;
@@ -3854,5 +3873,88 @@ html[dir="rtl"] .drawer {
 
   .sim__grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ==========================================================================
+   HMMT bank screen (#/bank)
+   The page is deliberately number-forward: supply ceiling, net backing and the
+   reserve ratios are the first thing read, and the simulator sits below them.
+   ========================================================================== */
+
+.bank {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
+.bank .section-head {
+  margin-block-end: 0;
+}
+
+.haircut-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.haircut-stack .card {
+  margin-block-end: 0;
+}
+
+.sim-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.9rem;
+  align-items: start;
+}
+
+.sim-form > .btn-row {
+  grid-column: 1 / -1;
+}
+
+.sim__result {
+  margin-block-start: 1rem;
+  padding-block-start: 0.9rem;
+  border-block-start: 1px solid var(--border);
+}
+
+.sim__result:empty {
+  display: none;
+}
+
+.sim__result .kv {
+  margin-block-start: 0.5rem;
+}
+
+.bank .badge {
+  white-space: nowrap;
+}
+
+/* Row headers on this page are sentences, not column labels: the global
+   uppercase + letter-spacing treatment would shout them. */
+.bank .data-table tbody th {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.8rem;
+  color: var(--ink-900);
+  background: transparent;
+  border-block-end: 1px solid var(--border);
+}
+
+.btn--sm {
+  min-height: 30px;
+  padding-inline: 0.6rem;
+  font-size: 0.76rem;
+}
+
+.bank .data-table td.small,
+.bank .data-table th.small {
+  font-weight: 400;
+}
+
+@media print {
+  .bank .data-table {
+    font-size: 0.7rem;
   }
 }
