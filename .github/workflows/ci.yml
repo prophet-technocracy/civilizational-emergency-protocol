@@ -1,0 +1,63 @@
+name: CI
+
+# The repository had no checks: PR #16 merged with an empty status roll-up, and
+# the only thing standing between a broken invariant and `main` was whoever ran
+# `npm test` locally. This workflow is that person, automated.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: tests, build and generated docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.12.0'
+          cache: npm
+
+      # `npm ci` needs the lockfile to match package.json exactly; that is the
+      # point — a drifting lockfile is a reproducibility failure, not a warning.
+      - name: Install
+        run: npm ci
+
+      - name: Test all workspaces
+        run: npm test
+
+      - name: Validate the historical CSV sample
+        run: npm run validate:csv
+
+      - name: Build the web app
+        run: npm run build
+
+      # `docs/principles/PRINCIPLES-COVERAGE.md` is generated from the API data.
+      # If it drifts, the document and the screen are telling different stories,
+      # and the CI run is where that gets caught rather than in a screenshot.
+      - name: Generated coverage doc is in sync
+        run: |
+          npm run docs:principles
+          if ! git diff --quiet -- docs/principles/PRINCIPLES-COVERAGE.md; then
+            echo "::error file=docs/principles/PRINCIPLES-COVERAGE.md::The coverage document is out of date. Run 'npm run docs:principles' and commit the result."
+            git --no-pager diff -- docs/principles/PRINCIPLES-COVERAGE.md | head -60
+            exit 1
+          fi
+
+      # The two claims that must never regress silently: no personal data, and no
+      # copy that says the system is a government, an election authority or ratified.
+      - name: Guardrails in the payloads and copy
+        run: npm run audit:guardrails
