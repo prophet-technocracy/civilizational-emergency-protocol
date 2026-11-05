@@ -162,7 +162,7 @@ npm install
 npm run dev
 ```
 
-The web app is served by Vite on port 5173 (Persian RTL by default, English LTR switchable) and proxies read-only `/api` requests to the local Node API on port 3001. If a preview environment needs the application on a fixed port, set `WEB_PORT` (Vite) and `API_PORT`/`PORT` (Node API) — for example `PORT=3002 WEB_PORT=3001 API_PORT=3002 npm run dev` serves the app on 3001 and the API on 3002, with the proxy following automatically. Port 3001 alone serves JSON, so it is not a usable app preview on its own. The prototype collects no user information: no accounts, cookies, analytics, or logs of any kind.
+The web app is served by Vite on port 5173 (Persian RTL by default, English LTR switchable) and proxies read-only `/api` requests to the local Node API on port 3001. If a preview environment needs the application on a fixed port, set `WEB_PORT` (Vite) and `API_PORT`/`PORT` (Node API) — the value the preview proxies must be the **web** port, because the API only serves JSON. For example `PORT=3003 WEB_PORT=3002 API_PORT=3003 npm run dev` serves the app on 3002 and the API on 3003, with Vite proxying `/api` and `/health` to it. Pointing a preview at the API port shows `{"error":"not_found"}` and is not a usable app preview. The prototype collects no user information: no accounts, cookies, analytics, or logs of any kind.
 
 Verification:
 
