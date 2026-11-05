@@ -317,7 +317,7 @@ export default function Archive({ lang, dict, openProvenance, navigate, initialR
         )}
       </Drawer>
 
-      <Toast message={toast} onClose={() => setToast("")} />
+      <Toast message={toast} lang={lang} onClose={() => setToast("")} />
     </>
   );
 }

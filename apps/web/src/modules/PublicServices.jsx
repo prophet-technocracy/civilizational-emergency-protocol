@@ -177,7 +177,7 @@ export default function PublicServices({ lang, dict }) {
         </p>
       </Card>
 
-      <Toast message={copied} onClose={() => setCopied("")} />
+      <Toast message={copied} lang={lang} onClose={() => setCopied("")} />
     </>
   );
 }

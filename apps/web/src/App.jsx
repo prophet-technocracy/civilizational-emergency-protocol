@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { UI, MODULES, DEPARTMENTS, EPISTEMIC, t, formatNumber } from "./i18n.js";
 import { useDebounced, readStored, writeStored } from "./lib/api.js";
 import { Drawer, ProvenanceBody, Badge } from "./components/ui.jsx";
+import { useFocusTrap, prefersReducedMotion } from "./lib/focus.js";
 import { Icon } from "./components/icons.jsx";
 import Dashboard from "./modules/Dashboard.jsx";
 import Governance from "./modules/Governance.jsx";
@@ -54,6 +55,10 @@ export default function App() {
   const [searchResults, setSearchResults] = useState(null);
   const [provenance, setProvenance] = useState(null);
   const searchInputRef = useRef(null);
+  const navToggleRef = useRef(null);
+  const mainRef = useRef(null);
+  const routeMovedRef = useRef(false);
+  const [isNarrow, setIsNarrow] = useState(false);
   const debouncedSearch = useDebounced(searchTerm, 220);
 
   const dict = UI[lang];
@@ -72,8 +77,25 @@ export default function App() {
         : `${t(activeModule.title, "en")} · CEP Civilizational Operating System`;
   }, [lang, theme, activeModule]);
 
+  // The module drawer only exists below 900px; above it the sidebar is a
+  // permanent landmark and must stay reachable.
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return undefined;
+    const query = window.matchMedia("(max-width: 900px)");
+    const sync = () => {
+      setIsNarrow(query.matches);
+      if (!query.matches) setNavOpen(false);
+    };
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
+
   useEffect(() => {
     const onHashChange = () => {
+      // Marks a real navigation (not the first paint) so the effect below can
+      // move focus to the new view once it has rendered.
+      routeMovedRef.current = true;
       setRoute(readRouteFromHash(window.location.hash));
       setNavOpen(false);
     };
@@ -86,15 +108,20 @@ export default function App() {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         setSearchOpen(true);
-        setTimeout(() => searchInputRef.current?.focus(), 30);
-      }
-      if (event.key === "Escape") {
-        setSearchOpen(false);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  // Focus follows the route: after an in-app jump, keyboard and screen-reader
+  // users are placed at the start of the new view instead of staying on a link
+  // whose target has been replaced.
+  useEffect(() => {
+    if (!routeMovedRef.current) return;
+    routeMovedRef.current = false;
+    mainRef.current?.focus({ preventScroll: true });
+  }, [route.view, route.recordId]);
 
   useEffect(() => {
     if (!searchOpen) return undefined;
@@ -119,6 +146,7 @@ export default function App() {
 
   const navigate = useCallback((viewId, recordId) => {
     const target = recordId ? `#/${viewId}/${encodeURIComponent(recordId)}` : `#/${viewId}`;
+    routeMovedRef.current = true;
     if (window.location.hash === target) {
       setRoute({ view: viewId, recordId: recordId ?? null });
     } else {
@@ -127,12 +155,28 @@ export default function App() {
     setNavOpen(false);
     setSearchOpen(false);
     setSearchTerm("");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? "auto" : "smooth" });
   }, []);
+
+  const closeSearch = useCallback(() => {
+    setSearchOpen(false);
+    setSearchTerm("");
+  }, []);
+
+  // Below 900px the module list is a modal drawer: it traps focus while open,
+  // Escape closes it, and focus goes back to the toggle. Closed, it is inert so
+  // the off-canvas links cannot be tabbed into.
+  const navRef = useFocusTrap({
+    active: navOpen && isNarrow,
+    onEscape: () => setNavOpen(false)
+  });
 
   const openProvenance = useCallback((record) => setProvenance(record), []);
 
   const ViewComponent = VIEWS[route.view] ?? Dashboard;
+  // While a modal layer is open the page behind it is inert for assistive
+  // technology as well as for Tab, which is what aria-modal promises.
+  const overlayOpen = searchOpen || Boolean(provenance);
 
   return (
     <div className="app-shell" lang={lang} dir={lang === "fa" ? "rtl" : "ltr"}>
@@ -140,11 +184,12 @@ export default function App() {
         {dict.skip}
       </a>
 
-      <header className="app-header">
+      <header className="app-header" inert={overlayOpen || undefined}>
         <div className="app-header__top">
           <button
             type="button"
             className="icon-btn nav-toggle"
+            ref={navToggleRef}
             aria-expanded={navOpen}
             aria-controls="primary-navigation"
             aria-label={dict.menu}
@@ -169,10 +214,12 @@ export default function App() {
           </button>
 
           <div className="app-header__tools">
-            <button type="button" className="search-trigger" onClick={() => { setSearchOpen(true); setTimeout(() => searchInputRef.current?.focus(), 30); }}>
+            <button type="button" className="search-trigger" onClick={() => setSearchOpen(true)}>
               <Icon name="search" size={15} />
               <span className="search-trigger__label">{dict.searchPlaceholder}</span>
-              <kbd>{dict.searchHint}</kbd>
+              {/* The shortcut hint is decorative: keeping it out of the
+                  accessible name makes the label match the visible label. */}
+              <kbd aria-hidden="true">{dict.searchHint}</kbd>
             </button>
 
             <div className="tool-group" role="group" aria-label={dict.theme}>
@@ -240,11 +287,13 @@ export default function App() {
         </nav>
       </header>
 
-      <div className="app-body">
+      <div className="app-body" inert={overlayOpen || undefined}>
         <nav
           id="primary-navigation"
+          ref={navRef}
           className={`sidebar ${navOpen ? "is-open" : ""}`}
           aria-label={dict.modules}
+          inert={isNarrow && !navOpen ? true : undefined}
         >
           <p className="sidebar__label">{dict.modules}</p>
           <ul>
@@ -276,7 +325,7 @@ export default function App() {
 
         {navOpen ? <button type="button" className="nav-scrim" aria-label={dict.close} onClick={() => setNavOpen(false)} /> : null}
 
-        <main id="main-content" className="content" tabIndex={-1}>
+        <main id="main-content" className="content" tabIndex={-1} ref={mainRef}>
           <ViewComponent
             key={route.view}
             lang={lang}
@@ -304,10 +353,7 @@ export default function App() {
           onTerm={setSearchTerm}
           results={searchResults}
           inputRef={searchInputRef}
-          onClose={() => {
-            setSearchOpen(false);
-            setSearchTerm("");
-          }}
+          onClose={closeSearch}
           onPick={(result) => navigate(result.target.view, result.target.recordId)}
         />
       ) : null}
@@ -327,8 +373,13 @@ export default function App() {
 }
 
 function SearchOverlay({ lang, dict, term, onTerm, results, inputRef, onClose, onPick }) {
+  // Same trap as the drawer: Escape closes and hands focus back to whatever
+  // opened the search, and Tab cycles through the results instead of escaping
+  // into the page behind the scrim.
+  const layerRef = useFocusTrap({ active: true, onEscape: onClose, initialFocus: inputRef });
+
   return (
-    <div className="search-layer" role="dialog" aria-modal="true" aria-label={dict.searchLabel}>
+    <div className="search-layer" role="dialog" aria-modal="true" aria-label={dict.searchLabel} ref={layerRef}>
       <button type="button" className="search-scrim" aria-label={dict.closeSearch} onClick={onClose} tabIndex={-1} />
       <div className="search-panel">
         <div className="search-panel__head">

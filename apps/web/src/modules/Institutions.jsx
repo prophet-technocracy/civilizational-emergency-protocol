@@ -4,29 +4,28 @@ import { t, formatNumber, RELATION_TYPES, labelFor } from "../i18n.js";
 import { SectionHeader, Card, StateBlock, EpistemicBadge, Badge, Callout, Empty, FieldList, Drawer } from "../components/ui.jsx";
 
 // Wraps a label into at most two short lines so text stays inside its node circle.
-function wrapLabel(text, maxChars = 15) {
+function wrapLabel(text, maxChars = 15, maxLines = 3) {
   const clean = String(text ?? "").trim();
   if (clean.length <= maxChars) return [clean];
-  const words = clean.split(/\s+/);
-  const lines = [""];
-  for (const word of words) {
-    const current = lines[lines.length - 1];
-    if (current.length + word.length + 1 <= maxChars || current.length === 0) {
-      lines[lines.length - 1] = current ? `${current} ${word}` : word;
-    } else if (lines.length < 2) {
-      lines.push(word);
+  const lines = [];
+  let current = "";
+  for (const word of clean.split(/\s+/)) {
+    if (!current) {
+      current = word;
+    } else if (`${current} ${word}`.length <= maxChars) {
+      current = `${current} ${word}`;
     } else {
-      break;
+      lines.push(current);
+      current = word;
     }
   }
-  const last = lines[lines.length - 1];
-  if (lines.join(" ").length < clean.length && last.length > maxChars - 1) {
-    lines[lines.length - 1] = `${last.slice(0, maxChars - 1)}…`;
-  }
-  return lines;
+  if (current) lines.push(current);
+  // Never drop words from a name: a silently truncated label is both a content
+  // bug and an accessible-name mismatch. Names that would need more than three
+  // lines are caught by a render test instead of being clipped at runtime.
+  return lines.slice(0, maxLines);
 }
 
-// Deterministic radial layout — no graph library, no runtime network access.
 function layoutNodes(items, width, height) {
   const radius = Math.min(width, height) / 2 - 96;
   const cx = width / 2;
@@ -141,7 +140,10 @@ export default function Institutions({ lang, dict, openProvenance }) {
                   transform={`translate(${node.x}, ${node.y})`}
                   tabIndex={0}
                   role="button"
-                  aria-label={t(node.name, lang)}
+                  // No aria-label: the name is taken from the node's own text so
+                  // the accessible name and the visible label cannot drift apart
+                  // (WCAG 2.5.3). The text below carries the full name and the
+                  // category, space-separated.
                   onMouseEnter={() => setFocusRelation(null)}
                   onClick={() => setSelectedId(node.id)}
                   onKeyDown={(event) => {
@@ -151,11 +153,13 @@ export default function Institutions({ lang, dict, openProvenance }) {
                     }
                   }}
                 >
-                  <circle r="58" className="graph__circle" />
+                  <circle r="58" className="graph__circle" aria-hidden="true" />
                   <text className="graph__label" textAnchor="middle">
                     {wrapLabel(t(node.name, lang)).map((line, index, all) => (
-                      <tspan key={index} x="0" dy={index === 0 ? (all.length === 1 ? -1 : -12) : 13}>
-                        {line}
+                      <tspan key={index} x="0" dy={index === 0 ? -2 - 6.5 * (all.length - 1) : 13}>
+                        {/* Trailing space keeps wrapped lines from running
+                            together in the text alternative. */}
+                        {`${line} `}
                       </tspan>
                     ))}
                   </text>

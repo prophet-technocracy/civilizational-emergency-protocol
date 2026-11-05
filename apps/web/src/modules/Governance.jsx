@@ -265,7 +265,7 @@ export default function Governance({ lang, dict, navigate, openProvenance }) {
         </button>
       </Disclosure>
 
-      <Toast message={toast} onClose={() => setToast("")} />
+      <Toast message={toast} lang={lang} onClose={() => setToast("")} />
     </>
   );
 }
