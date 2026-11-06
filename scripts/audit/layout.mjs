@@ -1,15 +1,26 @@
 // Layout sweep: horizontal overflow, offscreen nodes, clipped text and
-// undersized controls across all views at four widths and both themes.
+// undersized controls, every view at five widths and both themes.
 import { launch } from "./launch.mjs";
 
-const routes = ["dashboard","governance","transition","institutions","historical-archive","research","verification","accountability","public-services","projects","simulations","digital-legacy"];
+// Every view the router can reach, not just the twelve library modules: the hub,
+// the level chooser, a level, the bank, the principles, the programme and the
+// referendum are all part of the interface, and until this list was widened they
+// were the four places a 320 px overflow could hide (it did).
+const routes = [
+  "hub", "levels", "levels/3", "dashboard", "bank", "principles", "programme", "referendum",
+  "governance", "transition", "institutions", "historical-archive", "research", "verification",
+  "accountability", "public-services", "projects", "simulations", "digital-legacy"
+];
 const url = process.env.CEP_URL ?? "http://127.0.0.1:5173";
 
 const browser = await launch();
 const page = await browser.newPage();
 const problems = [];
 
-for (const width of [1440, 1024, 768, 390]) {
+// 320 px is the WCAG 1.4.10 reflow width (400% zoom of a 1280 px window); it is
+// narrower than any phone the audit used to test, and it is where fixed-width
+// rows and non-wrapping labels break first.
+for (const width of [1440, 1024, 768, 390, 320]) {
   await page.setViewport({ width, height: 900 });
   await page.goto(`${url}/#/dashboard`, { waitUntil: "networkidle0" });
   await page.evaluate(() => {
