@@ -15,7 +15,7 @@ const STATUS_ORDER = ["covered", "partial", "gap", "outside"];
 
 export default function Principles({ lang, route }) {
   const copy = localeStrings(lang).principles;
-  const { status, payload, reload } = useApi("/api/v1/principles");
+  const { status, payload, error, reload } = useApi("/api/v1/principles");
   // The queue that targets these principles: cached, and allowed to fail
   // quietly — a missing programme must not take the mother file down.
   const programme = useApi("/api/v1/programme");
@@ -41,7 +41,7 @@ export default function Principles({ lang, route }) {
     return (
       <>
         <SectionHeader eyebrow={copy.eyebrow} title={copy.title} />
-        <StateBlock status={status} lang={lang} onRetry={reload} />
+        <StateBlock status={status} lang={lang} onRetry={reload} error={error} />
       </>
     );
   }

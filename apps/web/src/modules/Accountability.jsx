@@ -10,14 +10,14 @@ const REVIEW_OUTCOME_TONE = {
 };
 
 export default function Accountability({ lang, dict }) {
-  const { status, payload, reload } = useApi("/api/v1/accountability");
+  const { status, payload, error, reload } = useApi("/api/v1/accountability");
   const [openEvent, setOpenEvent] = useState(null);
 
   if (status !== "ready") {
     return (
       <>
         <SectionHeader eyebrow={`${dict.modules} ۰۸`} title={dict.breadcrumbHome} />
-        <StateBlock status={status} lang={lang} onRetry={reload} />
+        <StateBlock status={status} lang={lang} onRetry={reload} error={error} />
       </>
     );
   }

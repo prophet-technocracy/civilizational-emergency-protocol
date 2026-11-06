@@ -938,7 +938,7 @@ export default function Level({ lang, navigate, levelId, policyId, onPolicyChang
             <h1 className="h1">{staticTitle}</h1>
           </div>
         </header>
-        <StateBlock status={state.status} lang={lang} onRetry={state.reload} />
+        <StateBlock status={state.status} lang={lang} onRetry={state.reload} error={state.error} />
       </div>
     );
   }

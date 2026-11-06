@@ -15,13 +15,13 @@ const optionLabel = (question, id, lang) => t(question.options.find((option) => 
 
 export default function Referendum({ lang }) {
   const copy = localeStrings(lang).referendum;
-  const { status, payload, reload } = useApi("/api/v1/referendum");
+  const { status, payload, error, reload } = useApi("/api/v1/referendum");
 
   if (status !== "ready") {
     return (
       <>
         <SectionHeader eyebrow={copy.eyebrow} title={copy.title} />
-        <StateBlock status={status} lang={lang} onRetry={reload} />
+        <StateBlock status={status} lang={lang} onRetry={reload} error={error} />
       </>
     );
   }

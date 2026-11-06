@@ -1031,6 +1031,88 @@ input[type="range"] {
   color: var(--danger);
 }
 
+/* Skeletons (#44): a loading state with the shape of the content, so the page
+   does not jump when it arrives. The bars are decorative; the announcement is
+   the visually hidden text in StateBlock. */
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.4rem 0;
+}
+
+.skeleton__line {
+  height: 0.75rem;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--paper-2), var(--paper-3), var(--paper-2));
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  max-width: 42rem;
+}
+
+.skeleton__line--wide {
+  width: 70%;
+}
+
+.skeleton__line--short {
+  width: 35%;
+}
+
+@keyframes skeleton-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton__line {
+    animation: none;
+  }
+}
+
+.state-block__detail {
+  font-size: 0.82rem;
+  color: var(--ink-500);
+}
+
+.state-block__detail summary {
+  cursor: pointer;
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.stale-note {
+  margin: 0.4rem 0 0;
+  padding: 0.4rem 0.6rem;
+  border-inline-start: 3px solid var(--warn);
+  color: var(--ink-500);
+  font-size: 0.8rem;
+}
+
+.data-health {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.4rem 1rem;
+  font-size: 0.8rem;
+  color: var(--ink-700);
+  background: var(--paper-2);
+  border-block-end: 1px solid var(--border);
+}
+
+.data-health__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--danger);
+  flex: none;
+}
+
 .spinner {
   width: 14px;
   height: 14px;

@@ -14,7 +14,7 @@ const CLASSIFICATION_LABELS = {
 };
 
 export default function Research({ lang, dict, openProvenance }) {
-  const { status, payload, reload } = useApi("/api/v1/evidence");
+  const { status, payload, error, reload } = useApi("/api/v1/evidence");
   const [claimId, setClaimId] = useState(null);
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
@@ -39,7 +39,7 @@ export default function Research({ lang, dict, openProvenance }) {
     return (
       <>
         <SectionHeader eyebrow={`${dict.modules} ۰۶`} title={dict.breadcrumbHome} />
-        <StateBlock status={status} lang={lang} onRetry={reload} />
+        <StateBlock status={status} lang={lang} onRetry={reload} error={error} />
       </>
     );
   }

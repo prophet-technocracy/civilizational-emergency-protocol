@@ -39,6 +39,8 @@ let ENUM_LABELS;
 let formatDate;
 let formatRatio;
 let Toast;
+let StateBlock;
+	let DataHealthNotice;
 let nextDoorIndex;
 let doorStepForArrow;
 let doorHref;
@@ -62,7 +64,7 @@ before(async () => {
         'export { localeStrings } from "./src/locales/index.js";',
         'export { readTheme } from "./src/lib/theme.js";',
         'export { UI, MODULES, t, formatNumber, labelFor, ENUM_LABELS, formatDate, formatRatio } from "./src/i18n.js";',
-        'export { Toast, Meter, BarRow, nextToastDelay } from "./src/components/ui.jsx";',
+        'export { Toast, Meter, BarRow, nextToastDelay, StateBlock, DataHealthNotice } from "./src/components/ui.jsx";',
         'export { doorGlyph } from "./src/components/KeyDock.jsx";',
         'export { default as SearchOverlay } from "./src/components/SearchOverlay.jsx";',
         'export { default as ErrorBoundary, CrashFallback } from "./src/components/ErrorBoundary.jsx";',
@@ -105,6 +107,8 @@ before(async () => {
   formatDate = bundle.formatDate;
   formatRatio = bundle.formatRatio;
   Toast = bundle.Toast;
+  StateBlock = bundle.StateBlock;
+  DataHealthNotice = bundle.DataHealthNotice;
   nextDoorIndex = bundle.nextDoorIndex;
   doorStepForArrow = bundle.doorStepForArrow;
   doorHref = bundle.doorHref;
@@ -1802,4 +1806,54 @@ test("the theme buttons are named for assistive technology (issue #51)", () => {
   } finally {
     restore();
   }
+});
+
+/* --------------------- issue #44: four failures, four sentences -------------------- */
+
+const renderState = (props) => renderToString(createElement(StateBlock, props));
+
+test("every failure kind gets its own sentence, in both languages", () => {
+  const kinds = [
+    [{ kind: "offline" }, "errorOffline"],
+    [{ kind: "timeout" }, "errorTimeout"],
+    [{ kind: "http", status: 503 }, "errorServer"],
+    [{ kind: "contract", detail: "mode" }, "errorContract"],
+    [{ kind: "network", detail: "Failed to fetch" }, "errorNetwork"]
+  ];
+  for (const lang of ["fa", "en"]) {
+    const rendered = kinds.map(([error, key]) => {
+      const html = renderState({ status: "error", lang, error, onRetry: () => {} });
+      assert.ok(html.includes(UI[lang][key]), `${lang}/${key} must reach the page`);
+      return UI[lang][key];
+    });
+    assert.equal(new Set(rendered).size, kinds.length, "the five failures must read differently");
+    assert.equal(rendered.includes(UI[lang].loadError), false, "no kind falls back to the generic sentence");
+  }
+});
+
+test("the status code and the contract reasons sit behind a disclosure, not in the headline", () => {
+  const html = renderState({ status: "error", lang: "en", error: { kind: "http", status: 503, detail: "HTTP 503" }, onRetry: () => {} });
+  const headline = html.slice(0, html.indexOf("<details"));
+  assert.equal(headline.includes("503"), false, "the reader gets a sentence first");
+  assert.ok(html.includes("<details"), "the detail is available, one click away");
+  assert.ok(html.includes("Status code: 503"));
+  assert.ok(html.includes(UI.en.retry));
+});
+
+test("loading shows a skeleton and announces itself once", () => {
+  const html = renderState({ status: "loading", lang: "fa" });
+  assert.ok(html.includes("skeleton"), "a shaped placeholder, not a bare spinner");
+  assert.equal((html.match(/role="status"/g) ?? []).length, 1);
+  assert.ok(html.includes("aria-live=\"polite\""));
+  assert.ok(html.includes(UI.fa.loading), "the announcement is text, for readers who cannot see it");
+});
+
+test("stale data says so instead of pretending to be fresh", () => {
+  const html = renderState({ status: "ready", stale: true, lang: "en", error: { kind: "timeout" } });
+  assert.ok(html.includes(UI.en.staleData));
+  assert.ok(html.includes("stale-note"));
+});
+
+test("a healthy app renders no health notice at all", () => {
+  assert.equal(renderToString(createElement(DataHealthNotice, { lang: "en" })), "");
 });

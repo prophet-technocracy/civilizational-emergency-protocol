@@ -12,7 +12,7 @@ const CATEGORY_LABELS = {
 };
 
 export default function PublicServices({ lang, dict }) {
-  const { status, payload, reload } = useApi("/api/v1/public-services");
+  const { status, payload, error, reload } = useApi("/api/v1/public-services");
   const [category, setCategory] = useState("all");
   const [copied, setCopied] = useState("");
 
@@ -34,7 +34,7 @@ export default function PublicServices({ lang, dict }) {
     return (
       <>
         <SectionHeader eyebrow={`${dict.modules} ۰۹`} title={dict.breadcrumbHome} />
-        <StateBlock status={status} lang={lang} onRetry={reload} />
+        <StateBlock status={status} lang={lang} onRetry={reload} error={error} />
       </>
     );
   }

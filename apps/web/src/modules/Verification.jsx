@@ -21,7 +21,7 @@ const DECISION_TONE = {
 };
 
 export default function Verification({ lang, dict }) {
-  const { status, payload, reload } = useApi("/api/v1/verification");
+  const { status, payload, error, reload } = useApi("/api/v1/verification");
   const [action, setAction] = useState("VIEW-PUBLIC-DOCS");
   const [band, setBand] = useState(1);
   const [proofs, setProofs] = useState([]);
@@ -63,7 +63,7 @@ export default function Verification({ lang, dict }) {
     return (
       <>
         <SectionHeader eyebrow={`${dict.modules} ۰۷`} title={dict.breadcrumbHome} />
-        <StateBlock status={status} lang={lang} onRetry={reload} />
+        <StateBlock status={status} lang={lang} onRetry={reload} error={error} />
       </>
     );
   }

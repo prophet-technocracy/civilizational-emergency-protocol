@@ -28,7 +28,7 @@ export default function Archive({ lang, dict, openProvenance, navigate, initialR
     () => buildArchiveQuery({ q: debouncedQuery, era, field, region }),
     [debouncedQuery, era, field, region]
   );
-  const { status, payload, reload } = useApi(listPath);
+  const { status, payload, error, reload } = useApi(listPath);
   const detailState = useApi(detailId ? `/api/v1/archive/${detailId}` : null);
 
   useEffect(() => {
@@ -149,7 +149,7 @@ export default function Archive({ lang, dict, openProvenance, navigate, initialR
       </Card>
 
       {status !== "ready" ? (
-        <StateBlock status={status} lang={lang} onRetry={reload} />
+        <StateBlock status={status} lang={lang} onRetry={reload} error={error} />
       ) : payload.data.results.length === 0 ? (
         <Empty lang={lang}>{t({ fa: "هیچ پرونده‌ای با این صافی‌ها یافت نشد.", en: "No dossier matches these filters." }, lang)}</Empty>
       ) : (
@@ -311,7 +311,7 @@ export default function Archive({ lang, dict, openProvenance, navigate, initialR
             setFlagNote={setFlagNote}
           />
         ) : (
-          <StateBlock status={detailState.status} lang={lang} onRetry={detailState.reload} />
+          <StateBlock status={detailState.status} lang={lang} onRetry={detailState.reload} error={detailState.error} />
         )}
       </Drawer>
 
