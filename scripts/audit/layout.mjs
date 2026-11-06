@@ -1,5 +1,6 @@
 // Layout sweep: horizontal overflow, offscreen nodes, clipped text and
-// undersized controls, every view at five widths and both themes.
+// undersized controls, every view at five widths, plus the shell every view
+// shares. One theme and one language only (light, fa) — see issue #64.
 import { launch } from "./launch.mjs";
 
 // Every view the router can reach, not just the twelve library modules: the hub,
@@ -44,12 +45,21 @@ for (const width of [1440, 1024, 768, 390, 320]) {
       const offscreen = [];
       const clipped = [];
       const tiny = [];
-      for (const el of document.querySelectorAll("main *")) {
+      // main is not the whole interface. The header and the key dock live
+      // outside it, and while this loop read only "main *" they went unchecked:
+      // the dock keys and the breadcrumb links were under the 24 px minimum on
+      // every route, and no audit saw it.
+      for (const el of document.querySelectorAll("main *, .app-header *, .key-dock *")) {
         const r = el.getBoundingClientRect();
         if (!r.width || !r.height) continue;
         if (el.closest(".table-wrap")) continue; // scrolls on purpose
-        if (r.right > window.innerWidth + 1 || r.left < -1) offscreen.push(label(el));
+        // The skip link is parked off-screen until it takes focus.
+        if (el.closest(".skip-link")) continue;
         const cs = getComputedStyle(el);
+        // An inline box may paint past an ancestor that clips it — the brand's
+        // accent span does, inside an ellipsised name. The box that has to fit
+        // is the container, and the container is checked on its own.
+        if (cs.display !== "inline" && (r.right > window.innerWidth + 1 || r.left < -1)) offscreen.push(label(el));
         if (
           (el.textContent || "").trim() &&
           (cs.overflow === "hidden" || cs.overflowX === "hidden") &&
@@ -58,8 +68,8 @@ for (const width of [1440, 1024, 768, 390, 320]) {
         ) {
           clipped.push(label(el));
         }
-        if ((el.tagName === "BUTTON" || el.tagName === "A") && (r.width < 24 || r.height < 24) && !el.closest(".skip-link")) {
-          tiny.push(`${label(el)} ${Math.round(r.width)}x${Math.round(r.height)}`);
+        if ((el.tagName === "BUTTON" || el.tagName === "A") && (r.width < 24 || r.height < 24)) {
+          tiny.push(`${label(el)} ${r.width.toFixed(2)}x${r.height.toFixed(2)}`);
         }
       }
       return {

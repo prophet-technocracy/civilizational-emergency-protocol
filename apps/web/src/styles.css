@@ -375,8 +375,16 @@ button {
 }
 
 .icon-btn--sm {
+  /* A close glyph sized by its font is a target sized by its font: the banner
+     dismiss button measured 24.19 x 23.97 px, a third of a pixel under the
+     24 px floor this project holds itself to. Box it instead. */
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: 26px;
+  min-block-size: 26px;
+  padding: 0 0.25rem;
   font-size: 0.8rem;
-  padding: 0.15rem 0.35rem;
+  line-height: 1;
 }
 
 .demo-banner {
@@ -5778,5 +5786,30 @@ html[data-theme="dark"] .work-card__icon {
 
   .field--presets .btn-row {
     min-width: 0;
+  }
+}
+
+/* Two controls outside <main> sit under the 24 px minimum the moment a sweep is
+   pointed at them, which none was: scripts/audit/layout.mjs read "main *" only.
+   - a.crumb is a real link in the breadcrumb nav: 15 px tall in en, 19 px in fa;
+   - the dock keys are sized by their label, so a short name gave a 17 px wide
+     key beside a 41 px one, and the 17 px depended on which font had loaded.
+   Breadcrumbs get a floor; in the phone rail each key takes its whole column,
+   which makes the rhythm even and the width independent of the font. */
+a.crumb {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding-inline: 0.15rem;
+}
+
+@media (max-width: 720px) {
+  .key-dock__slot {
+    min-inline-size: 0;
+  }
+
+  .key-dock__slot,
+  .dock-key {
+    inline-size: 100%;
   }
 }
