@@ -1,7 +1,7 @@
 # CEP-T016 — Tokenization-led economic transition: strategy, preconditions, kill criteria
 
 **Status:** Ready for review (report drafted, PR open).
-**Deliverable:** [`docs/economics/TOKENIZATION-TRANSITION-STRATEGY.md`](../docs/economics/TOKENIZATION-TRANSITION-STRATEGY.md).
+**Deliverables:** [`docs/economics/TOKENIZATION-TRANSITION-STRATEGY.md`](../docs/economics/TOKENIZATION-TRANSITION-STRATEGY.md) (PR A) and [`docs/economics/HMMT-REDTEAM-vs-TOKENIZATION.md`](../docs/economics/HMMT-REDTEAM-vs-TOKENIZATION.md) (PR B).
 **Suggested lead:** Economics + research agents, with a sanctions lawyer and a debt-management practitioner as human reviewers.
 
 ## Objective and research question
@@ -30,7 +30,7 @@ The repository is Persian-first and already contains a tokenization design (HMMT
 5. Sequenced roadmap, Stages 0–4, each with entry gates, success metrics and pre-registered kill criteria (§9).
 6. Failure-mode catalogue with early-warning indicators and priced mitigations (§10).
 7. Distributional and rights analysis, including the surveillance flag (§11).
-8. Assessment of the repository's own design against all of the above (§12), pointing to a separate red-team deliverable.
+8. Assessment of the repository's own design against all of the above (§12), and — in the companion red team — six attacks on HMMT under the maintainer's constraint that any pre-transformation launch runs on TON inside a Telegram Mini App, including the finding that invariant 2 cannot hold in the FX-appreciation direction and that the API serves a ceiling the design says only governance may raise.
 
 ## Evidence and method requirements
 
@@ -58,7 +58,8 @@ Follows [`agents/RESEARCH-STANDARDS.md`](../agents/RESEARCH-STANDARDS.md): every
 - [x] No proposal, hypothesis or press claim is presented as a fact.
 - [x] Unverified leads are marked, and the sections that depend on them say so.
 - [ ] Human review by someone with sanctions and/or debt-management expertise.
-- [ ] Maintainer decision on whether the companion red team proceeds.
+- [x] Companion red team delivered (`HMMT-REDTEAM-vs-TOKENIZATION.md`), with a proposed nine-item diff to `HMMT-DESIGN.md` that touches none of the three structural rules.
+- [ ] Maintainer decision on the proposed diff D1–D9, and on Track 0 / Track 1 (§8.5 of the report).
 
 ## Open questions
 

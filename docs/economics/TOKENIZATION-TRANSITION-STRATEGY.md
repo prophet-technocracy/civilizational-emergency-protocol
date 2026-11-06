@@ -4,6 +4,7 @@
 **Status:** Research draft for review. Not adopted, not endorsed, not a plan of any government or movement.
 **Date:** 2026-11-06.
 **AI disclosure:** drafted by an AI agent (Arena Agent Mode) working from public sources retrieved on 2026-11-06 and from this repository's own documents. Every source was opened, not quoted from a search snippet, except where marked. No interview, dataset or endorsement was invented.
+**Revision 2 (2026-11-06):** adds §8.5, which splits the roadmap into a pre-legitimacy track and a post-legitimacy track, after maintainer feedback that any launch before a political transformation will be on TON inside a Telegram Mini App. That constraint is recorded there and attacked in the companion red team; nothing else in this report changes.
 
 > This document is a proposal-shaped analysis, not a program. CEP is non-governmental; HMMT is not legal tender, not a deposit and not a security; nothing here confers legitimacy on CEP, on any transition institution, or on any instrument. A well-supported conclusion that a design should not be built is treated as a valid result and is one of the outcomes this report reaches for part of the programme.
 
@@ -360,6 +361,24 @@ Six inputs, each with an observable proxy a researcher can check without access 
 
 ---
 
+### 8.5 Track 0: the pre-legitimacy build (added in revision 2)
+
+Everything from §9 onward assumes a legitimately constituted government that may lawfully issue. A pre-transformation project has no such issuer, so its build is **not Stage 1 of the roadmap**. It is a separate track with a different legal status, and mixing the two is the single most expensive mistake available to this programme.
+
+| | **Track 0 — before legitimacy** | **Track 1 — after legitimacy** (Stage 0 onward) |
+| --- | --- | --- |
+| Issuer | None that the law recognises; a civic body with no statutory power | Debt office or central bank, under statute |
+| Instrument | A published arithmetic, ideally with nothing transferable and nothing of value at risk | A bill, bond or deposit token under existing law |
+| Chain | Public (TON), inside a messaging client, as a distribution decision rather than a technical one | Permissioned, supervised, central-bank-anchored |
+| Money | No fiat redemption promise, no yield, no market support | Par redemption in domestic money, settlement finality |
+| Success test | Participants can verify the rules, and none of them can lose anything | Matched-pair issuance cost, settlement cycle, measured against conventional issuance |
+| Failure mode | A money-like object with no law behind it, issued by a movement | Petro |
+
+**(Proposal) The Track 0 gate: nothing of value may be at risk.** If a participant can lose money, Track 0 has ended and the programme is in Track 1 territory without a mandate. That one rule settles most of the design questions — including whether the unit should be transferable, which is attacked at length in the companion red team.
+
+**(Interpretation) Two things make Track 0 worth doing anyway.** It can demonstrate the arithmetic, the haircut chain, the evidence tiering and the verification interface to an audience the project could not otherwise reach; and it can build a verified constituency that a Track 1 issuance would otherwise have to build from nothing. Neither requires a token, and neither survives being confused with one.
+
+
 ## 9. A sequenced roadmap, with kill criteria
 
 Stated as **Proposal**. Each stage has entry gates, success metrics and the conditions under which it is abandoned rather than extended. The kill criteria are pre-registered deliberately: a programme that decides at the end whether it worked has already decided that it worked.
@@ -562,4 +581,4 @@ Ranked, with the smallest defensible action first.
 
 ---
 
-**Companion deliverable (not in this PR):** `docs/economics/HMMT-REDTEAM-vs-TOKENIZATION.md` — the red team of the HMMT design against §7 and §12, with a proposed minimal diff to `HMMT-DESIGN.md` that does not touch the three structural rules.
+**Companion deliverable:** [HMMT-REDTEAM-vs-TOKENIZATION.md](HMMT-REDTEAM-vs-TOKENIZATION.md) — the red team of the HMMT design against §7 and §12, parameterised on the TON/Telegram constraint, with a proposed minimal diff to `HMMT-DESIGN.md` that does not touch the three structural rules. Its finding that invariant 2 is unenforceable in the appreciation direction (§5 there) is a defect in this repository's design, not in the strategy.
