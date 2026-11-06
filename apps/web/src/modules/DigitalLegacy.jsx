@@ -5,14 +5,14 @@ import { SectionHeader, Card, StateBlock, Badge, Callout, Empty, FieldList, Disc
 import { Icon } from "../components/icons.jsx";
 
 export default function DigitalLegacy({ lang, dict, navigate }) {
-  const { status, payload, reload } = useApi("/api/v1/digital-legacy");
+  const { status, payload, error, reload } = useApi("/api/v1/digital-legacy");
   const [activeClause, setActiveClause] = useState(null);
 
   if (status !== "ready") {
     return (
       <>
         <SectionHeader eyebrow={`${dict.modules} ۱۲`} title={dict.breadcrumbHome} />
-        <StateBlock status={status} lang={lang} onRetry={reload} />
+        <StateBlock status={status} lang={lang} onRetry={reload} error={error} />
       </>
     );
   }

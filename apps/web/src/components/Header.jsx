@@ -1,4 +1,5 @@
 import { Icon } from "./icons.jsx";
+import { DataHealthNotice } from "./ui.jsx";
 import { localeStrings } from "../locales/index.js";
 import { hrefFor, HUB_VIEW } from "../lib/routes.js";
 
@@ -114,6 +115,11 @@ export default function Header({
           {dict.demoReopen}
         </button>
       )}
+
+      {/* Data health is shell-level on purpose (#44): a screen showing cached
+          data while its refresh fails has no error state of its own to render,
+          so the admission belongs where every route can see it. */}
+      <DataHealthNotice lang={lang} />
 
       {/* Every crumb but the last is a real anchor: the browser's copy-link and
           open-in-new-tab work, and the last one is the current page. */}

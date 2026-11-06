@@ -4,7 +4,7 @@ import { t, formatNumber, labelFor } from "../i18n.js";
 import { SectionHeader, Card, StateBlock, EpistemicBadge, Badge, Callout, Empty, Disclosure, FieldList, Toast } from "../components/ui.jsx";
 
 export default function Governance({ lang, dict, navigate, openProvenance }) {
-  const { status, payload, reload } = useApi("/api/v1/governance");
+  const { status, payload, error, reload } = useApi("/api/v1/governance");
   const [activeLayer, setActiveLayer] = useState(null);
   const [toast, setToast] = useState("");
   const [sampleChoice, setSampleChoice] = useState(null);
@@ -24,7 +24,7 @@ export default function Governance({ lang, dict, navigate, openProvenance }) {
     return (
       <>
         <SectionHeader eyebrow={`${dict.modules} ۰۲`} title={dict.breadcrumbHome} />
-        <StateBlock status={status} lang={lang} onRetry={reload} />
+        <StateBlock status={status} lang={lang} onRetry={reload} error={error} />
       </>
     );
   }

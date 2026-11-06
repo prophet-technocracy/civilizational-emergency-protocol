@@ -160,14 +160,14 @@ function ProjectCard({ project, copy, lang, stateLabel }) {
 
 export default function Programme({ lang, navigate }) {
   const copy = localeStrings(lang).programme;
-  const { status, payload, reload } = useApi("/api/v1/programme");
+  const { status, payload, error, reload } = useApi("/api/v1/programme");
   const [filter, setFilter] = useState("all");
 
   if (status !== "ready") {
     return (
       <>
         <SectionHeader eyebrow={copy.eyebrow} title={copy.title} />
-        <StateBlock status={status} lang={lang} onRetry={reload} />
+        <StateBlock status={status} lang={lang} onRetry={reload} error={error} />
       </>
     );
   }

@@ -121,7 +121,7 @@ export default function LevelHome({ lang, navigate }) {
     return (
       <div className="level-home">
         {hero}
-        <StateBlock status={levelsState.status} lang={lang} onRetry={levelsState.reload} />
+        <StateBlock status={levelsState.status} lang={lang} onRetry={levelsState.reload} error={levelsState.error} />
       </div>
     );
   }

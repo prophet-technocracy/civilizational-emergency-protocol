@@ -10,14 +10,14 @@ const TONE_BY_KEY = {
 };
 
 export default function Dashboard({ lang, dict, navigate, openProvenance }) {
-  const { status, payload, reload } = useApi("/api/v1/dashboard");
+  const { status, payload, error, reload } = useApi("/api/v1/dashboard");
   const schemaVersion = useSchemaVersion();
 
   if (status !== "ready") {
     return (
       <>
         <SectionHeader eyebrow={`${dict.modules} ۰۱`} title={dict.breadcrumbHome} />
-        <StateBlock status={status} lang={lang} onRetry={reload} />
+        <StateBlock status={status} lang={lang} onRetry={reload} error={error} />
       </>
     );
   }

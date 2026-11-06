@@ -41,7 +41,7 @@ function layoutNodes(items, width, height) {
 }
 
 export default function Institutions({ lang, dict, openProvenance }) {
-  const { status, payload, reload } = useApi("/api/v1/institutions");
+  const { status, payload, error, reload } = useApi("/api/v1/institutions");
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState(null);
   const [focusRelation, setFocusRelation] = useState(null);
@@ -67,7 +67,7 @@ export default function Institutions({ lang, dict, openProvenance }) {
     return (
       <>
         <SectionHeader eyebrow={`${dict.modules} ۰۴`} title={dict.breadcrumbHome} />
-        <StateBlock status={status} lang={lang} onRetry={reload} />
+        <StateBlock status={status} lang={lang} onRetry={reload} error={error} />
       </>
     );
   }

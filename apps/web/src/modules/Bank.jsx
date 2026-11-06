@@ -1027,7 +1027,7 @@ function DesignSection({ design, copy, lang }) {
 // computed at the frozen reference. Showing both, side by side, is the only
 // honest way to render a ceiling that depends on a price nobody controls.
 function RateSection({ copy, lang }) {
-  const { status, payload, reload } = useApi("/api/v1/fx/sensitivity");
+  const { status, payload, error, reload } = useApi("/api/v1/fx/sensitivity");
   const rate = copy.rate;
 
   if (status !== "ready") {
@@ -1041,7 +1041,7 @@ function RateSection({ copy, lang }) {
             <p className="lede">{rate.lede}</p>
           </div>
         </div>
-        <StateBlock status={status} lang={lang} onRetry={reload} />
+        <StateBlock status={status} lang={lang} onRetry={reload} error={error} />
       </section>
     );
   }
@@ -1150,13 +1150,13 @@ function RateSection({ copy, lang }) {
 
 export default function Bank({ lang }) {
   const copy = localeStrings(lang).bank;
-  const { status, payload, reload } = useApi("/api/v1/hmmt");
+  const { status, payload, error, reload } = useApi("/api/v1/hmmt");
 
   if (status !== "ready") {
     return (
       <>
         <SectionHeader eyebrow={copy.eyebrow} title={copy.title} lede={copy.lede} />
-        <StateBlock status={status} lang={lang} onRetry={reload} />
+        <StateBlock status={status} lang={lang} onRetry={reload} error={error} />
       </>
     );
   }

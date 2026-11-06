@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useFocusTrap } from "../lib/focus.js";
+import { useDataHealth } from "../lib/api.js";
 import { EPISTEMIC, UI, t, formatNumber } from "../i18n.js";
 import { Icon } from "./icons.jsx";
 
@@ -60,27 +61,81 @@ export function Callout({ tone = "info", title, children }) {
   );
 }
 
-export function StateBlock({ status, lang, onRetry }) {
+// Which sentence a failure gets. The kind comes from lib/request.mjs, which is
+// the only place that knows the difference between a dead connection, a slow
+// server, a 500 and a payload that breaks the demo contract (#44).
+const ERROR_COPY = {
+  offline: "errorOffline",
+  timeout: "errorTimeout",
+  http: "errorServer",
+  contract: "errorContract",
+  network: "errorNetwork"
+};
+
+export function StateBlock({ status, lang, onRetry, error = null, stale = false }) {
   const dict = UI[lang];
   if (status === "loading") {
+    // A skeleton rather than a bare spinner: the bar has a shape, so the page
+    // does not jump when the data lands, and the announcement happens once, in
+    // text, for readers who are not looking at the animation.
     return (
       <div className="state-block" role="status" aria-live="polite">
-        <span className="spinner" aria-hidden="true" />
-        <p>{dict.loading}</p>
+        <div className="skeleton" aria-hidden="true">
+          <span className="skeleton__line skeleton__line--wide" />
+          <span className="skeleton__line" />
+          <span className="skeleton__line skeleton__line--short" />
+        </div>
+        <p className="sr-only">{dict.loading}</p>
       </div>
     );
   }
   if (status === "error") {
+    const detail = [
+      error?.status ? `${dict.errorStatus}: ${error.status}` : null,
+      error?.detail ?? null
+    ].filter(Boolean).join(" · ");
     return (
       <div className="state-block state-block--error" role="alert">
-        <p>{dict.loadError}</p>
+        <p>{dict[ERROR_COPY[error?.kind] ?? "loadError"] ?? dict.loadError}</p>
+        {detail ? (
+          // Developer detail behind a disclosure: the reader gets a sentence and
+          // a button, the person debugging gets the status code and the reason.
+          <details className="state-block__detail">
+            <summary>{dict.errorDetails}</summary>
+            <p className="mono small">{detail}</p>
+          </details>
+        ) : null}
         <button type="button" className="btn btn--ghost" onClick={onRetry}>
           {dict.retry}
         </button>
       </div>
     );
   }
+  if (status === "ready" && stale) {
+    // Data is on screen and the refresh failed. Saying so is the whole point of
+    // keeping the data instead of replacing it with an error page.
+    return (
+      <p className="stale-note" role="status" aria-live="polite">
+        {dict.staleData}
+      </p>
+    );
+  }
   return null;
+}
+
+/**
+ * The shell-level signal: something failed, even if every screen still has data
+ * to show. Renders nothing while the app is healthy.
+ */
+export function DataHealthNotice({ lang }) {
+  const health = useDataHealth();
+  if (health.state === "ok") return null;
+  return (
+    <div className="data-health" role="status" aria-live="polite">
+      <span className="data-health__dot" aria-hidden="true" />
+      <p>{UI[lang].dataHealth}</p>
+    </div>
+  );
 }
 
 export function Empty({ lang, children }) {

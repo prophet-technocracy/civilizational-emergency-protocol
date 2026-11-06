@@ -1,47 +1,65 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { validateEnvelope } from "../demo-contract.mjs";
+import { requestJson, createApiCache } from "./request.mjs";
+import { getHealth, subscribeHealth, reportFailure, reportSuccess } from "./health.mjs";
 
-const cache = new Map();
+// One cache for the whole app, with an age. A cached payload is reused while it
+// is fresh, and revalidated in the background once it is older than the TTL —
+// the screen keeps showing data it already has instead of flashing a skeleton
+// every time a reader changes route and comes back.
+const cache = createApiCache();
 
 /**
- * Read-only data hook. Preserves per-path caching so switching modules is
- * instant, and exposes an explicit reload that bypasses the cache.
+ * Read-only data hook.
+ *
+ * Returns `{ status, payload, error, stale, reload }` where:
+ *   status  "loading" | "ready" | "error"
+ *   error   `{ kind, status, detail }` from request.mjs, or null
+ *   stale   true when the payload on screen is older than the TTL and the
+ *           refresh that was supposed to replace it failed
+ *
+ * A failed refresh with usable cached data stays `ready` on purpose: replacing
+ * five-minute-old content with an error page loses more than it tells. The
+ * staleness travels on `stale` and is announced by the shell.
  */
 export function useApi(path) {
-  const [state, setState] = useState(() =>
-    cache.has(path)
-      ? { status: "ready", payload: cache.get(path) }
-      : { status: "loading", payload: null }
-  );
+  const [state, setState] = useState(() => initial(path));
   const [nonce, setNonce] = useState(0);
 
   useEffect(() => {
     if (!path) return undefined;
-    if (cache.has(path) && nonce === 0) return undefined;
+    const entry = cache.read(path);
+    if (entry && !entry.stale && nonce === 0) {
+      setState({ status: "ready", payload: entry.payload, error: null, stale: false });
+      return undefined;
+    }
 
     let alive = true;
-    setState({ status: "loading", payload: null });
-    fetch(path, { headers: { Accept: "application/json" }, credentials: "omit" })
-      .then((response) => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return response.json();
-      })
-      .then((payload) => {
-        if (!alive) return;
-        // A payload that violates the demo envelope (wrong mode, missing
-        // bilingual notice, or any living-person / personal-data field) is
-        // treated as a failed request instead of being rendered.
-        const { valid, errors } = validateEnvelope(payload);
-        if (!valid) throw new Error(`contract: ${errors.join("; ")}`);
-        cache.set(path, payload);
-        setState({ status: "ready", payload });
-      })
-      .catch(() => {
-        if (alive) setState({ status: "error", payload: null });
+    const controller = new AbortController();
+    const fallback = entry?.payload ?? null;
+    if (!fallback) setState({ status: "loading", payload: null, error: null, stale: false });
+
+    requestJson(path, { signal: controller.signal, validate: validateEnvelope }).then((result) => {
+      if (!alive) return;
+      if (result.ok) {
+        cache.write(path, result.payload);
+        reportSuccess(path);
+        setState({ status: "ready", payload: result.payload, error: null, stale: false });
+        return;
+      }
+      if (result.error.kind === "aborted") return;
+      reportFailure(result.error.kind, path);
+      setState((previous) => {
+        const usable = previous.payload ?? fallback;
+        return usable
+          ? { status: "ready", payload: usable, error: result.error, stale: true }
+          : { status: "error", payload: null, error: result.error, stale: false };
       });
+    });
 
     return () => {
       alive = false;
+      controller.abort();
     };
   }, [path, nonce]);
 
@@ -54,6 +72,17 @@ export function useApi(path) {
   };
 }
 
+function initial(path) {
+  const entry = path ? cache.read(path) : null;
+  if (!entry) return { status: "loading", payload: null, error: null, stale: false };
+  return { status: "ready", payload: entry.payload, error: null, stale: entry.stale };
+}
+
+/** Live view of whether the app can reach its API. Used by the shell notice. */
+export function useDataHealth() {
+  return useSyncExternalStore(subscribeHealth, getHealth, getHealth);
+}
+
 // The schema version is a property of the server, not of this file: it is read
 // from an /api/v1/health envelope once per page load (issue #40). Until it
 // answers there is no version to print, and nothing is guessed.
@@ -64,13 +93,10 @@ export function useSchemaVersion() {
   useEffect(() => {
     let alive = true;
     if (!schemaVersionPromise) {
-      schemaVersionPromise = fetch("/api/v1/health", {
-        headers: { Accept: "application/json" },
-        credentials: "omit"
-      })
-        .then((response) => (response.ok ? response.json() : null))
-        .then((payload) => payload?.schemaVersion ?? null)
-        .catch(() => null);
+      // Same deadline as every other request: a version string is not worth a
+      // hung connection, and "no version" is a valid answer to print nothing.
+      schemaVersionPromise = requestJson("/api/v1/health", { timeoutMs: 5_000 })
+        .then((result) => (result.ok ? result.payload?.schemaVersion ?? null : null));
     }
     schemaVersionPromise.then((value) => {
       if (alive) setVersion(value);
@@ -113,7 +139,7 @@ export function writeStored(key, value) {
 /** Test seam: pre-populate the read-only response cache (used by render tests). */
 export function primeApiCache(entries) {
   for (const [path, payload] of Object.entries(entries)) {
-    cache.set(path, payload);
+    cache.write(path, payload);
   }
 }
 

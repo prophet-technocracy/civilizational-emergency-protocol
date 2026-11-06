@@ -11,7 +11,7 @@ const MODEL_DEFAULT = {
 };
 
 export default function Simulations({ lang, dict }) {
-  const { status, payload, reload } = useApi("/api/v1/simulations");
+  const { status, payload, error, reload } = useApi("/api/v1/simulations");
   const [selectedModels, setSelectedModels] = useState([]);
   const [params, setParams] = useState({ sunsetDays: 180, reviewIntervalDays: 90, supermajority: 66, decentralization: 35 });
   const [profile, setProfile] = useState(null);
@@ -52,7 +52,7 @@ export default function Simulations({ lang, dict }) {
     return (
       <>
         <SectionHeader eyebrow={`${dict.modules} ۱۱`} title={dict.breadcrumbHome} />
-        <StateBlock status={status} lang={lang} onRetry={reload} />
+        <StateBlock status={status} lang={lang} onRetry={reload} error={error} />
       </>
     );
   }

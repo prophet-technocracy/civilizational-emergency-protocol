@@ -12,7 +12,7 @@ const SECTORS = [
 ];
 
 export default function Transition({ lang, dict, navigate, openProvenance }) {
-  const { status, payload, reload } = useApi("/api/v1/transition");
+  const { status, payload, error, reload } = useApi("/api/v1/transition");
   const [sector, setSector] = useState("all");
   const [horizon, setHorizon] = useState("all");
   const [expanded, setExpanded] = useState(null);
@@ -30,7 +30,7 @@ export default function Transition({ lang, dict, navigate, openProvenance }) {
     return (
       <>
         <SectionHeader eyebrow={`${dict.modules} ۰۳`} title={dict.breadcrumbHome} />
-        <StateBlock status={status} lang={lang} onRetry={reload} />
+        <StateBlock status={status} lang={lang} onRetry={reload} error={error} />
       </>
     );
   }
