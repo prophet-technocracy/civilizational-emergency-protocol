@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { localeStrings } from "../locales/index.js";
 import { onLinkClick } from "../lib/links.js";
+import { Icon } from "./icons.jsx";
 
 // The civic key switch: one centre, six doors.
 //
@@ -45,8 +46,14 @@ export function isDoorActive(door, route) {
   return String(door.recordId) === String(route.recordId ?? "");
 }
 
+/**
+ * The key's glyph: a Persian digit for a level, and nothing for the bank — the
+ * bank door carries the same icon everywhere it appears (issue #42). A currency
+ * sign would be worse than nothing here: the unit is toman, the sign is rial,
+ * and this key is not a price.
+ */
 export function doorGlyph(door) {
-  if (door.level === null) return "﷼";
+  if (door.level === null) return "";
   return String(door.level).replace(/\d/g, (digit) => PERSIAN_DIGITS[Number(digit)]);
 }
 
@@ -106,7 +113,7 @@ export default function KeyDock({ lang, route, navigate, inert = false }) {
           }}
           className={`dock-key ${active ? "is-pressed" : ""} ${door.level === null ? "dock-key--bank" : ""}`}
           aria-current={active ? "page" : undefined}
-          title={`${copy.levelWord} ${glyph} — ${label}`}
+          title={glyph ? `${copy.levelWord} ${glyph} — ${label}` : `${copy.levelWord} — ${label}`}
           tabIndex={index === tabStop ? 0 : -1}
           onKeyDown={onKeyDown}
           onFocus={() => {
@@ -121,7 +128,7 @@ export default function KeyDock({ lang, route, navigate, inert = false }) {
           <span className="dock-key__cap">
             <span className="sr-only">{copy.levelWord} </span>
             <span className="dock-key__glyph" aria-hidden="true">
-              {glyph}
+              {door.level === null ? <Icon name="bank" size={15} /> : glyph}
             </span>
             <span className="dock-key__label">{label}</span>
           </span>

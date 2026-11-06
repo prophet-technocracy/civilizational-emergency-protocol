@@ -45,6 +45,8 @@ let doorHref;
 let isDoorActive;
 let DOORS;
 let isPlainLeftClick;
+let nextToastDelay;
+let doorGlyph;
 
 const server = createServer();
 let baseUrl;
@@ -60,7 +62,8 @@ before(async () => {
         'export { localeStrings } from "./src/locales/index.js";',
         'export { readTheme } from "./src/lib/theme.js";',
         'export { UI, MODULES, t, formatNumber, labelFor, ENUM_LABELS, formatDate, formatRatio } from "./src/i18n.js";',
-        'export { Toast, Meter, BarRow } from "./src/components/ui.jsx";',
+        'export { Toast, Meter, BarRow, nextToastDelay } from "./src/components/ui.jsx";',
+        'export { doorGlyph } from "./src/components/KeyDock.jsx";',
         'export { default as SearchOverlay } from "./src/components/SearchOverlay.jsx";',
         'export { default as ErrorBoundary, CrashFallback } from "./src/components/ErrorBoundary.jsx";',
         'export { nextDoorIndex, doorStepForArrow, doorHref, isDoorActive, DOORS } from "./src/components/KeyDock.jsx";',
@@ -108,6 +111,8 @@ before(async () => {
   isDoorActive = bundle.isDoorActive;
   DOORS = bundle.DOORS;
   isPlainLeftClick = bundle.isPlainLeftClick;
+  nextToastDelay = bundle.nextToastDelay;
+  doorGlyph = bundle.doorGlyph;
 
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   baseUrl = `http://127.0.0.1:${server.address().port}`;
@@ -157,6 +162,34 @@ after(async () => {
   });
   rmSync(BUILD_DIR, { recursive: true, force: true });
 });
+
+/**
+ * The visible text of an HTML fragment, for assertion messages and label
+ * comparisons.
+ *
+ * This is a one-pass reader, not a sanitiser — it only ever runs on markup this
+ * test just rendered, and it never touches data that came from outside. It is
+ * written as a scanner rather than as one regular-expression replacement,
+ * because a single pass is not an HTML stripper — it leaves a doubled tag
+ * opener behind — and a test that pretends otherwise teaches the wrong pattern.
+ */
+function visibleText(fragment) {
+  let out = "";
+  let depth = 0;
+  for (const char of fragment) {
+    if (char === "<") depth += 1;
+    else if (char === ">" && depth > 0) {
+      depth -= 1;
+      if (depth === 0) out += " ";
+    } else if (depth === 0) out += char;
+  }
+  return out.replace(/\s+/g, " ").trim();
+}
+
+/** Escape a literal for use inside a RegExp source: the complete set, not a guess. */
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 /**
  * Renders <App /> at a given hash with network access disabled, proving that
@@ -289,7 +322,7 @@ test("an address that resolves to nothing gets a page that says so, in both lang
   ]) {
     const { html, restore } = renderWithoutFetch("#/levels/9", lang);
     try {
-      assert.match(html, new RegExp(`<h1[^>]*>${title}</h1>`), `${lang}: not-found needs its own h1`);
+      assert.match(html, new RegExp(`<h1[^>]*>${escapeRegex(title)}</h1>`), `${lang}: not-found needs its own h1`);
       assert.ok(html.includes(homeLabel), `${lang}: not-found needs a way back to the hub`);
       assert.match(html, /href="#\/hub"/);
       assert.match(html, /href="#\/levels"/);
@@ -392,7 +425,7 @@ test("no dead buttons: every rendered button has an accessible name", () => {
     const buttons = html.match(/<button[^>]*>(.*?)<\/button>/gs) ?? [];
     assert.ok(buttons.length > 10, "expected many interactive controls");
     for (const button of buttons) {
-      const text = button.replace(/<[^>]+>/g, "").trim();
+      const text = visibleText(button);
       const hasLabel = /aria-label="[^"]+"/.test(button) || /title="[^"]+"/.test(button);
       assert.ok(text.length > 0 || hasLabel, `unnamed button: ${button.slice(0, 120)}`);
     }
@@ -483,7 +516,7 @@ test("module views never print a raw enum slug where a label is expected", () =>
     const { html, restore } = renderWithoutFetch(view);
     try {
       for (const slug of Object.keys(ENUM_LABELS)) {
-        const raw = new RegExp(`>\\s*${slug.replace(/[-.]/g, "\\$&")}\\s*<`);
+        const raw = new RegExp(`>\\s*${escapeRegex(slug)}\\s*<`);
         assert.doesNotMatch(html, raw, `${view} prints the raw slug "${slug}"`);
       }
     } finally {
@@ -565,7 +598,7 @@ test("table headers have accessible text", () => {
     const { html, restore } = renderWithoutFetch(view);
     try {
       for (const match of html.matchAll(/<th[^>]*>([\s\S]*?)<\/th>/g)) {
-        const inner = match[1].replace(/<[^>]+>/g, "").trim();
+        const inner = visibleText(match[1]);
         const hasHiddenLabel = /class="sr-only"/.test(match[1]);
         assert.ok(inner.length > 0 || hasHiddenLabel, `${view} has an empty <th>`);
       }
@@ -581,7 +614,7 @@ test("colour tokens used for text keep WCAG AA contrast in both themes", () => {
   // 4.5:1 against the light paper and the dark paper.
   const css = readFileSync(join(WEB_ROOT, "src/styles.css"), "utf8");
   const readVar = (block, name) => {
-    const match = block.match(new RegExp(`${name}:\\s*(#[0-9a-fA-F]{6})`));
+    const match = block.match(new RegExp(`${escapeRegex(name)}:\\s*(#[0-9a-fA-F]{6})`));
     return match ? match[1] : null;
   };
   const split = css.indexOf('html[data-theme="dark"]');
@@ -683,7 +716,7 @@ test("the skip link targets a focusable main region, and the nav toggle announce
     assert.ok(skip, "skip link missing");
     const target = skip[1].replace("#", "");
     assert.ok(html.includes(`id="${target}"`), "skip link points at an id that does not exist");
-    const main = html.match(new RegExp(`<main[^>]*id="${target}"[^>]*>`));
+    const main = html.match(new RegExp(`<main[^>]*id="${escapeRegex(target)}"[^>]*>`));
     assert.ok(main, "the skip target is not <main>");
     assert.match(main[0], /tabindex="-1"/, "programmatic focus target must be focusable");
 
@@ -735,10 +768,7 @@ test("every relationship-map node keeps its whole name in the visible label", ()
     const institutions = fixtures.get("/api/v1/institutions").data.institutions;
     assert.equal(nodes.length, institutions.length, "one group per institution expected");
     for (const node of nodes) {
-      const visible = node
-        .replace(/<[^>]+>/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
+      const visible = visibleText(node);
       const match = institutions.find((item) => visible.startsWith(t(item.name, "fa")));
       assert.ok(match, `no institution matches the rendered label: ${visible.slice(0, 60)}`);
       assert.equal(visible, `${t(match.name, "fa")} ${labelFor(match.category, "fa")}`.replace(/\s+/g, " ").trim());
@@ -1127,7 +1157,7 @@ test("the hub is the landing, and it opens with one centre and six doors", () =>
     // Moderated per node, not six copies of one card: the counts differ, and
     // only the participating citizen carries a ballot.
     // SSR inserts comment markers between adjacent text nodes; flatten first.
-    const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+    const text = visibleText(html);
     const counts = [...text.matchAll(/([۰-۹]+) کنش مجاز/g)].map((match) => match[1]);
     assert.equal(counts.length, 5, "each level door must state how many actions it allows");
     assert.ok(new Set(counts).size >= 2, "the doors would be indistinguishable if every count were equal");
@@ -1380,7 +1410,7 @@ test("a render error shows a fallback with a heading, a sentence and a way out",
     ["en", "This section could not be displayed", "Back to the hub"]
   ]) {
     const html = renderToString(createElement(CrashFallback, { lang, onReset() {} }));
-    assert.match(html, new RegExp(`<h1[^>]*>${title}</h1>`), `${lang}: the fallback needs its own h1`);
+    assert.match(html, new RegExp(`<h1[^>]*>${escapeRegex(title)}</h1>`), `${lang}: the fallback needs its own h1`);
     assert.match(html, /role="alert"/);
     assert.match(html, /href="#\/hub"/, `${lang}: a link back to the hub`);
     assert.match(html, /<button type="button" class="btn btn--primary"/, `${lang}: a retry control`);
@@ -1546,10 +1576,10 @@ test("a project and the principle it targets link to each other, once each", () 
   try {
     assert.match(
       fromProgramme.html,
-      new RegExp(`<a class="link-button" href="#/principles/${project.principleId}">`),
+      new RegExp(`<a class="link-button" href="#/principles/${escapeRegex(project.principleId)}">`),
       "the principle id must link to its row"
     );
-    const links = fromProgramme.html.match(new RegExp(`href="#/principles/${project.principleId}"`, "g")) ?? [];
+    const links = fromProgramme.html.match(new RegExp(`href="#/principles/${escapeRegex(project.principleId)}"`, "g")) ?? [];
     assert.equal(links.length, 1, "one link per project, so a screen reader announces it once");
   } finally {
     fromProgramme.restore();
@@ -1558,7 +1588,7 @@ test("a project and the principle it targets link to each other, once each", () 
   // Principle -> programme: the row says which project is working on it.
   const fromPrinciple = renderWithoutFetch(`#/principles/${project.principleId}`);
   try {
-    assert.match(fromPrinciple.html, new RegExp(`id="principle-${project.principleId}"`), "the row is anchorable");
+    assert.match(fromPrinciple.html, new RegExp(`id="principle-${escapeRegex(project.principleId)}"`), "the row is anchorable");
     assert.match(fromPrinciple.html, /class="is-targeted"/, "the row a deep link names is marked");
     assert.match(fromPrinciple.html, /در دستور کار/, "the row says it is targeted");
     assert.ok(fromPrinciple.html.includes(project.id), "the row names the project id");
@@ -1663,7 +1693,7 @@ test("the referendum page names its link instead of printing the route (issue #5
       const main = html.slice(html.indexOf("<main"));
       const anchor = main.match(/<a class="link-button" href="#\/principles">([\s\S]*?)<\/a>/);
       assert.ok(anchor, `${lang ?? "fa"}: the principles link is missing from the method card`);
-      assert.equal(anchor[1].replace(/<[^>]+>/g, "").trim(), label, `${lang ?? "fa"}: the link must carry its own words`);
+      assert.equal(visibleText(anchor[1]), label, `${lang ?? "fa"}: the link must carry its own words`);
       assert.ok(!main.includes(">#/principles<"), `${lang ?? "fa"}: the raw route is still used as link text`);
     } finally {
       restore();
@@ -1696,6 +1726,63 @@ test("the dock is a sibling of the inert regions, so it is told to be inert sepa
     // proven in the browser audit, which can open a dialog.
     assert.ok(/<nav class="key-dock"[^>]*aria-label/.test(html), "the dock must render on every route");
     assert.ok(!/<nav class="key-dock"[^>]*inert/.test(html), "the dock must not be inert when no overlay is open");
+  } finally {
+    restore();
+  }
+});
+
+test("a toast stops its clock instead of expiring under the reader (issue #51)", () => {
+  assert.equal(nextToastDelay({ tone: "info", remaining: 5200 }), 5200, "an untouched toast keeps its full time");
+  assert.equal(nextToastDelay({ tone: "info", remaining: 3000 }), 3000, "resuming keeps the time that was left");
+  assert.equal(nextToastDelay({ tone: "info", remaining: 5200, paused: true }), null, "hover or focus stops the clock");
+  assert.equal(nextToastDelay({ tone: "info", remaining: 5200, hidden: true }), null, "a background tab stops the clock");
+  assert.equal(nextToastDelay({ tone: "error", remaining: 5200 }), null, "an error waits for a human to dismiss it");
+  assert.equal(nextToastDelay({ tone: "info", remaining: 5 }), 600, "a toast never flashes out instantly");
+});
+
+test("the bank door carries one symbol and no currency sign (issue #42)", () => {
+  const bankDoor = DOORS.find((door) => door.level === null);
+  for (const [lang, hash] of [[null, "#/hub"], ["en", "#/hub"]]) {
+    const { html, restore } = renderWithoutFetch(hash, lang);
+    try {
+      // U+FDFC is the RIAL sign; the unit here is toman, and the door is not a price.
+      assert.ok(!html.includes("\uFDFC"), `${lang ?? "fa"}: the rial sign is still rendered`);
+      assert.ok(!html.includes("⌂"), `${lang ?? "fa"}: the hub door still uses its own house glyph`);
+      const bankIcon = (html.match(/M4 20\.5h16/g) ?? []).length;
+      assert.ok(bankIcon >= 2, `${lang ?? "fa"}: the dock and the hub door must draw the same bank icon (found ${bankIcon})`);
+    } finally {
+      restore();
+    }
+  }
+  assert.equal(doorGlyph(bankDoor), "", "the bank key has no glyph of its own");
+  assert.equal(doorGlyph({ level: 3 }), "۳", "levels keep their Persian digit");
+});
+
+test("every door arrow is a drawn chevron, not a mirrored text glyph (issue #50)", () => {
+  for (const lang of [null, "en"]) {
+    const { html, restore } = renderWithoutFetch("#/hub", lang);
+    try {
+      const arrows = html.match(/class="door__arrow"[^>]*>([\s\S]*?)<\/span>/g) ?? [];
+      assert.ok(arrows.length >= 6, `${lang ?? "fa"}: expected six door arrows, found ${arrows.length}`);
+      for (const arrow of arrows) {
+        assert.ok(arrow.includes("<svg"), `${lang ?? "fa"}: a door arrow is still a text glyph`);
+        assert.ok(!arrow.includes("\u2039"), `${lang ?? "fa"}: U+2039 mirrors itself and the CSS mirrors it again`);
+      }
+    } finally {
+      restore();
+    }
+  }
+});
+
+test("the theme buttons are named for assistive technology (issue #51)", () => {
+  const { html, restore } = renderWithoutFetch("#/dashboard");
+  try {
+    const group = html.match(/<div class="tool-group"[\s\S]*?<\/div>/);
+    assert.ok(group, "the theme group is missing");
+    const labels = [...group[0].matchAll(/aria-label="([^"]+)"/g)].map((match) => match[1]);
+    const pressed = [...group[0].matchAll(/aria-pressed="(true|false)"/g)].map((match) => match[1]);
+    assert.ok(labels.length >= 2, "both theme buttons need a name that is not only a title attribute");
+    assert.equal(pressed.length, 2, "both theme buttons need to state whether they are pressed");
   } finally {
     restore();
   }

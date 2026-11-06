@@ -67,6 +67,7 @@ export default function Header({
               type="button"
               className={`seg ${theme === "light" ? "is-active" : ""}`}
               aria-pressed={theme === "light"}
+              aria-label={dict.themeLight}
               onClick={() => onTheme("light")}
               title={dict.themeLight}
             >
@@ -76,6 +77,7 @@ export default function Header({
               type="button"
               className={`seg ${theme === "dark" ? "is-active" : ""}`}
               aria-pressed={theme === "dark"}
+              aria-label={dict.themeDark}
               onClick={() => onTheme("dark")}
               title={dict.themeDark}
             >

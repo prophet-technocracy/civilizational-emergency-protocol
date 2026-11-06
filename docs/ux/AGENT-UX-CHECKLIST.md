@@ -82,7 +82,7 @@ both servers up (`npm run dev`: API 3001, web 5173) and the one-time setup from
 
 ```sh
 node scripts/audit/a11y.mjs      # axe, every view, light + dark, open mobile nav
-node scripts/audit/keyboard.mjs  # 20 keyboard checks, focus return, inertness, modified clicks
+node scripts/audit/keyboard.mjs  # 23 keyboard checks, focus return, inertness, modified clicks, toast timing
 node scripts/audit/layout.mjs    # 12 views x 4 widths
 ```
 
@@ -111,7 +111,7 @@ An honest "not done" is accepted. An unverified "done" is not.
 - [ ] `npm test` green, including the localization parity test.
 - [ ] `npm run check` green (tests, CSV validation, build, guardrails).
 - [ ] `node scripts/audit/a11y.mjs` prints `{}`.
-- [ ] `node scripts/audit/keyboard.mjs` passes all 20 checks.
+- [ ] `node scripts/audit/keyboard.mjs` passes all 23 checks.
 - [ ] `node scripts/audit/layout.mjs` is clean.
 - [ ] Checked fa/en × light/dark × 390/1440, with screenshots in the PR.
 - [ ] No slash ratio, no Latin digits in Persian accessible names, no Arabic

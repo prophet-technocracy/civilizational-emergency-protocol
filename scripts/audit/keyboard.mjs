@@ -227,6 +227,37 @@ const toast = await page.evaluate(() => {
 });
 record("toast renders with a close button label (no crash)", Boolean(toast), JSON.stringify(toast));
 
+// A toast that disappears while it is being read is a timing failure; focusing
+// its own close button has to stop the clock (issue #51).
+const focusedToast = await page.evaluate(() => {
+  const button = document.querySelector(".toast button");
+  button?.focus();
+  return Boolean(button) && document.activeElement === button;
+});
+await new Promise((r) => setTimeout(r, 5600));
+const survived = await page.evaluate(() => Boolean(document.querySelector(".toast")));
+record("a focused toast does not close itself (issue #51)", focusedToast && survived,
+  JSON.stringify({ focusedToast, survived }));
+
+// Once nothing is holding it, the clock resumes and the toast goes away.
+await page.evaluate(() => document.activeElement?.blur());
+let gone = false;
+for (let i = 0; i < 24 && !gone; i += 1) {
+  await new Promise((r) => setTimeout(r, 300));
+  gone = await page.evaluate(() => !document.querySelector(".toast"));
+}
+record("a released toast closes on its own again (issue #51)", gone, JSON.stringify({ gone }));
+
+const themeButtons = await page.evaluate(() =>
+  [...document.querySelectorAll(".tool-group button")].map((b) => ({
+    label: b.getAttribute("aria-label"),
+    pressed: b.getAttribute("aria-pressed")
+  }))
+);
+record("the theme buttons carry a name and a pressed state (issue #51)",
+  themeButtons.length === 2 && themeButtons.every((b) => Boolean(b.label) && ["true", "false"].includes(b.pressed)),
+  JSON.stringify(themeButtons));
+
 record("no console or page errors during the walkthrough", errors.length === 0, errors.slice(0, 3).join(" | "));
 
 await browser.close();
