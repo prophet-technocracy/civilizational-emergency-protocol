@@ -663,6 +663,134 @@
         "npm run audit:guardrails"
       ],
       "notes": "Documentation-only, but a governance decision: propose wording, do not decide it."
+    },
+    {
+      "id": "ENG-061",
+      "title": "Keep the key dock out of the page while a modal layer is open",
+      "status": "complete",
+      "kind": "code",
+      "priority": 1,
+      "issue": 57,
+      "labels": [
+        "accessibility",
+        "ux"
+      ],
+      "effort": "S",
+      "paths": [
+        "apps/web/src/App.jsx",
+        "apps/web/src/components/KeyDock.jsx",
+        "scripts/audit/keyboard.mjs"
+      ],
+      "why": "The dock is a sibling of .app-body, so marking the body inert left it focusable and exposed behind an aria-modal dialog.",
+      "spec": {
+        "input": "An open search overlay or provenance drawer.",
+        "output": "The dock and the skip link carry inert while a layer is open and lose it when it closes; the keyboard audit asserts both, and that focus cannot enter the dock.",
+        "acceptance": [
+          "20/20 keyboard checks pass.",
+          "axe stays clean in both themes and languages."
+        ]
+      },
+      "verify": [
+        "npm test",
+        "node scripts/audit/keyboard.mjs",
+        "node scripts/audit/a11y.mjs"
+      ],
+      "notes": "inert is a property of the shell: any new sibling of .app-body needs the same treatment."
+    },
+    {
+      "id": "ENG-062",
+      "title": "Let modified clicks, middle clicks and the context menu keep their native behaviour",
+      "status": "complete",
+      "kind": "code",
+      "priority": 1,
+      "issue": 58,
+      "labels": [
+        "ux",
+        "accessibility"
+      ],
+      "effort": "S",
+      "paths": [
+        "apps/web/src/lib/links.js",
+        "apps/web/src/modules/Hub.jsx",
+        "apps/web/src/components/KeyDock.jsx",
+        "apps/web/src/modules/Programme.jsx"
+      ],
+      "why": "Every in-app anchor called preventDefault unconditionally, so Ctrl/Cmd-click, middle-click and copy-link did nothing.",
+      "spec": {
+        "input": "A click event on an in-app anchor.",
+        "output": "isPlainLeftClick gates the router: only an unmodified primary click is intercepted, and the href stays the real destination.",
+        "acceptance": [
+          "Unit tests cover every modifier, the middle button and an already-handled event.",
+          "The browser audit dispatches modified clicks and asserts nothing cancelled them."
+        ]
+      },
+      "verify": [
+        "npm test",
+        "node scripts/audit/keyboard.mjs"
+      ],
+      "notes": "New in-app anchors must use onLinkClick, not a bare preventDefault."
+    },
+    {
+      "id": "ENG-063",
+      "title": "Name the principles link on the referendum page instead of printing the route",
+      "status": "complete",
+      "kind": "code",
+      "priority": 2,
+      "issue": 59,
+      "labels": [
+        "accessibility",
+        "ux"
+      ],
+      "effort": "S",
+      "paths": [
+        "apps/web/src/modules/Referendum.jsx"
+      ],
+      "why": "The method card used '#/principles' as visible link text, which is an implementation detail read aloud.",
+      "spec": {
+        "input": "The referendum method card in fa and en.",
+        "output": "The anchor carries copy.principlesLink as its text and keeps the route only in href.",
+        "acceptance": [
+          "A render test checks the label in both locales and that no raw route is link text."
+        ]
+      },
+      "verify": [
+        "npm test"
+      ],
+      "notes": "Link text must survive being read out of context in a screen-reader link list."
+    },
+    {
+      "id": "ENG-064",
+      "title": "Replace the last slash ratios with spoken wording (programme, bank)",
+      "status": "complete",
+      "kind": "code",
+      "priority": 2,
+      "issue": 60,
+      "labels": [
+        "ux",
+        "i18n",
+        "data-integrity"
+      ],
+      "effort": "S",
+      "paths": [
+        "apps/web/src/modules/Programme.jsx",
+        "apps/web/src/modules/Bank.jsx",
+        "apps/web/src/locales/fa/programme.js",
+        "apps/web/src/locales/fa/bank.js"
+      ],
+      "why": "A slash between two numbers reverses in RTL and does not say which number is which; three places still drew one.",
+      "spec": {
+        "input": "The programme summary statistic, the bank circulating-supply bar and the reserve utilisation note.",
+        "output": "Values in words: a note that states the denominator, formatRatio for the two bars, and a phrase for the FX rate unit.",
+        "acceptance": [
+          "A test renders all 19 routes in both languages and fails on any digit-slash-digit in main.",
+          "The rate unit comes from the locale files, not a ternary in JSX."
+        ]
+      },
+      "verify": [
+        "npm test",
+        "node scripts/audit/layout.mjs"
+      ],
+      "notes": "The guard is generic on purpose: it caught two instances the issue did not mention."
     }
   ]
 }

@@ -27,7 +27,7 @@
 | Contracts | payload schemas as plain modules | `packages/schemas` |
 | Arithmetic | caps, haircuts, HMMT units, ballot and referendum maths | `packages/domain-models` |
 | Locales | fa (primary, RTL) and en, key-parity tested | `packages/localization`, `apps/web/src/locales` |
-| Checks | 294 tests, ESLint flat config, 4 audit scripts | `scripts/`, `apps/*/test` |
+| Checks | 300 tests, ESLint flat config, 4 audit scripts | `scripts/`, `apps/*/test` |
 
 Node ≥ 22.12. No runtime dependencies beyond React in the web app.
 
@@ -36,7 +36,7 @@ Node ≥ 22.12. No runtime dependencies beyond React in the web app.
 ```sh
 npm install                                  # required after a fresh checkout
 npm run dev                                  # web :5173, api :3001
-npm test                                     # 294 tests, 5 workspaces, ~4 s
+npm test                                     # 300 tests, 5 workspaces, ~4 s
 npm run lint                                 # ESLint flat config
 npm run check                                # the gate: lint, tests, guardrails, csv, build, drift, docs, backlog
 node scripts/agent/run.mjs --full            # same gate, as a table, with failure hints

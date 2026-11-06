@@ -55,6 +55,17 @@ await new Promise((r) => setTimeout(r, 200));
 const inSearch = await describe(page);
 record("Ctrl+K focuses the search field", inSearch.tag === "input" && inSearch.inSearch, JSON.stringify(inSearch));
 
+// The dock is a sibling of .app-body, not a child of it: it needs its own inert
+// or it stays reachable behind an aria-modal dialog (issue #57).
+const dockWhileSearch = await page.evaluate(() => {
+  const dock = document.querySelector(".key-dock");
+  const link = dock?.querySelector("a[href]");
+  link?.focus();
+  return { inert: dock?.hasAttribute("inert") ?? null, focusStolen: document.activeElement === link };
+});
+record("the key dock leaves the page while the search dialog is open (issue #57)",
+  dockWhileSearch.inert === true && !dockWhileSearch.focusStolen, JSON.stringify(dockWhileSearch));
+
 let escaped = false;
 for (let i = 0; i < 8; i += 1) {
   await page.keyboard.press("Tab");
@@ -71,6 +82,16 @@ await page.keyboard.press("Escape");
 await new Promise((r) => setTimeout(r, 250));
 const afterEscape = await describe(page);
 const searchGone = await page.evaluate(() => !document.querySelector(".search-layer"));
+const dockAfterSearch = await page.evaluate(() => ({
+  inert: document.querySelector(".key-dock")?.hasAttribute("inert") ?? null,
+  focusable: (() => {
+    const link = document.querySelector(".key-dock a[href]");
+    link?.focus();
+    return document.activeElement === link;
+  })()
+}));
+record("closing the search returns the dock to the page and the tab order (issue #57)",
+  dockAfterSearch.inert === false && dockAfterSearch.focusable, JSON.stringify(dockAfterSearch));
 record("Escape closes the search opened by shortcut and restores the previous focus",
   searchGone && afterEscape.tag === "main", JSON.stringify(afterEscape));
 
@@ -90,6 +111,13 @@ await page.keyboard.press("Enter");
 await new Promise((r) => setTimeout(r, 250));
 const inDrawer = await describe(page);
 record("provenance drawer takes focus", inDrawer.inDrawer, JSON.stringify(inDrawer));
+
+const dockWhileDrawer = await page.evaluate(() => ({
+  inert: document.querySelector(".key-dock")?.hasAttribute("inert") ?? null,
+  headerInert: document.querySelector(".app-header")?.hasAttribute("inert") ?? null
+}));
+record("the key dock is inert while the provenance drawer is open (issue #57)",
+  dockWhileDrawer.inert === true && dockWhileDrawer.headerInert === true, JSON.stringify(dockWhileDrawer));
 
 let drawerEscaped = false;
 for (let i = 0; i < 8; i += 1) {
@@ -113,6 +141,26 @@ const drawerClosed = await page.evaluate(() => ({
 record("Escape closes the drawer and restores focus to the opener",
   drawerClosed.gone && drawerClosed.active.includes("link-btn") && drawerClosed.inertHeader === false,
   JSON.stringify(drawerClosed));
+
+/* --------------------------- link behaviour (#58) -------------------------- */
+await page.goto(`${LAYER}/#/hub`, { waitUntil: "networkidle0" });
+const linkClicks = await page.evaluate(() => {
+  const door = document.querySelector(".door__link");
+  const make = (extra) => new MouseEvent("click", { bubbles: true, cancelable: true, button: 0, ...extra });
+  const kept = {};
+  for (const [name, extra] of [["ctrl", { ctrlKey: true }], ["meta", { metaKey: true }], ["shift", { shiftKey: true }], ["alt", { altKey: true }], ["middle", { button: 1 }]]) {
+    kept[name] = door.dispatchEvent(make(extra)); // true = nothing called preventDefault
+  }
+  const href = door.getAttribute("href");
+  const before = location.hash;
+  const plainCancelled = !door.dispatchEvent(make({}));
+  return { ...kept, href, before, after: location.hash, plainCancelled };
+});
+record("modified clicks on a door link are left to the browser (issue #58)",
+  linkClicks.ctrl && linkClicks.meta && linkClicks.shift && linkClicks.alt, JSON.stringify(linkClicks));
+record("a plain click still routes in-app, with a real href (issue #58)",
+  linkClicks.plainCancelled && linkClicks.href === "#/levels/1" && linkClicks.after === "#/levels/1",
+  JSON.stringify(linkClicks));
 
 /* ---------------------------- route change focus -------------------------- */
 await page.evaluate(() => document.querySelector('a[href="#/research"]')?.focus());

@@ -51,6 +51,7 @@ export const programmeEn = {
   summaryDelivered: "delivered",
   summaryWouldFlip: "lights that would go green",
   summaryTargets: "amber principles targeted",
+  summaryTargetsNote: "out of {partial} partial targets",
   summaryUncovered: "amber principles outside this queue",
   uncoveredNote:
     "This queue is not the whole job: {uncovered} other amber principles are still waiting for a project. A programme that claimed to cover the queue would be lying.",
