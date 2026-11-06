@@ -38,6 +38,28 @@ test("the style block is never treated as data", () => {
   }
 });
 
+test("layout blocks are removed at a fixed point, whatever their case or padding", () => {
+  const base = unwrapEscapes(FIXTURE);
+  const variants = [
+    base.replace("<style>", "<STYLE>").replace("</style>", "</STYLE >"),
+    base.replace("</style>", "</style><style>.x{color:#bd0a0a}</style>"),
+    base.replace("<style>", "<style >")
+  ];
+  for (const variant of variants) {
+    const parsed = parseNavasanWidget(variant);
+    assert.ok(parsed, "a well-formed table must still parse");
+    assert.equal(parsed.rows.usd.rate, 267_500);
+  }
+});
+
+test("an unterminated style or script block is refused, not repaired", () => {
+  const base = unwrapEscapes(FIXTURE);
+  // A style block that never closes cannot be removed by any pass; the decoder
+  // must decline the payload rather than guess where the data begins.
+  assert.equal(parseNavasanWidget(base.replace("</style>", "")), null);
+  assert.equal(parseNavasanWidget(base.replace("</style>", "<script>alert(1)" )), null);
+});
+
 test("a single-escaped payload decodes the same way as a double-escaped one", () => {
   const plain = unwrapEscapes(FIXTURE);
   const once = parseNavasanWidget(plain);

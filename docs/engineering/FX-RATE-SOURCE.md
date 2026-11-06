@@ -23,7 +23,7 @@ Three properties of that payload drive the design:
 
 1. **It is escaped twice.** Quotes arrive as `\\\"`, newlines as `\\r\\n`, non-ASCII as `\u06f2`-style escapes. The decoder unwraps in passes until the text stops changing, and a single-escaped payload decodes identically (tested).
 2. **Numbers are in Persian digits with ASCII thousands separators.** `۲۶۷,۵۰۰` is 267,500.
-3. **It contains a `<style>` block.** `#bd0a0a` is a colour, not a price. The decoder strips style and script blocks before reading rows, so a hex colour can never become a rate.
+3. **It contains a `<style>` block.** `#bd0a0a` is a colour, not a price. The decoder removes style and script blocks to a fixed point (case-insensitive, closing tag matched to its opener, tolerating `</style >`) before reading rows. If a block cannot be removed — an unterminated opener, for instance — the payload is **refused** rather than repaired. Sanitising by deleting characters is not an option here: the rows being read *are* markup, so an angle-bracket strip would delete the data along with the hazard.
 
 `wp-navasan.php` sends no CORS headers suitable for a browser fetch from another origin, and this repository's API sets `Cross-Origin-Resource-Policy: same-origin` on its own responses. **The reading is therefore server-side only, proxied through `/api/v1/fx`.** No browser calls navasan directly, and no third-party script is embedded in the Mini App.
 

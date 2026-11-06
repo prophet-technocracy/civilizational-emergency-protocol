@@ -64,20 +64,39 @@ export function unwrapEscapes(input, passes = 6) {
 }
 
 /**
- * Remove non-data HTML blocks that can interfere with row/value extraction.
- * Applied to a fixed point so multi-character patterns cannot reappear after a pass.
- * Then strip tag delimiters to prevent residual element starts from surviving malformed input.
+ * Layout blocks are not data: a colour rule containing `#bd0a0a` must never be
+ * read as a price, and a `<script>` body must never be read as anything.
+ *
+ * The removal is applied to a fixed point, because a single pass over
+ * `<style>…</style>` can leave a second block behind when the input nests or
+ * when a closing tag carries attributes (`</style >`). Case is ignored, and the
+ * closing tag is matched against the *same* opener it closes.
+ *
+ * What this function deliberately does not do is "sanitise" by deleting
+ * characters: the rows this parser needs are themselves markup (`<tr id="usd">`,
+ * `<td class="val">`), so stripping angle brackets would delete the very
+ * structure being read. Where a block cannot be removed safely the caller
+ * refuses the payload instead — see `parseNavasanWidget`.
  */
-function stripNonDataBlocks(input) {
+const LAYOUT_BLOCK = /<\s*(style|script)\b[\s\S]*?<\s*\/\s*\1\s*[^>]*>/gi;
+const LAYOUT_OPENER = /<\s*(?:style|script)\b/i;
+
+/**
+ * Returns the payload with layout blocks removed, or `null` when a clean fixed
+ * point could not be reached. The refusal lives here rather than at the call
+ * site so that no caller can ever hold a string this function could not vouch
+ * for.
+ */
+function stripLayoutBlocks(input) {
   let current = String(input);
-  let previous;
-  do {
-    previous = current;
-    current = current
-      .replace(/<style\b[\s\S]*?<\/style\b[^>]*>/gi, "")
-      .replace(/<script\b[\s\S]*?<\/script\b[^>]*>/gi, "");
-  } while (current !== previous);
-  return current.replace(/[<>]/g, "");
+  // Bounded loop: a fixed point is reached in one pass for well-formed input,
+  // and a hostile payload must not be able to spin here.
+  for (let pass = 0; pass < 8; pass += 1) {
+    const next = current.replace(LAYOUT_BLOCK, "");
+    if (next === current) break;
+    current = next;
+  }
+  return LAYOUT_OPENER.test(current) ? null : current;
 }
 
 /** ASCII digits out of a Persian-formatted number, or null if there is none. */
@@ -99,9 +118,11 @@ export function toNumber(raw) {
  * half-read table is how a wrong rate gets published.
  */
 export function parseNavasanWidget(payload) {
-  // Style and script blocks are layout, not data. A colour rule containing a
-  // hex value must never be mistaken for a price.
-  const text = stripNonDataBlocks(unwrapEscapes(payload));
+  // An unmatched style or script opener means the block could not be removed
+  // safely. Refusing the whole payload is cheaper than repairing markup: a
+  // decoder that guesses is a decoder that can publish a number from a stylesheet.
+  const text = stripLayoutBlocks(unwrapEscapes(payload));
+  if (text === null) return null;
   if (!text.includes("navasan_table") && !text.includes('class="val"')) return null;
 
   const rows = {};
