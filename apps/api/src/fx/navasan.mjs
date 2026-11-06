@@ -66,6 +66,7 @@ export function unwrapEscapes(input, passes = 6) {
 /**
  * Remove non-data HTML blocks that can interfere with row/value extraction.
  * Applied to a fixed point so multi-character patterns cannot reappear after a pass.
+ * Then strip tag delimiters to prevent residual element starts from surviving malformed input.
  */
 function stripNonDataBlocks(input) {
   let current = String(input);
@@ -76,7 +77,7 @@ function stripNonDataBlocks(input) {
       .replace(/<style\b[\s\S]*?<\/style\b[^>]*>/gi, "")
       .replace(/<script\b[\s\S]*?<\/script\b[^>]*>/gi, "");
   } while (current !== previous);
-  return current;
+  return current.replace(/[<>]/g, "");
 }
 
 /** ASCII digits out of a Persian-formatted number, or null if there is none. */
