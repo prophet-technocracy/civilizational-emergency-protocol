@@ -738,7 +738,12 @@ html[lang="en"] .stat__value--num {
   font-size: 0.72rem;
   font-weight: 600;
   border: 1px solid transparent;
-  white-space: nowrap;
+  /* Long Persian labels stay on one line when there is room, and wrap instead of
+     pushing the page sideways when there is not: a 355 px badge inside a 320 px
+     viewport is what broke WCAG 1.4.10 reflow. */
+  white-space: normal;
+  max-width: 100%;
+  text-wrap: balance;
 }
 
 .badge__dot {
@@ -887,6 +892,26 @@ html[lang="en"] .stat__value--num {
 }
 
 .link-btn:hover {
+  color: var(--teal-500);
+}
+
+/* The product links (a principle, a project, the referendum's method note) use
+   .link-button in four modules, and it had no rule at all: they rendered as
+   bare inline text, 18-23 px tall, which failed WCAG 2.5.8 the moment the
+   layout sweep started covering those routes. Same affordance as .link-btn,
+   one size up, because these sit in prose. */
+.link-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 24px;
+  color: var(--teal-text);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.link-button:hover {
   color: var(--teal-500);
 }
 
@@ -3006,6 +3031,47 @@ html[dir="rtl"] .drawer {
   }
 }
 
+/* 320-420 px: the header cannot hold the brand, the search field and three
+   controls on one line. Wrapping keeps every control visible and named, which
+   is what WCAG 1.4.10 asks for; the alternative — shrinking the search label
+   away — would leave a button with no accessible name. */
+@media (max-width: 420px) {
+  .app-header__top {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+  }
+
+  .brand {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .brand__text {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .brand__name,
+  .brand__sub {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .app-header__tools {
+    flex: 1 1 100%;
+    justify-content: space-between;
+  }
+
+  /* Below 900 px the trigger is already icon-only (its label is visually
+     hidden but still its name), so on the wrapped row it should hug the icon
+     instead of stretching into an empty pill. */
+  .search-trigger {
+    flex: 0 0 auto;
+    min-width: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -4723,7 +4789,8 @@ html[data-theme="dark"] .hub__stage {
 }
 
 .door__arrow {
-  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
   line-height: 1;
 }
 
@@ -5697,4 +5764,19 @@ html[data-theme="dark"] .work-card__icon {
 
 .sim__audit-count {
   margin: 0;
+}
+
+/* Narrow screens: a two-column span inside a one-column grid makes Chromium
+   size the track from `minmax(220px, 1fr)` twice over, so the bank's preset row
+   rendered 384 px wide inside a 254 px form. Fill the row instead of spanning
+   it. Declared last on purpose: the base rule lives further up the file. */
+@media (max-width: 620px) {
+  .sim-form > .field--presets {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+
+  .field--presets .btn-row {
+    min-width: 0;
+  }
 }

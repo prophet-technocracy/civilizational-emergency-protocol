@@ -8,7 +8,7 @@ root `README.md`, and they should be re-run after any UI change.
 | script | what it proves |
 | --- | --- |
 | `a11y.mjs` | axe-core (WCAG 2.1 A/AA + best practice) over the twelve views in light and dark, plus the open mobile navigation drawer at 390 px. Prints `{}` when clean. |
-| `keyboard.mjs` | 20 keyboard-only checks: skip link, focus trap and Escape in the search overlay and provenance drawer, focus returned to the opening control, an inert key dock and header behind a modal layer, inert off-canvas navigation, focus after a route change, modified clicks staying with the browser, labelled toasts. |
+| `keyboard.mjs` | 23 keyboard-only checks: toast timing included; skip link, focus trap and Escape in the search overlay and provenance drawer, focus returned to the opening control, an inert key dock and header behind a modal layer, inert off-canvas navigation, focus after a route change, modified clicks staying with the browser, labelled toasts, and a toast whose clock stops while it holds focus. |
 | `layout.mjs` | twelve views × four widths (1440 / 1024 / 768 / 390): page-level horizontal scroll, offscreen nodes, clipped text, controls under 24 × 24. |
 
 ## Setup (once per machine)

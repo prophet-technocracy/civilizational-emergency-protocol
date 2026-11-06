@@ -12,6 +12,9 @@ const PATHS = {
   chevronDown: "M6 9.5 12 15l6-5.5",
   chevronLeft: "M14.5 6 9 12l5.5 6",
   arrowRight: "M4 12h15M13 6l6 6-6 6",
+  // A chevron drawn as a path, not typed as U+2039: that character is
+  // bidi-mirrored, so RTL mirrored it once and the CSS flip mirrored it twice.
+  chevron: "M9 5.5 15.5 12 9 18.5",
   check: "M5 12.5 10 17.5 19 7",
   external: "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5",
   dashboard: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM12 12l4.5-4.5",

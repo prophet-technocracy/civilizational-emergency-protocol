@@ -62,7 +62,7 @@ function LevelDoor({ id, title, purpose, stats, state, lang, copy, navigate }) {
         <span className="door__cta">
           {copy.open}
           <span className="door__arrow" aria-hidden="true">
-            ‹
+            <Icon name="chevron" size={14} />
           </span>
         </span>
       </a>
@@ -81,7 +81,7 @@ function BankDoor({ copy, navigate }) {
         <span className="door__rail" aria-hidden="true" />
         <header className="door__head">
           <span className="door__num door__num--mark" aria-hidden="true">
-            ⌂
+            <Icon name="bank" size={22} />
           </span>
           <span className="door__icon" aria-hidden="true">
             <Icon name="bank" size={20} />
@@ -95,7 +95,7 @@ function BankDoor({ copy, navigate }) {
         <span className="door__cta">
           {copy.open}
           <span className="door__arrow" aria-hidden="true">
-            ‹
+            <Icon name="chevron" size={14} />
           </span>
         </span>
       </a>

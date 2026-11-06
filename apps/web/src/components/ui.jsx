@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useFocusTrap } from "../lib/focus.js";
 import { EPISTEMIC, UI, t, formatNumber } from "../i18n.js";
 import { Icon } from "./icons.jsx";
@@ -250,18 +250,68 @@ export function ProvenanceBody({ record, lang, onInspectClaim }) {
   );
 }
 
-export function Toast({ message, tone = "info", onClose, lang = "fa" }) {
+/**
+ * How long a toast may stay, or `null` when it must not close itself.
+ *
+ * A toast that vanishes while it is being read is a timing failure (WCAG
+ * 2.2.1), so the clock stops while the toast is hovered, focused, or while the
+ * tab is in the background. An error stays until it is dismissed: the reader
+ * decides when the bad news is over (issue #51).
+ */
+export function nextToastDelay({ tone, remaining, paused = false, hidden = false, duration = 5200 }) {
+  if (tone === "error") return null;
+  if (paused || hidden) return null;
+  const left = Number.isFinite(remaining) ? remaining : duration;
+  return Math.max(600, left);
+}
+
+export function Toast({ message, tone = "info", onClose, lang = "fa", duration = 5200 }) {
   const dict = UI[lang];
+  const [paused, setPaused] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const remaining = useRef(duration);
+
+  // A toast still open when the tab is hidden would expire unread; the clock
+  // waits for the reader to come back.
+  useEffect(() => {
+    if (typeof document === "undefined" || !document.addEventListener) return undefined;
+    const onVisibility = () => setHidden(document.hidden === true);
+    onVisibility();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
+
+  // A new message starts a new clock; the decrement in the next effect only
+  // ever shortens the clock that is already running.
+  useEffect(() => {
+    remaining.current = duration;
+  }, [message, duration]);
 
   useEffect(() => {
     if (!message) return undefined;
-    const timer = setTimeout(onClose, 5200);
-    return () => clearTimeout(timer);
-  }, [message, onClose]);
+    const delay = nextToastDelay({ tone, remaining: remaining.current, paused, hidden, duration });
+    if (delay === null) return undefined;
+    const started = Date.now();
+    const timer = setTimeout(onClose, delay);
+    return () => {
+      clearTimeout(timer);
+      remaining.current = Math.max(600, remaining.current - (Date.now() - started));
+    };
+  }, [message, tone, paused, hidden, onClose, duration]);
 
   if (!message) return null;
   return (
-    <div className={`toast toast--${tone}`} role="status" aria-live="polite">
+    <div
+      className={`toast toast--${tone}`}
+      role={tone === "error" ? "alert" : "status"}
+      aria-live={tone === "error" ? "assertive" : "polite"}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setPaused(false);
+      }}
+    >
       <p>{message}</p>
       <button type="button" className="icon-btn icon-btn--sm" onClick={onClose} aria-label={dict.close}>
         <Icon name="close" size={13} />
