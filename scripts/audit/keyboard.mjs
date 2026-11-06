@@ -104,6 +104,54 @@ await new Promise((r) => setTimeout(r, 250));
 const backOnTrigger = await describe(page);
 record("Escape returns focus to the search trigger", /search-trigger/.test(backOnTrigger.cls), JSON.stringify(backOnTrigger));
 
+/* ------------------- search palette: arrows, Enter, Escape ---------------- */
+// Issue #43: Tab-only was the whole story. Arrows and Enter now work, and the
+// results are links, so Enter on one activates the destination natively.
+await page.evaluate(() => document.querySelector(".search-trigger")?.focus());
+await page.keyboard.press("Enter");
+await new Promise((r) => setTimeout(r, 250));
+await page.keyboard.type("اصل");
+await new Promise((r) => setTimeout(r, 800));
+
+const resultCount = await page.evaluate(() => document.querySelectorAll(".search-layer a.search-result").length);
+record("a typed query returns links, not buttons (issue #43)", resultCount > 0, `${resultCount} results`);
+
+await page.keyboard.press("ArrowDown");
+const firstResult = await describe(page);
+const onResult = await page.evaluate(() => document.activeElement?.matches("a.search-result") ?? false);
+record("ArrowDown from the field moves into the results (issue #43)", onResult, JSON.stringify(firstResult));
+
+await page.keyboard.press("ArrowUp");
+const backInField = await describe(page);
+record("ArrowUp from the first result returns to the field", backInField.tag === "input", JSON.stringify(backInField));
+
+await page.keyboard.press("Escape");
+await new Promise((r) => setTimeout(r, 250));
+const afterClear = await page.evaluate(() => ({
+  open: Boolean(document.querySelector(".search-layer")),
+  value: document.querySelector(".search-layer input")?.value ?? null,
+  tag: document.activeElement?.tagName.toLowerCase()
+}));
+record("Escape clears a typed query and keeps the palette open (issue #43)",
+  afterClear.open && afterClear.value === "" && afterClear.tag === "input", JSON.stringify(afterClear));
+
+await page.keyboard.press("Escape");
+await new Promise((r) => setTimeout(r, 300));
+const closedOnSecond = await page.evaluate(() => !document.querySelector(".search-layer"));
+record("Escape on an empty field closes the palette (issue #43)", closedOnSecond, String(closedOnSecond));
+
+await page.evaluate(() => document.querySelector(".search-trigger")?.focus());
+await page.keyboard.press("Enter");
+await new Promise((r) => setTimeout(r, 250));
+await page.keyboard.type("اصل");
+await new Promise((r) => setTimeout(r, 800));
+const beforeEnter = await page.evaluate(() => location.hash);
+await page.keyboard.press("Enter");
+await new Promise((r) => setTimeout(r, 600));
+const afterEnter = await page.evaluate(() => ({ hash: location.hash, open: Boolean(document.querySelector(".search-layer")) }));
+record("Enter in the field opens the first result (issue #43)",
+  afterEnter.hash !== beforeEnter && !afterEnter.open, `${beforeEnter} -> ${JSON.stringify(afterEnter)}`);
+
 /* -------------------------------- drawer --------------------------------- */
 await page.goto(`${LAYER}/#/dashboard`, { waitUntil: "networkidle0" });
 await page.evaluate(() => document.querySelector(".link-btn")?.focus());

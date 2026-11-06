@@ -1355,7 +1355,8 @@ const ONE_RESULT = {
   title: { fa: "مدت و خاتمهٔ دولت انتقالی", en: "A dated, bounded transition government" },
   subtitle: { fa: "اصل صفر ممیز یک", en: "Principle 0.1" },
   kind: { fa: "اصل", en: "principle" },
-  epistemicStatus: "sourced"
+  epistemicStatus: "sourced",
+  target: { view: "principles", recordId: "Z-01" }
 };
 
 test("the search overlay has five states, and an outage never reads as no results", () => {
@@ -1389,6 +1390,21 @@ test("the search overlay has five states, and an outage never reads as no result
   const errorEn = renderSearch({ status: "error", term: "land", payload: null }, "en", "land");
   assert.match(errorEn, /did not answer/);
   assert.match(errorEn, /Retry/);
+});
+
+test("a search result is a link to where it points, not a button (issue #43)", () => {
+  const html = renderSearch(
+    { status: "ready", term: "اصل", payload: { total: 1, results: [ONE_RESULT] } },
+    "en",
+    "اصل"
+  );
+  assert.match(html, /<a[^>]+class="search-result"[^>]+href="#\/principles\/Z-01"/, "the result must carry the route it opens");
+  assert.doesNotMatch(html, /<button[^>]+class="search-result"/, "a destination is a link, not a button");
+  assert.match(html, /id="search-results"/, "the field points at the list it filters");
+  assert.match(html, /aria-controls="search-results"/, "the field names the list it filters");
+
+  const idle = renderSearch({ status: "idle", term: "", payload: null });
+  assert.doesNotMatch(idle, /aria-controls/, "an empty palette owns no list to point at");
 });
 
 test("a search result outside the twelve modules renders without a module chip", () => {

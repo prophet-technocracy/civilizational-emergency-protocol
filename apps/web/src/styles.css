@@ -5813,3 +5813,15 @@ a.crumb {
     inline-size: 100%;
   }
 }
+
+/* A search result is a destination, so it is an anchor with a real href (issue
+   #43). An anchor brings its own colour and underline; the button it replaced
+   brought neither. */
+a.search-result {
+  color: inherit;
+  text-decoration: none;
+}
+
+a.search-result:hover .search-result__title {
+  text-decoration: underline;
+}
