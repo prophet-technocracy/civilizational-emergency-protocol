@@ -1,7 +1,7 @@
 # CEP-T016 — Tokenization-led economic transition: strategy, preconditions, kill criteria
 
 **Status:** Ready for review (report drafted, PR open).
-**Deliverables:** [`docs/economics/TOKENIZATION-TRANSITION-STRATEGY.md`](../docs/economics/TOKENIZATION-TRANSITION-STRATEGY.md) (PR A) and [`docs/economics/HMMT-REDTEAM-vs-TOKENIZATION.md`](../docs/economics/HMMT-REDTEAM-vs-TOKENIZATION.md) (PR B).
+**Deliverables:** [`docs/economics/TOKENIZATION-TRANSITION-STRATEGY.md`](../docs/economics/TOKENIZATION-TRANSITION-STRATEGY.md) (PR A), [`docs/economics/HMMT-REDTEAM-vs-TOKENIZATION.md`](../docs/economics/HMMT-REDTEAM-vs-TOKENIZATION.md) (PR B), [`docs/strategy/PHASE-0-NFT-CLAIMS.md`](../docs/strategy/PHASE-0-NFT-CLAIMS.md) (Phase-0 instrument spec) and [`docs/engineering/FX-RATE-SOURCE.md`](../docs/engineering/FX-RATE-SOURCE.md) (live-rate implementation note).
 **Suggested lead:** Economics + research agents, with a sanctions lawyer and a debt-management practitioner as human reviewers.
 
 ## Objective and research question
@@ -31,6 +31,8 @@ The repository is Persian-first and already contains a tokenization design (HMMT
 6. Failure-mode catalogue with early-warning indicators and priced mitigations (§10).
 7. Distributional and rights analysis, including the surveillance flag (§11).
 8. Assessment of the repository's own design against all of the above (§12), and — in the companion red team — six attacks on HMMT under the maintainer's constraint that any pre-transformation launch runs on TON inside a Telegram Mini App, including the finding that invariant 2 cannot hold in the FX-appreciation direction and that the API serves a ceiling the design says only governance may raise.
+9. **Phase-0 instrument (maintainer's direction, 2026-11-06).** No RWA, no liquidity minting, no redemption promise: Phase 0 issues free, non-transferable claim NFTs on TON whose honouring requires a post-transition registry. Specified in `docs/strategy/PHASE-0-NFT-CLAIMS.md` with claim classes, the deferred-verification procedure, the surveillance threat model, freeze-resistance assumptions, a self-critique and six decisions for the maintainer (N1–N6). Reconciliation with §8.5 is recorded there and in the report's Revision 3 note; the red team's §7.1 assesses the direction and amends D7.
+10. **Live exchange rate (maintainer's direction, 2026-11-06).** The free-market toman/USD rate is read from navasan.tech server-side and applied to every calculation that depends on the rate. Decoder, TTL cache, plausibility gates and four-state disclosure are in `apps/api/src/fx/`; the arithmetic consequences (ceiling at the rate in force, at ±10/20/30 %, and against the ratified ceiling) are exposed at `/api/v1/fx` and `/api/v1/fx/sensitivity` and rendered on the bank screen. `/api/v1/hmmt*` stays on the frozen reference until D5 is decided.
 
 ## Evidence and method requirements
 
@@ -60,6 +62,9 @@ Follows [`agents/RESEARCH-STANDARDS.md`](../agents/RESEARCH-STANDARDS.md): every
 - [ ] Human review by someone with sanctions and/or debt-management expertise.
 - [x] Companion red team delivered (`HMMT-REDTEAM-vs-TOKENIZATION.md`), with a proposed nine-item diff to `HMMT-DESIGN.md` that touches none of the three structural rules.
 - [ ] Maintainer decision on the proposed diff D1–D9, and on Track 0 / Track 1 (§8.5 of the report).
+- [x] Phase-0 NFT specification drafted, with claim classes, verification procedure, threat model, self-critique and the N1–N6 decision list.
+- [x] Live FX source implemented, tested without network access, and disclosed in the interface (`docs/engineering/FX-RATE-SOURCE.md`).
+- [ ] Maintainer decisions N1–N6 (Phase 0) and on reading a third-party endpoint from a server (terms of use).
 
 ## Open questions
 

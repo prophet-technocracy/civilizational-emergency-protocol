@@ -4,6 +4,7 @@
 **Status:** Red-team draft for review. Attacks the design; proposes changes; changes nothing in code.
 **Date:** 2026-11-06.
 **AI disclosure:** written by an AI agent. Sources retrieved 2026-11-06; `[R1]`…`[R8]` are listed in §12.
+**Revision 2 (2026-11-06):** the maintainer has fixed the Track 0 instrument: **non-transferable claim NFTs on TON, with verification deferred to after the transition, no RWA, no liquidity minting, no redemption.** §7.1 assesses that direction against this red team and amends D7. The attacks in §§2–6 are unaffected — they are about a token with a price, which Track 0 now explicitly is not.
 
 > HMMT is not legal tender, not a deposit, not a security, and not authorised. Nothing in this document is a plan to issue anything, and several of its findings argue that the current design should not be issued in its current form at all.
 
@@ -184,6 +185,24 @@ The cap ladder is well built: caps follow civic level, observers hold nothing, p
 
 **(Interpretation) Where I would concede A.** If the maintainer's judgement is that a transferable unit is politically necessary — that the project cannot recruit without a tradeable instrument — then A is a political decision that evidence cannot settle, and the minimum conditions are: TON only, no bridge, no fiat redemption promise, no market-making, a hard supply cap below 2 % of the ceiling, an external funded audit, and the over-ceiling regime of §5 in place before the first mint.
 
+### 7.1 The maintainer's direction: claim NFTs, verified after the transition
+
+The direction is **B carried in an NFT**: a free, publicly readable record of a hashed assertion, whose honouring requires an institution that does not exist yet. The specification is [`PHASE-0-NFT-CLAIMS.md`](../strategy/PHASE-0-NFT-CLAIMS.md). Read against §§2–6, it is a genuine improvement and it does not escape the red team.
+
+**What it fixes, attributed correctly.** The Gram comparison in §7 held that a unit carrying an expectation of profit is a security whatever the issuer calls it; a claim record with no price, no yield and no redemption has nothing for the expectation to attach to. The freeze exposure in §4 largely disappears because there is nothing to freeze and no stablecoin rail in the loop. The run and the queue disappear with the redemption promise. Non-transferability means a secondary market cannot form without an off-chain over-the-counter workaround, and the specification forbids marketplace integration precisely so that workaround has no venue.
+
+**What it does not fix, in descending order of severity.**
+
+1. **The participation list survives, and the NFT makes it more durable.** §3 called this the most serious ethical objection. A claim NFT is a permanent public artefact; a Telegram-linked mint still ties an account to a claim at the moment of minting, and the offline export mitigates the client dependency without changing the on-chain set. The specification's answer — fresh wallets, hashes only, no issuer-side table — reduces correlation but cannot remove it, because the chain remembers.
+2. **"Verified after the transition" is a promise about a government that does not exist.** The specification says so before minting, which is the right place, but the sentence a holder will remember is not the one in §4. **Hypothesis:** the comprehension test in the specification (§4) will show people over-reading the NFT as a future entitlement. **Test:** run it before any contract exists. If holders cannot restate what the NFT does *not* do, the design fails ethically even if it succeeds technically.
+3. **`P0-REGISTRY-KEY` is a bearer instrument** and therefore the most legally exposed object in the set. My recommendation: drop it from Phase 0, or accept that the project is issuing an unregistered bearer claim keyed to a hash and say so in the interface.
+4. **A free mint is still a mint.** Network fees, wallet setup and a Telegram account are not free for a user under sanctions, and any subsidy reintroduces a treasury, which reintroduces the movement-treasury problem of §2.
+5. **The tax and reporting question is untouched.** If a future market ever prices these NFTs, holders acquire a reportable asset in jurisdictions that have no idea what it is. Phase 0 cannot solve that; it can only avoid creating the price.
+
+**Verdict (Interpretation).** The direction survives §7's test and fails none of §1's gate. It is the first version of this project's on-chain plan I would not argue against in principle. The residual objections are ethical and legal rather than economic, they are narrower than for a transferable unit, and two of the five are reasons to *narrow* Phase 0 further rather than to abandon it: drop `P0-REGISTRY-KEY`, and publish the comprehension test result before the first contract.
+
+**What would change this verdict.** Evidence that claim records are being read as entitlements at scale; a legal analysis that recording assertions about the state is itself an offence for participants; or an engineer showing the offline verification path cannot exist without an issuer-controlled component. Any one of those turns this into a "do not build" for Phase 0 as specified.
+
 ---
 
 ## 8. What survives the red team untouched
@@ -210,7 +229,7 @@ Nine changes. None touches the three structural rules, the cap invariants or the
 | D4 | §4 and §7 | Add the **over-ceiling regime**: `coverage` published daily, `under-collateralised` state, automatic issuance stop, pre-committed restoration options, 30-day plan | §5; invariant 2 is currently unenforceable in the appreciation direction |
 | D5 | §4, and `apps/api/src/data/hmmt.mjs:96` | Split **arithmetic ceiling** (published, moves with FX) from **ratified ceiling** (adopted, enforced, invariant to FX). FX-driven headroom is unavailable until revalued and signed | §5; the data layer currently raises the ceiling with the exchange rate while a test comment says only governance may |
 | D6 | §5.1 | Track 0: level 2 cap for everyone, no level verification collected, no civic status granted | §6; a verified ladder before legitimacy is a political register |
-| D7 | §5 | Track 0: non-transferable, no redemption for fiat, no yield, no market support — or an explicit, argued exception | §7 |
+| D7 | §5, §7.1 | Track 0: non-transferable claim NFTs, free to mint, no RWA, no redemption for fiat, no yield, no market support — and `P0-REGISTRY-KEY` excluded unless the maintainer says otherwise | §7, §7.1 |
 | D8 | §11 | Add "a participation list worth seizing" and "platform removal (App Store, Telegram policy)" to the list of things that would be required for this to be real | §4.3, §3 |
 | D9 | §12, and `packages/domain-models/test/hmmt.test.mjs` | Add tests: over-ceiling in both FX directions; the ratified ceiling is invariant to `fxRate`; no mint path; cap invariants under Track 0 configuration | §5, §6 |
 
@@ -226,7 +245,7 @@ Nine changes. None touches the three structural rules, the cap invariants or the
 | Appreciation breaks invariant 2 | The over-ceiling regime is specified and tested in both directions |
 | A resource-backed transferable unit is the wrong first instrument | The maintainer states the political necessity, accepts §7's minimum conditions in writing, and the first mint is bounded at 2 % of the ceiling |
 | Telegram reach is overstated | The interface states the diaspora-and-VPN channel honestly, and domestic reach is not claimed |
-| The Gram posture applies | The instrument is non-transferable and carries no expectation of profit — which is what §7 B proposes |
+| The Gram posture applies | The instrument is a non-transferable claim NFT with no expectation of profit — §7 B, now specified in `PHASE-0-NFT-CLAIMS.md` |
 
 ---
 
@@ -235,7 +254,7 @@ Nine changes. None touches the three structural rules, the cap invariants or the
 1. **I have not modelled the queue.** §5 shows the ceiling breaking and shows that the API serves a recomputed ceiling while a test comment says governance must ratify it; I have not simulated what holders do in the `under-collateralised` state. The repository's engine could, and should, before anyone relies on this analysis.
 2. **The Telegram reach claim rests on secondary sources.** I found no primary Iranian regulator document, and none would be published. The measurement-service evidence is thin (confidence 0.24 in the source itself).
 3. **The "participation list" objection is a judgement about risk, not a measurement.** It is the strongest ethical objection I make and the least evidenced. Someone who knows the Iranian security landscape should overrule me if they think it is overstated.
-4. **I have not costed B.** A non-transferable claim is cheap to build but may be worthless politically; I have asserted the trade-off rather than tested it.
+4. **I have not costed B.** A non-transferable claim is cheap to build but may be worthless politically; I have asserted the trade-off rather than tested it. §7.1 makes this worse, not better: I have assessed the NFT direction on paper and have run no comprehension test, no legal review and no contract review.
 5. **The Gram precedent is US law.** Its reasoning is persuasive elsewhere, not binding, and a project with no US nexus may discount it. I think that discount is a mistake for a project that wants diaspora participation, and I cannot prove it.
 
 ---

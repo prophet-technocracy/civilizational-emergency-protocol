@@ -4,7 +4,8 @@
 **Status:** Research draft for review. Not adopted, not endorsed, not a plan of any government or movement.
 **Date:** 2026-11-06.
 **AI disclosure:** drafted by an AI agent (Arena Agent Mode) working from public sources retrieved on 2026-11-06 and from this repository's own documents. Every source was opened, not quoted from a search snippet, except where marked. No interview, dataset or endorsement was invented.
-**Revision 2 (2026-11-06):** adds §8.5, which splits the roadmap into a pre-legitimacy track and a post-legitimacy track, after maintainer feedback that any launch before a political transformation will be on TON inside a Telegram Mini App. That constraint is recorded there and attacked in the companion red team; nothing else in this report changes.
+**Revision 2 (2026-11-06):** adds §8.5, which splits the roadmap into a pre-legitimacy track and a post-legitimacy track, after maintainer feedback that any launch before a political transformation will be on TON inside a Telegram Mini App. That constraint is recorded there and attacked in the companion red team.
+**Revision 3 (2026-11-06):** §8.5's Track 0 instrument is replaced. On the maintainer's direction, Phase 0 issues **non-transferable claim NFTs on TON whose backing can only be verified after the transition**, not a bare published arithmetic — no RWA, no liquidity minting, no redemption promise. The specification is [`docs/strategy/PHASE-0-NFT-CLAIMS.md`](../strategy/PHASE-0-NFT-CLAIMS.md). §9's roadmap, the three structural rules and the cap ladder are unchanged.
 
 > This document is a proposal-shaped analysis, not a program. CEP is non-governmental; HMMT is not legal tender, not a deposit and not a security; nothing here confers legitimacy on CEP, on any transition institution, or on any instrument. A well-supported conclusion that a design should not be built is treated as a valid result and is one of the outcomes this report reaches for part of the programme.
 
@@ -368,7 +369,7 @@ Everything from §9 onward assumes a legitimately constituted government that ma
 | | **Track 0 — before legitimacy** | **Track 1 — after legitimacy** (Stage 0 onward) |
 | --- | --- | --- |
 | Issuer | None that the law recognises; a civic body with no statutory power | Debt office or central bank, under statute |
-| Instrument | A published arithmetic, ideally with nothing transferable and nothing of value at risk | A bill, bond or deposit token under existing law |
+| Instrument | A free, non-transferable claim NFT on TON: a hashed record of an assertion, verifiable by a future registry, carrying no asset, no yield and no redemption (rev. 3) | A bill, bond or deposit token under existing law |
 | Chain | Public (TON), inside a messaging client, as a distribution decision rather than a technical one | Permissioned, supervised, central-bank-anchored |
 | Money | No fiat redemption promise, no yield, no market support | Par redemption in domestic money, settlement finality |
 | Success test | Participants can verify the rules, and none of them can lose anything | Matched-pair issuance cost, settlement cycle, measured against conventional issuance |
@@ -376,7 +377,9 @@ Everything from §9 onward assumes a legitimately constituted government that ma
 
 **(Proposal) The Track 0 gate: nothing of value may be at risk.** If a participant can lose money, Track 0 has ended and the programme is in Track 1 territory without a mandate. That one rule settles most of the design questions — including whether the unit should be transferable, which is attacked at length in the companion red team.
 
-**(Interpretation) Two things make Track 0 worth doing anyway.** It can demonstrate the arithmetic, the haircut chain, the evidence tiering and the verification interface to an audience the project could not otherwise reach; and it can build a verified constituency that a Track 1 issuance would otherwise have to build from nothing. Neither requires a token, and neither survives being confused with one.
+**(Revision 3 — the instrument, and why it changed.)** The maintainer's direction is sharper than revision 2's "publish an arithmetic": Phase 0 issues NFTs, and their backing can only be verified after a regime change. That is compatible with the gate, but only under four conditions, which the specification makes binding: minting is **free**; the NFT refers to a **hashed claim, never an asset**; it is **non-transferable** by default, because a market price on a future recognition is a security issued by nobody with a licence; and the interface states **before minting** that if the transition does not happen, or the new institutions decline to recognise the format, the NFT is worth nothing. No RWA, no liquidity, no redemption. The gate still holds because the holder's loss is bounded by network fees — but the *honesty* burden is heavier than in revision 2, not lighter: a claim record that implies a future entitlement is exactly the failure the Petro case describes.
+
+**(Interpretation) Two things make Track 0 worth doing anyway.** It can demonstrate the arithmetic, the haircut chain, the evidence tiering and the verification interface to an audience the project could not otherwise reach; and it can build a verified constituency that a Track 1 issuance would otherwise have to build from nothing. Revision 2 said neither requires a token. Revision 3 accepts a token as the delivery mechanism while keeping the substance: what is recorded is a claim and a hash, and the value to the project is the record, not the unit. **(Interpretation)** The NFT adds distribution and durability; it also adds a price surface, a surveillance surface and a securities question, which the specification addresses one at a time rather than waving away.
 
 
 ## 9. A sequenced roadmap, with kill criteria

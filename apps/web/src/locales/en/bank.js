@@ -240,6 +240,41 @@ export const bankEn = {
     notYet: "Not open"
   },
 
+  rate: {
+    title: "The exchange rate in force",
+    lede:
+      "One HMMT is fixed in toman, so the supply ceiling moves with the dollar rate. This panel shows the rate the calculations would use, when it was read, and what the ceiling becomes when the rate moves.",
+    rateLabel: "Free-market dollar",
+    statusLabel: "State of the reading",
+    asOfLabel: "Read at",
+    sourceLabel: "Source",
+    ageLabel: "Age",
+    ageSeconds: "seconds ago",
+    ageMinutes: "minutes ago",
+    never: "not read from the source",
+    liveCeiling: "Ceiling at this rate",
+    referenceCeiling: "Ceiling at the reference rate",
+    difference: "Difference",
+    referenceLine: "Reference rate",
+    ladderTitle: "The ceiling at other rates",
+    ladderLede:
+      "Assumptions, not forecasts: the same backing, the rate moved by a fixed percentage, the ceiling recomputed.",
+    shock: "Rate change",
+    rateColumn: "Toman per USD",
+    ceilingColumn: "Ceiling (HMMT)",
+    ratifiedColumn: "Against the ratified ceiling",
+    ratifiedAgrees: "Agrees",
+    ratifiedAbove: "Headroom lost",
+    limitationsTitle: "What this reading cannot tell you",
+    refresh: "Re-read the source",
+    states: {
+      fresh: "Fresh — read from the source",
+      stale: "Stale — last good read, source unreachable",
+      suspect: "Suspect — reading rejected, previous rate still in force",
+      reference: "Reference — the committed figure, not a live rate"
+    }
+  },
+
   design: {
     title: "Architecture and governance",
     lede: "The chain, the governance rules and the structural invariants in one place.",

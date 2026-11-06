@@ -1021,6 +1021,133 @@ function DesignSection({ design, copy, lang }) {
   );
 }
 
+
+// The rate panel. It is a separate fetch from the bank payload on purpose: the
+// rate changes while the page is open, and the supply figures on this screen are
+// computed at the frozen reference. Showing both, side by side, is the only
+// honest way to render a ceiling that depends on a price nobody controls.
+function RateSection({ copy, lang }) {
+  const { status, payload, reload } = useApi("/api/v1/fx/sensitivity");
+  const rate = copy.rate;
+
+  if (status !== "ready") {
+    return (
+      <section aria-labelledby="bank-rate">
+        <div className="section-head">
+          <div>
+            <h2 id="bank-rate" className="h2">
+              {rate.title}
+            </h2>
+            <p className="lede">{rate.lede}</p>
+          </div>
+        </div>
+        <StateBlock status={status} lang={lang} onRetry={reload} />
+      </section>
+    );
+  }
+
+  const data = payload.data;
+  const state = data.status;
+  const tone = state === "fresh" ? "good" : state === "stale" ? "warn" : state === "suspect" ? "danger" : "info";
+  const stateLabel = rate.states[state] ?? t(data.statusLabel, lang);
+  const ageText =
+    data.rateContext.ageMs === null || data.rateContext.ageMs === undefined
+      ? rate.never
+      : data.rateContext.ageMs < 60_000
+        ? `${formatNumber(Math.round(data.rateContext.ageMs / 1000), lang)} ${rate.ageSeconds}`
+        : `${formatNumber(Math.round(data.rateContext.ageMs / 60_000), lang)} ${rate.ageMinutes}`;
+
+  return (
+    <section aria-labelledby="bank-rate">
+      <div className="section-head">
+        <div>
+          <h2 id="bank-rate" className="h2">
+            {rate.title}
+          </h2>
+          <p className="lede">{rate.lede}</p>
+        </div>
+        <button type="button" className="btn btn--ghost" onClick={reload}>
+          {rate.refresh}
+        </button>
+      </div>
+
+      <div className="grid grid--stats">
+        <Stat
+          label={rate.rateLabel}
+          value={`${numberFormat(data.rate.tomanPerUsd, lang, 0)} ${lang === "fa" ? "تومان" : "toman"}`}
+          note={rate.rateColumn}
+          tone={state === "fresh" ? "info" : "neutral"}
+        />
+        <Stat label={rate.liveCeiling} value={`${numberFormat(data.live.ceilingTokens, lang, 0)} HMMT`} note={rate.ceilingColumn} />
+        <Stat
+          label={rate.referenceCeiling}
+          value={`${numberFormat(data.reference.ceilingTokens, lang, 0)} HMMT`}
+          note={`${rate.referenceLine}: ${numberFormat(data.rateContext.reference.rate, lang, 0)}`}
+          tone="info"
+        />
+        <Stat
+          label={rate.difference}
+          value={`${data.deltaFromReferenceTokens > 0 ? "+" : ""}${numberFormat(data.deltaFromReferenceTokens, lang, 0)} HMMT`}
+          note={`${rate.asOfLabel}: ${dateOnly(data.asOf, lang)}`}
+        />
+      </div>
+
+      <Card title={rate.ladderTitle}>
+        <p className="card__subtitle">{rate.ladderLede}</p>
+        <div className="table-wrap" tabIndex={0} role="region" aria-label={`${copy.tableRegion}: ${rate.ladderTitle}`}>
+          <table className="data-table data-table--compact">
+            <caption className="sr-only">{rate.ladderTitle}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{rate.shock}</th>
+                <th scope="col">{rate.rateColumn}</th>
+                <th scope="col">{rate.ceilingColumn}</th>
+                <th scope="col">{rate.ratifiedColumn}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.ladder.map((row) => (
+                <tr key={row.shockPercent}>
+                  <td className="mono">
+                    {row.shockPercent > 0 ? "+" : ""}
+                    {formatNumber(row.shockPercent, lang)}%
+                  </td>
+                  <td className="mono">{numberFormat(row.fxRate, lang, 0)}</td>
+                  <td className="mono">{numberFormat(row.ceilingTokens, lang, 0)}</td>
+                  <td>
+                    {row.belowRatifiedCeiling ? (
+                      <Badge tone="warn">
+                        {rate.ratifiedAbove} · {numberFormat(row.overIssueRiskTokens, lang, 0)}
+                      </Badge>
+                    ) : (
+                      <span className="small muted">{rate.ratifiedAgrees}</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <Callout tone={tone === "danger" ? "warn" : "info"} title={rate.statusLabel}>
+          <Badge tone={tone}>{stateLabel}</Badge>
+          <span className="small muted">
+            {" "}
+            · {rate.sourceLabel}: {data.rateContext.source ?? "—"} · {rate.ageLabel}: {ageText}
+          </span>
+        </Callout>
+      </Card>
+
+      <Callout tone="warn" title={rate.limitationsTitle}>
+        <ul className="tight-list">
+          {data.limitations.map((item, index) => (
+            <li key={index}>{t(item, lang)}</li>
+          ))}
+        </ul>
+      </Callout>
+    </section>
+  );
+}
+
 export default function Bank({ lang }) {
   const copy = localeStrings(lang).bank;
   const { status, payload, reload } = useApi("/api/v1/hmmt");
@@ -1082,6 +1209,7 @@ export default function Bank({ lang }) {
         </Card>
       </div>
 
+      <RateSection copy={copy} lang={lang} />
       <SupplySection supply={supply} copy={copy} lang={lang} />
       <CapsSection caps={caps} copy={copy} lang={lang} />
       <ChainSection supply={supply} backing={backing} copy={copy} lang={lang} />
