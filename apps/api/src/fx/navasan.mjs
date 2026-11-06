@@ -63,6 +63,22 @@ export function unwrapEscapes(input, passes = 6) {
   return current;
 }
 
+/**
+ * Remove non-data HTML blocks that can interfere with row/value extraction.
+ * Applied to a fixed point so multi-character patterns cannot reappear after a pass.
+ */
+function stripNonDataBlocks(input) {
+  let current = String(input);
+  let previous;
+  do {
+    previous = current;
+    current = current
+      .replace(/<style[\s\S]*?<\/style>/gi, "")
+      .replace(/<script[\s\S]*?<\/script>/gi, "");
+  } while (current !== previous);
+  return current;
+}
+
 /** ASCII digits out of a Persian-formatted number, or null if there is none. */
 export function toNumber(raw) {
   if (raw === null || raw === undefined) return null;
@@ -82,11 +98,9 @@ export function toNumber(raw) {
  * half-read table is how a wrong rate gets published.
  */
 export function parseNavasanWidget(payload) {
-  const text = unwrapEscapes(payload)
-    // Style and script blocks are layout, not data. A colour rule containing a
-    // hex value must never be mistaken for a price.
-    .replace(/<style[\s\S]*?<\/style>/gi, "")
-    .replace(/<script[\s\S]*?<\/script>/gi, "");
+  // Style and script blocks are layout, not data. A colour rule containing a
+  // hex value must never be mistaken for a price.
+  const text = stripNonDataBlocks(unwrapEscapes(payload));
   if (!text.includes("navasan_table") && !text.includes('class="val"')) return null;
 
   const rows = {};
