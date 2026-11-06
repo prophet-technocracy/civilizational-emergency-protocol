@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { UI } from "./i18n.js";
 import { useDebounced, readStored, writeStored } from "./lib/api.js";
 import { readTheme, hasStoredTheme, systemTheme, THEME_COLOR } from "./lib/theme.js";
+import { useTelegramEnvironment, useTelegramBackButton, wantedTheme } from "./platform/telegram/index.js";
+import TmaProbe from "./platform/telegram/Probe.jsx";
 import { Drawer, ProvenanceBody } from "./components/ui.jsx";
 import { useFocusTrap, prefersReducedMotion } from "./lib/focus.js";
 import { localeStrings } from "./locales/index.js";
@@ -102,6 +104,20 @@ export default function App() {
   const [isNarrow, setIsNarrow] = useState(false);
   const [policyId, setPolicyId] = useState("P-OPEN-DRAFT");
   const debouncedSearch = useDebounced(searchTerm, 220);
+  // The Mini App environment, when there is one. Outside Telegram this is null
+  // and every block below is inert — the browser build stays the reference.
+  const telegram = useTelegramEnvironment({
+    palette: { headerBg: THEME_COLOR[theme], bottomBarBg: THEME_COLOR[theme] }
+  });
+
+  // The client's colour scheme decides the theme only when the reader has not
+  // chosen one; an explicit choice always wins (same rule as the OS preference).
+  const telegramActive = Boolean(telegram?.active);
+  const telegramScheme = telegram?.colorScheme ?? null;
+  useEffect(() => {
+    const wanted = wantedTheme(telegramActive ? { active: true, colorScheme: telegramScheme } : null);
+    if (wanted && !hasStoredTheme()) setTheme(wanted);
+  }, [telegramActive, telegramScheme]);
 
   const dict = UI[lang];
   // Where the reader is, named once and shared by the title and the breadcrumb.
@@ -244,6 +260,16 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? "auto" : "smooth" });
   }, []);
 
+  // The client draws a back button in its own header. Mirror the browser's:
+  // shown on any route that is not the hub, and doing exactly what Back does.
+  // Declared after `navigate` because it closes over it: a `const` referenced
+  // above its declaration is a temporal-dead-zone crash at the first render.
+  const telegramBack = useCallback(() => {
+    if (typeof window !== "undefined" && window.history.length > 1) window.history.back();
+    else navigate(HUB_VIEW);
+  }, [navigate]);
+  useTelegramBackButton({ visible: Boolean(telegram?.active) && route.view !== HUB_VIEW, onBack: telegramBack });
+
   const closeSearch = useCallback(() => {
     setSearchOpen(false);
     setSearchTerm("");
@@ -335,7 +361,9 @@ export default function App() {
           )}
           </ErrorBoundary>
 
-          <Footer lang={lang} dict={dict} />
+          <TmaProbe context={telegram} lang={lang} />
+
+      <Footer lang={lang} dict={dict} />
         </main>
       </div>
 

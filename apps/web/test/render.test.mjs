@@ -49,6 +49,9 @@ let DOORS;
 let isPlainLeftClick;
 let nextToastDelay;
 let doorGlyph;
+let TmaProbe;
+let createMockWebApp;
+let readTelegramContext;
 
 const server = createServer();
 let baseUrl;
@@ -70,7 +73,10 @@ before(async () => {
         'export { default as ErrorBoundary, CrashFallback } from "./src/components/ErrorBoundary.jsx";',
         'export { nextDoorIndex, doorStepForArrow, doorHref, isDoorActive, DOORS } from "./src/components/KeyDock.jsx";',
         'export { isPlainLeftClick, onLinkClick } from "./src/lib/links.js";',
-        'export { visibleAudit } from "./src/modules/levels/panels.jsx";'
+        'export { visibleAudit } from "./src/modules/levels/panels.jsx";',
+        'export { default as TmaProbe } from "./src/platform/telegram/Probe.jsx";',
+        'export { createMockWebApp } from "./src/platform/telegram/mock.mjs";',
+        'export { readTelegramContext } from "./src/platform/telegram/context.mjs";'
       ].join("\n"),
       resolveDir: WEB_ROOT,
       loader: "js"
@@ -117,6 +123,9 @@ before(async () => {
   isPlainLeftClick = bundle.isPlainLeftClick;
   nextToastDelay = bundle.nextToastDelay;
   doorGlyph = bundle.doorGlyph;
+  TmaProbe = bundle.TmaProbe;
+  createMockWebApp = bundle.createMockWebApp;
+  readTelegramContext = bundle.readTelegramContext;
 
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   baseUrl = `http://127.0.0.1:${server.address().port}`;
@@ -1856,4 +1865,24 @@ test("stale data says so instead of pretending to be fresh", () => {
 
 test("a healthy app renders no health notice at all", () => {
   assert.equal(renderToString(createElement(DataHealthNotice, { lang: "en" })), "");
+});
+
+/* ------------------------------ Mini App probe ---------------------------- */
+
+test("the probe renders nothing outside a launch, so the web app is untouched", async () => {
+  const html = renderToString(createElement(TmaProbe, { context: readTelegramContext(null), lang: "en" }));
+  assert.equal(html, "");
+});
+
+test("the probe names a fabricated environment as fabricated, in both languages", async () => {
+  const context = readTelegramContext(createMockWebApp({ colorScheme: "dark" }), { mocked: true });
+  const english = renderToString(createElement(TmaProbe, { context, lang: "en" }));
+  assert.match(english, /tma-probe/);
+  assert.match(english, /simulated/i);
+  assert.equal(/--tg-theme|themeParams/.test(english), false, "the probe never prints Telegram's palette");
+
+  const persian = renderToString(createElement(TmaProbe, { context, lang: "fa" }));
+  assert.match(persian, /tma-probe/);
+  assert.notEqual(persian, english, "the probe is translated, not English-only");
+  assert.equal(/\u064A|\u0643/.test(persian), false, "no Arabic yeh or kaf");
 });
