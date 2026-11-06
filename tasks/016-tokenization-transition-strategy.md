@@ -64,7 +64,9 @@ Follows [`agents/RESEARCH-STANDARDS.md`](../agents/RESEARCH-STANDARDS.md): every
 - [ ] Maintainer decision on the proposed diff D1–D9, and on Track 0 / Track 1 (§8.5 of the report).
 - [x] Phase-0 NFT specification drafted, with claim classes, verification procedure, threat model, self-critique and the N1–N6 decision list.
 - [x] Live FX source implemented, tested without network access, and disclosed in the interface (`docs/engineering/FX-RATE-SOURCE.md`).
-- [ ] Maintainer decisions N1–N6 (Phase 0) and on reading a third-party endpoint from a server (terms of use).
+- [x] Maintainer decisions N1–N6 taken 2026-11-06 and recorded in `PHASE-0-NFT-CLAIMS.md` §11: four classes as written; non-transferable with successor key; `P0-REGISTRY-KEY` inactive until Track 1; one aggregate total only; holder pays fees; offline export mandatory.
+- [ ] Maintainer decision on reading a third-party endpoint from a server (navasan terms of use), and on authorising a Phase-0 contract at all.
+- [ ] The §4 comprehension test — unrun, and the condition attached to Phase 0.
 
 ## Open questions
 

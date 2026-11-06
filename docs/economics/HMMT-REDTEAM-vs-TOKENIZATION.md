@@ -203,6 +203,18 @@ The direction is **B carried in an NFT**: a free, publicly readable record of a 
 
 **What would change this verdict.** Evidence that claim records are being read as entitlements at scale; a legal analysis that recording assertions about the state is itself an offence for participants; or an engineer showing the offline verification path cannot exist without an issuer-controlled component. Any one of those turns this into a "do not build" for Phase 0 as specified.
 
+**§7.1.1 The six decisions, and how they answer the objections above.** The maintainer decided all six on 2026-11-06 (spec §11):
+
+| Objection | Decision | Residual |
+| --- | --- | --- |
+| (1) participation list | N4: **one aggregate total only** — no breakdowns, no cadence faster than daily, floor of 200 | The total still sizes the set; the on-chain wallet set is unchanged |
+| (2) over-reading as entitlement | No decision taken — the comprehension test is still unrun | **Unmitigated**, and it is the objection most likely to be fatal |
+| (3) `P0-REGISTRY-KEY` bearer instrument | N3: **defined, inactive until Track 1** | A published design for a bearer claim, with no registry to honour it |
+| (4) mint is not free for a sanctioned user | N5: **holder pays, no subsidy** | No treasury is created; the poorest are priced out, which is a distributional cost, not a safety one |
+| Freeze/offline path | N6: **offline export mandatory before any other feature** | Depends on a contract that does not exist |
+
+**(Interpretation)** N1–N6 close three of my five objections and leave the most important one open. If I had to pick the single condition that determines whether Phase 0 is defensible, it is not any of the six: it is whether a prospective holder, after reading the interface, can restate that the NFT promises nothing. That test costs almost nothing to run and has not been run.
+
 ---
 
 ## 8. What survives the red team untouched

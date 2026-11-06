@@ -1,6 +1,6 @@
 # Phase 0: claim NFTs before legitimacy
 
-**Task:** CEP-T016, track 0 (pre-legitimacy). **Status:** specification draft for the maintainer's decision. **Date:** 2026-11-06.
+**Task:** CEP-T016, track 0 (pre-legitimacy). **Status:** specification draft, **N1–N6 decided by the maintainer on 2026-11-06** (§11). Still no contract, no key, no deployment. **Date:** 2026-11-06.
 **Relationship to the rest of the programme:** supersedes the "arithmetic with nothing transferable" framing of §8.5 in [`TOKENIZATION-TRANSITION-STRATEGY.md`](../economics/TOKENIZATION-TRANSITION-STRATEGY.md) for the Phase-0 instrument only. It changes no HMMT rule, no cap ladder, and no structural invariant.
 **AI disclosure:** drafted by an AI agent from the maintainer's standing direction and from public TON documentation. No contract has been deployed, no wallet exists, no key is held anywhere in this repository, and nothing here has been reviewed by a lawyer.
 
@@ -63,7 +63,9 @@ Open-ended token types are how a recording instrument becomes a promise. Phase 0
 | `P0-HARM` | "I assert a harm, with the evidence hashed and held by me." | A future truth or restitution process may use it as a filing; the NFT is not a filing and does not start a clock. |
 | `P0-REGISTRY-KEY` | "This key will be presented to a future registry to claim the underlying record." | The only class with a defined mechanical use, and it is a *key*, not a balance. |
 
-A fifth class is proposed and **not** admitted in this version: `P0-ASSET-INTENT` — a statement of intent to register an asset after the transition. It is excluded because a hash pointing at an asset starts to look like a claim *on* the asset, which is exactly the RWA that Phase 0 forbids. It should not be admitted until a lawyer can say what it is.
+**Decided (N1, 2026-11-06): the four classes above are authorised as written.**
+
+A fifth class is proposed and **not** admitted: `P0-ASSET-INTENT` — a statement of intent to register an asset after the transition. It is excluded because a hash pointing at an asset starts to look like a claim *on* the asset, which is exactly the RWA that Phase 0 forbids. It should not be admitted until a lawyer can say what it is. N1 authorised the four-class set; adding a class is a separate decision, not an exercise of the same one.
 
 ---
 
@@ -108,13 +110,27 @@ A public registry of people who recorded claims about a regime is a list of peop
 
 **(Interpretation)** None of this makes the system safe. It makes the *protocol* not the leak, and leaves the client, the network and the holder's own device as the remaining leak paths. The interface must say that once, clearly, and not repeat it until it becomes wallpaper.
 
+### 5.1 The one number that may be published (N4)
+
+**Decided (N4, 2026-11-06): aggregate totals only — one number, no per-person data, no breakdowns, no growth charts.**
+
+What that permits, exactly:
+
+- **Permitted:** a single total count of claim NFTs minted, refreshed at most daily, published with the epoch it covers. Nothing else.
+- **Forbidden:** counts by class, by region, by date finer than the epoch, by language or by wallet age; per-claim tracing; a time series published as a chart; any figure that changes fast enough to read as momentum; any list, even of hashes, presented as "holders".
+- **Why the line is there.** A total that moves slowly is a scale claim. A total that moves daily is a growth chart, and a growth chart is a campaign. A breakdown by region is a map of risk for the people in those regions.
+- **The floor.** Below 200 mints the count is published as "fewer than 200", never as a number. An aggregate of a small set is a shortlist.
+
+**The cost of admitting this at all, stated.** The total is also the number a hostile reader uses to size the set. I argued for publishing nothing; the maintainer's version is narrower than I feared — one number, no segmentation, no cadence — but the residual risk is that a permitted aggregate becomes the thin end of a reporting habit. The specification therefore fixes the *shape* of the number rather than the principle behind it, so widening it later requires an explicit decision rather than a design choice made in a pull request.
+
+
 ---
 
-## 6. Transferability, and why the default is "no"
+## 6. Transferability: no
 
-The maintainer's direction is an NFT, and NFTs are conventionally transferable. This specification defaults to **non-transferable** and gives the reason, because a transferable Phase-0 token with no legal character is the single cheapest way to manufacture a security:
+The maintainer's direction is an NFT, and NFTs are conventionally transferable. This specification is **non-transferable** — decided, N2 — and gives the reason, because a transferable Phase-0 token with no legal character is the single cheapest way to manufacture a security:
 
-- **Proposal.** The Phase-0 contract rejects a transfer to any address other than the holder's designated successor key, set once at mint. Recovery from key loss is by a pre-committed successor, not by sale.
+- **Decided (N2, 2026-11-06): non-transferable, with a pre-committed successor key.** The contract rejects a transfer to any address other than the holder's successor, set once at mint. Recovery from key loss is by that successor, not by sale.
 - **Why.** A market price on a claim record converts "a record of participation" into "a priced expectation of future recognition". That is a security in most jurisdictions, issued by nobody with a licence, before any transition. The 2023 Petro lesson was not that resource tokens fail; it was that an instrument priced by its issuer's promises fails *and* discredits the institution around it.
 - **The cost, stated.** Non-transferable means no exit, no gift, no inheritance except via the successor key, and no way to compensate a holder who moves jurisdictions. It also means a holder who loses both keys loses the claim permanently.
 - **What would change this.** A ratified legal opinion that a transferable record-claim is not a security in the relevant jurisdictions, **and** an exchange or registrar willing to list it under supervision, **and** a decision by the maintainer that the resulting market is acceptable. That is a Phase-1 conversation, not a Phase-0 one.
@@ -135,7 +151,7 @@ Asset freezing is not hypothetical; the direction acknowledges it as likely. The
 | The holder's wallet | Yes, if the wallet is custodial | Only non-custodial wallets are supported; the app never holds a key |
 | The claim documents | Yes, if they live on one host | Documents are held by the holder; the protocol stores hashes only |
 
-**§7.3 Offline verification path (Proposal).** A claim is verifiable by a third party using only: (a) the claim document, (b) the salt, (c) the published contract address and epoch Merkle root, and (d) any `sha256` implementation. No network, no app, no issuer. The Mini App must be able to *export* this bundle, and the export must be the primary button, not a hidden menu item.
+**§7.3 Offline verification path (Proposal — N6: mandatory before any other feature).** A claim is verifiable by a third party using only: (a) the claim document, (b) the salt, (c) the published contract address and epoch Merkle root, and (d) any `sha256` implementation. No network, no app, no issuer. The Mini App must be able to *export* this bundle, and the export must be the primary button, not a hidden menu item.
 
 **(Interpretation)** This is the strongest part of the design and the part most likely to be dropped under delivery pressure. Dropping it would leave a project whose entire value is verifiability, dependent on a blocked client.
 
@@ -159,7 +175,8 @@ Asset freezing is not hypothetical; the direction acknowledges it as likely. The
 - **No contract code, no deployment, no key.** Building it requires the maintainer's explicit instruction and a security review; this repository holds no key material and must not.
 - **No legal opinion.** Whether a non-transferable claim record is a regulated crypto-asset in Iran, the EU, the UK or anywhere else is unverified here. The classes are drafted to be as boring as possible; that is not the same as being lawful.
 - **No promise of recognition.** §4 step 3 is a decision for a future institution with standing, and the specification says so in the interface text a holder sees before minting.
-- **No participation metrics, no leaderboard, no referral scheme.** Each of those converts a record into a campaign, and a campaign into a liability.
+- **No participation metrics beyond the single aggregate of §5.1, no leaderboard, no referral scheme.** Each of those converts a record into a campaign, and a campaign into a liability.
+- **No active use of `P0-REGISTRY-KEY` (N3).** The class is defined and mintable, but the claiming path opens only in Track 1, against a registry that a ratified body has actually constituted. Until then the key is a receipt, not an instrument.
 - **No link from Phase 0 to HMMT.** HMMT's three structural rules and cap ladder are untouched. A Phase-0 NFT is not a pre-mine, not an allocation, not a discount and not a whitelist for any future issuance; if HMMT is ever issued, its Phase-0 records confer no priority.
 
 ---
@@ -168,20 +185,24 @@ Asset freezing is not hypothetical; the direction acknowledges it as likely. The
 
 - **The strongest argument against Phase 0 at all:** it asks people to record claims about a repressive state, in a system run by an unaccountable civic project, in exchange for something that may never be honoured. That is a request with asymmetric downside for the participant and asymmetric upside for the project's legitimacy. **What would change my mind:** evidence that prospective holders understand the asymmetry, measured, not assumed (§4 hypothesis).
 - **The strongest technical objection:** non-transferable NFTs with pre-committed successor keys are poorly supported on TON tooling, and the "no admin function" requirement conflicts with the recovery flow. This needs an engineer's review before anyone writes a contract.
-- **The strongest legal objection:** a class named `P0-REGISTRY-KEY` is functionally a bearer instrument, and bearer instruments are the most heavily regulated object in the set. It may have to be dropped, and its removal would weaken the mechanical usefulness of the whole design.
+- **The strongest legal objection:** a class named `P0-REGISTRY-KEY` is functionally a bearer instrument, and bearer instruments are the most heavily regulated object in the set. **Decision (N3): kept, but inactive until Track 1.** That removes the "instrument with no lawful registry" problem and leaves the smaller one: a defined-but-dormant class is still a published design for a bearer claim, and the specification should be read by a lawyer before it is implemented rather than after.
 - **What would make me recommend abandoning Phase 0:** a legal analysis holding that recording claims about the state for later adjudication is itself an offence for participants; or a security review finding that the offline path cannot be built without an issuer-controlled component; or the maintainer concluding that the constituency-building benefit does not justify asking people to bear the risk.
 
 ---
 
-## 11. Decisions needed from the maintainer
+## 11. Decisions, as taken
 
-| # | Decision | Default if unanswered |
-| --- | --- | --- |
-| N1 | Authorise the four claim classes as written, or amend the set | No build |
-| N2 | Confirm non-transferable default (with successor key) | Stays non-transferable |
-| N3 | Confirm `P0-REGISTRY-KEY` is in scope despite its bearer-instrument character | Excluded |
-| N4 | Confirm no participation metrics are ever published | Excluded |
-| N5 | Who pays network fees at mint, and whether a fee subsidy exists at all | Holder pays, no subsidy |
-| N6 | Whether the offline export is mandatory before any other feature | Mandatory |
+**All six decided by the maintainer on 2026-11-06. They bind the specification; changing one is a new decision, not an implementation detail.**
+
+| # | Question | Decision | Consequence written into the spec |
+| --- | --- | --- | --- |
+| N1 | Claim classes | **The four as written** (`P0-RECORD`, `P0-CONTRIB`, `P0-HARM`, `P0-REGISTRY-KEY`) | §2.3; `P0-ASSET-INTENT` remains excluded and is not implied by this decision |
+| N2 | Transferability | **Non-transferable, with a pre-committed successor key** | §6; no marketplace integration, ever, in Phase 0 |
+| N3 | `P0-REGISTRY-KEY` | **In scope, inactive until Track 1** | §9; the claiming path opens only against a ratified registry |
+| N4 | Participation metrics | **Aggregate totals only** — one number, no breakdowns, no cadence faster than daily, floor of 200 | §5.1; widening this needs an explicit decision |
+| N5 | Mint fees | **Holder pays, no subsidy** | §7; no treasury exists, and none may be created to fund mints |
+| N6 | Offline export | **Mandatory before any other feature** | §7.3; no mint ships ahead of it |
+
+**What is still open for the maintainer, and is not covered by N1–N6:** whether to authorise a contract at all (no code exists), who conducts the security review, and the comprehension test of §4 — which should run before the first contract, not after.
 
 **Not done yet:** no contract, no test vectors against a live TON node, no legal review, no user research, no threat-model sign-off. This is a specification to be attacked, not a plan to be executed.
