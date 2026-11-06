@@ -51,6 +51,7 @@ export const bankEn = {
     usdValue: "USD value",
     tomanValue: "Toman value",
     fxRate: "Reference FX rate",
+    fxRateUnit: "toman for every US dollar",
     formula: "Formula",
     sourceTitle: "Where each figure comes from",
     source: "Source",

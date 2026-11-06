@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import { localeStrings } from "../locales/index.js";
+import { onLinkClick } from "../lib/links.js";
 
 // The civic key switch: one centre, six doors.
 //
@@ -49,7 +50,7 @@ export function doorGlyph(door) {
   return String(door.level).replace(/\d/g, (digit) => PERSIAN_DIGITS[Number(digit)]);
 }
 
-export default function KeyDock({ lang, route, navigate }) {
+export default function KeyDock({ lang, route, navigate, inert = false }) {
   const copy = localeStrings(lang).hub;
   const linksRef = useRef([]);
   const rtl = lang === "fa";
@@ -115,10 +116,7 @@ export default function KeyDock({ lang, route, navigate }) {
             const node = linksRef.current[index];
             if (node) node.tabIndex = 0;
           }}
-          onClick={(event) => {
-            event.preventDefault();
-            navigate(door.view, door.recordId ?? undefined);
-          }}
+          onClick={onLinkClick(navigate, door.view, door.recordId)}
         >
           <span className="dock-key__cap">
             <span className="sr-only">{copy.levelWord} </span>
@@ -133,8 +131,11 @@ export default function KeyDock({ lang, route, navigate }) {
     );
   });
 
+  // While a modal layer is open, the dock is part of the page behind it: it
+  // must leave the tab order and the accessibility tree with everything else
+  // (issue #57). It is a sibling of .app-body, so it has to be told separately.
   return (
-    <nav className="key-dock" aria-label={copy.dockLabel}>
+    <nav className="key-dock" aria-label={copy.dockLabel} inert={inert || undefined}>
       <ul className="key-dock__rail" role="list" aria-label={copy.dockLabel}>
         {keys.slice(0, 3)}
 
@@ -144,10 +145,7 @@ export default function KeyDock({ lang, route, navigate }) {
             className={`dock-core ${homeActive ? "is-pressed" : ""}`}
             title={copy.dockHome}
             aria-current={homeActive ? "page" : undefined}
-            onClick={(event) => {
-              event.preventDefault();
-              navigate("hub");
-            }}
+            onClick={onLinkClick(navigate, "hub")}
           >
             <span className="dock-core__mark">{copy.mark}</span>
             <span className="dock-core__line dock-core__line--long">{copy.markLine}</span>

@@ -268,7 +268,7 @@ export default function App() {
 
   return (
     <div className="app-shell" lang={lang} dir={lang === "fa" ? "rtl" : "ltr"}>
-      <a className="skip-link" href="#main-content">
+      <a className="skip-link" href="#main-content" inert={overlayOpen || undefined}>
         {dict.skip}
       </a>
 
@@ -339,7 +339,7 @@ export default function App() {
         </main>
       </div>
 
-      <KeyDock lang={lang} route={route} navigate={navigate} />
+      <KeyDock lang={lang} route={route} navigate={navigate} inert={overlayOpen} />
 
       {searchOpen ? (
         <SearchOverlay

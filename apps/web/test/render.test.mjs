@@ -44,6 +44,7 @@ let doorStepForArrow;
 let doorHref;
 let isDoorActive;
 let DOORS;
+let isPlainLeftClick;
 
 const server = createServer();
 let baseUrl;
@@ -63,6 +64,7 @@ before(async () => {
         'export { default as SearchOverlay } from "./src/components/SearchOverlay.jsx";',
         'export { default as ErrorBoundary, CrashFallback } from "./src/components/ErrorBoundary.jsx";',
         'export { nextDoorIndex, doorStepForArrow, doorHref, isDoorActive, DOORS } from "./src/components/KeyDock.jsx";',
+        'export { isPlainLeftClick, onLinkClick } from "./src/lib/links.js";',
         'export { visibleAudit } from "./src/modules/levels/panels.jsx";'
       ].join("\n"),
       resolveDir: WEB_ROOT,
@@ -105,6 +107,7 @@ before(async () => {
   doorHref = bundle.doorHref;
   isDoorActive = bundle.isDoorActive;
   DOORS = bundle.DOORS;
+  isPlainLeftClick = bundle.isPlainLeftClick;
 
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   baseUrl = `http://127.0.0.1:${server.address().port}`;
@@ -1622,5 +1625,78 @@ test("every view keeps a level-one heading even when its data fails (issue #19)"
     }
   } finally {
     primeApiCache(allEntries);
+  }
+});
+
+// One list of every route, used by the two structural guards below.
+const ALL_ROUTES = [
+  "#/hub", "#/dashboard", "#/governance", "#/transition", "#/institutions",
+  "#/historical-archive", "#/research", "#/verification", "#/accountability",
+  "#/public-services", "#/projects", "#/simulations", "#/digital-legacy",
+  "#/bank", "#/principles", "#/programme", "#/referendum", "#/levels", "#/levels/3"
+];
+
+test("only an unmodified primary click belongs to the router (issue #58)", () => {
+  assert.equal(isPlainLeftClick({ button: 0 }), true, "a plain left click is ours to route");
+  for (const modifier of ["ctrlKey", "metaKey", "shiftKey", "altKey"]) {
+    assert.equal(isPlainLeftClick({ button: 0, [modifier]: true }), false, `${modifier}+click belongs to the browser`);
+  }
+  assert.equal(isPlainLeftClick({ button: 1 }), false, "middle click opens a new tab, it is not a route change");
+  assert.equal(isPlainLeftClick({ button: 0, defaultPrevented: true }), false, "an already-handled click is not re-routed");
+});
+
+test("in-app destinations stay real links with a real href (issue #58)", () => {
+  const { html, restore } = renderWithoutFetch("#/hub");
+  try {
+    for (const href of ["#/levels/1", "#/levels/5", "#/bank", "#/programme", "#/referendum", "#/principles"]) {
+      assert.ok(html.includes(`href="${href}"`), `the hub lost its real anchor to ${href}`);
+    }
+  } finally {
+    restore();
+  }
+});
+
+test("the referendum page names its link instead of printing the route (issue #59)", () => {
+  for (const [lang, label] of [[null, "اصل ۹۸ سند مادر"], ["en", "Principle 98 of the mother file"]]) {
+    const { html, restore } = renderWithoutFetch("#/referendum", lang);
+    try {
+      const main = html.slice(html.indexOf("<main"));
+      const anchor = main.match(/<a class="link-button" href="#\/principles">([\s\S]*?)<\/a>/);
+      assert.ok(anchor, `${lang ?? "fa"}: the principles link is missing from the method card`);
+      assert.equal(anchor[1].replace(/<[^>]+>/g, "").trim(), label, `${lang ?? "fa"}: the link must carry its own words`);
+      assert.ok(!main.includes(">#/principles<"), `${lang ?? "fa"}: the raw route is still used as link text`);
+    } finally {
+      restore();
+    }
+  }
+});
+
+test("no view draws a ratio as two numbers with a slash (issue #60)", () => {
+  // The checklist forbids it: in an RTL layout "12 / 5" reverses and stops
+  // meaning what it says. Ratios are spoken ("۱۲ از ۵"), never drawn.
+  const SLASH_RATIO = /[0-9۰-۹][\u200e\u200f ]*\/[\u200e\u200f ]*[0-9۰-۹]/;
+  for (const lang of [null, "en"]) {
+    for (const hash of ALL_ROUTES) {
+      const { html, restore } = renderWithoutFetch(hash, lang);
+      try {
+        const main = html.slice(html.indexOf("<main"));
+        const match = main.match(SLASH_RATIO);
+        assert.equal(match, null, `${hash} (${lang ?? "fa"}) renders a slash ratio: ${match?.[0]}`);
+      } finally {
+        restore();
+      }
+    }
+  }
+});
+
+test("the dock is a sibling of the inert regions, so it is told to be inert separately (issue #57)", () => {
+  const { html, restore } = renderWithoutFetch("#/dashboard");
+  try {
+    // Closed overlays leave no inert attribute anywhere; the mechanism itself is
+    // proven in the browser audit, which can open a dialog.
+    assert.ok(/<nav class="key-dock"[^>]*aria-label/.test(html), "the dock must render on every route");
+    assert.ok(!/<nav class="key-dock"[^>]*inert/.test(html), "the dock must not be inert when no overlay is open");
+  } finally {
+    restore();
   }
 });

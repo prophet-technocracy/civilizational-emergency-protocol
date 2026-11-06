@@ -52,6 +52,7 @@ export const bankFa = {
     usdValue: "ارزش دلاری",
     tomanValue: "ارزش تومانی",
     fxRate: "نرخ مبنای دلار",
+    fxRateUnit: "تومان به ازای هر دلار",
     formula: "فرمول",
     sourceTitle: "منبع هر رقم",
     source: "منبع",

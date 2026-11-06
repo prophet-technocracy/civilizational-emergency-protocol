@@ -52,6 +52,7 @@ export const programmeFa = {
   summaryDelivered: "تحویل‌شده",
   summaryWouldFlip: "چراغ که سبز می‌شود",
   summaryTargets: "اصل کهربایی هدف‌گرفته",
+  summaryTargetsNote: "از {partial} هدف ناقص",
   summaryUncovered: "اصل کهربایی بیرون از این صف",
   uncoveredNote:
     "این صف کلِ کار نیست: {uncovered} اصل کهربایی دیگر هم منتظر پروژه‌اند. برنامه‌ای که همهٔ صف را پوشیده اعلام کند، دروغ می‌گوید.",

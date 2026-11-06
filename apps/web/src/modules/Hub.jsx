@@ -2,6 +2,7 @@ import { useApi } from "../lib/api.js";
 import { t, formatNumber, MODULES } from "../i18n.js";
 import { localeStrings } from "../locales/index.js";
 import { Callout } from "../components/ui.jsx";
+import { onLinkClick } from "../lib/links.js";
 import { Icon } from "../components/icons.jsx";
 
 // Module 00 — the hub.
@@ -20,10 +21,7 @@ function LevelDoor({ id, title, purpose, stats, state, lang, copy, navigate }) {
       <a
         className="door__link"
         href={`#/levels/${id}`}
-        onClick={(event) => {
-          event.preventDefault();
-          navigate("levels", String(id));
-        }}
+        onClick={onLinkClick(navigate, "levels", String(id))}
       >
         <span className="door__rail" aria-hidden="true" />
         <header className="door__head">
@@ -78,10 +76,7 @@ function BankDoor({ copy, navigate }) {
       <a
         className="door__link"
         href="#/bank"
-        onClick={(event) => {
-          event.preventDefault();
-          navigate("bank");
-        }}
+        onClick={onLinkClick(navigate, "bank")}
       >
         <span className="door__rail" aria-hidden="true" />
         <header className="door__head">
@@ -158,20 +153,14 @@ export default function Hub({ lang, navigate, route }) {
             <a
               className="btn btn--ghost"
               href="#/levels"
-              onClick={(event) => {
-                event.preventDefault();
-                navigate("levels");
-              }}
+              onClick={onLinkClick(navigate, "levels")}
             >
               {copy.levels}
             </a>
             <a
               className="btn btn--ghost"
               href="#/principles"
-              onClick={(event) => {
-                event.preventDefault();
-                navigate("principles");
-              }}
+              onClick={onLinkClick(navigate, "principles")}
             >
               {copy.principles}
             </a>
@@ -228,10 +217,7 @@ export default function Hub({ lang, navigate, route }) {
           <a
             className="work-card work-card--programme"
             href="#/programme"
-            onClick={(event) => {
-              event.preventDefault();
-              navigate("programme");
-            }}
+            onClick={onLinkClick(navigate, "programme")}
           >
             <span className="work-card__icon" aria-hidden="true">
               <Icon name="projects" size={20} />
@@ -250,10 +236,7 @@ export default function Hub({ lang, navigate, route }) {
           <a
             className="work-card work-card--referendum"
             href="#/referendum"
-            onClick={(event) => {
-              event.preventDefault();
-              navigate("referendum");
-            }}
+            onClick={onLinkClick(navigate, "referendum")}
           >
             <span className="work-card__icon" aria-hidden="true">
               <Icon name="ballot" size={20} />
@@ -282,10 +265,7 @@ export default function Hub({ lang, navigate, route }) {
               <a
                 href={`#/${module.id}`}
                 className="module-chip"
-                onClick={(event) => {
-                  event.preventDefault();
-                  navigate(module.id);
-                }}
+                onClick={onLinkClick(navigate, module.id)}
               >
                 <span className="module-chip__num" aria-hidden="true">
                   {formatNumber(module.number, lang)}

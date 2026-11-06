@@ -169,7 +169,9 @@ export default function Referendum({ lang }) {
           <strong>{copy.sourceTitle}:</strong> {copy.sourceBody}
         </p>
         <p className="small muted">
-          {copy.principlesLink} · <a className="link-button" href="#/principles">#/principles</a>
+          <a className="link-button" href="#/principles">
+            {copy.principlesLink}
+          </a>
         </p>
       </Card>
     </>

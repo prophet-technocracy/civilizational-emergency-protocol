@@ -7,7 +7,7 @@
 import { useMemo, useState } from "react";
 import { useApi } from "../lib/api.js";
 import { parseDecimalInput } from "../lib/decimal.mjs";
-import { t, formatNumber, formatDate } from "../i18n.js";
+import { t, formatNumber, formatDate, formatRatio } from "../i18n.js";
 import { localeStrings } from "../locales/index.js";
 import { SectionHeader, Card, Callout, StateBlock, Badge, Stat, BarRow } from "../components/ui.jsx";
 
@@ -137,13 +137,14 @@ function SupplySection({ supply, copy, lang }) {
           value={circulating.tokens}
           max={ceiling.tokens}
           tone="info"
-          display={`${numberFormat(circulating.tokens, lang, 2)} / ${numberFormat(ceiling.tokens, lang, 0)} HMMT`}
+          // Two quantities read out in order, never as a slash (issue #60, checklist).
+          display={`${formatRatio(circulating.tokens, ceiling.tokens, lang)} HMMT`}
         />
         <dl className="kv kv--inline">
           <div className="kv__row">
             <dt>{copy.supply.fxRate}</dt>
             <dd className="mono">
-              {numberFormat(ceiling.fxRate, lang, 0)} {lang === "fa" ? "تومان / دلار" : "toman / USD"}
+              {numberFormat(ceiling.fxRate, lang, 0)} {copy.supply.fxRateUnit}
             </dd>
           </div>
           <div className="kv__row">
@@ -326,7 +327,7 @@ function ReserveSection({ reserve, copy, lang }) {
         <Stat
           label={copy.reserve.utilisation}
           value={`${numberFormat(reserve.utilisation * 100, lang, 1)}٪`}
-          note={`${numberFormat(reserve.circulatingTokens, lang, 2)} / ${numberFormat(reserve.ceilingTokens, lang, 0)} HMMT`}
+          note={`${formatRatio(reserve.circulatingTokens, reserve.ceilingTokens, lang)} HMMT`}
         />
         <Stat label={copy.reserve.queued} value={`${numberFormat(reserve.queuedTokens, lang, 2)} HMMT`} note={compact(reserve.queuedToman, lang)} />
       </div>

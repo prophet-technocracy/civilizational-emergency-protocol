@@ -21,13 +21,13 @@ WHERE WORK COMES FROM agent/tasks.json                    (node scripts/agent/ta
 
 ```sh
 npm install            # required after every fresh checkout: node_modules is not in git
-npm test               # expect 294 passing tests across 5 workspaces, 0 failures
+npm test               # expect 300 passing tests across 5 workspaces, 0 failures
 npm run check          # the full gate; also prints the per-step table CI uses
 ```
 
 | Command | What it proves | Typical time |
 | --- | --- | --- |
-| `npm test` | 294 unit/render/localization tests | 4 s |
+| `npm test` | 300 unit/render/localization tests | 4 s |
 | `npm run lint` | ESLint flat config, zero errors | 3 s |
 | `npm run check` | lint + tests + guardrails + CSV + build + doc drift + link integrity | 15 s |
 | `node scripts/agent/run.mjs --browser` | axe, keyboard and layout audits against a running dev server | 60 s |
@@ -183,7 +183,7 @@ Run these before claiming any of these areas. Each row names its own proof.
 | Check | How to prove it |
 | --- | --- |
 | No axe violations on any route, either theme, fa or en | `node scripts/audit/a11y.mjs` → `{}` |
-| Tab order, focus ring, skip link, escape behaviour | `node scripts/audit/keyboard.mjs` → 15/15 |
+| Tab order, focus ring, skip link, escape behaviour | `node scripts/audit/keyboard.mjs` → 20/20 |
 | No horizontal overflow at 390/768/1024/1440 px | `node scripts/audit/layout.mjs` → clean |
 | Every view keeps exactly one `h1`, even when its data fails | `npm test` — "every view keeps a level-one heading" |
 | A disabled control is `disabled` and `aria-disabled`, not just grey | read the component; state it in the PR |

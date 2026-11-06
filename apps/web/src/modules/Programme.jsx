@@ -8,6 +8,7 @@ import { useApi } from "../lib/api.js";
 import { t, formatNumber, formatDate } from "../i18n.js";
 import { localeStrings } from "../locales/index.js";
 import { principleHref } from "../lib/routes.js";
+import { onLinkClick } from "../lib/links.js";
 import { SectionHeader, Card, Callout, StateBlock, Badge, Stat, Empty } from "../components/ui.jsx";
 import { LightDot } from "../components/lights.jsx";
 
@@ -194,7 +195,14 @@ export default function Programme({ lang, navigate }) {
         <Stat label={copy.summaryTokens} value={summary.tokens} tone="info" lang={lang} />
         <Stat label={copy.summaryDelivered} value={summary.delivered} tone="good" lang={lang} />
         <Stat label={copy.summaryWouldFlip} value={summary.wouldFlip} tone="good" lang={lang} />
-        <Stat label={copy.summaryTargets} value={`${formatNumber(summary.targeted, lang)} / ${formatNumber(summary.partialTargets, lang)}`} lang={lang} />
+        {/* Two numbers, said in words: a slash reads in the wrong order in RTL,
+            and "12 / 5" does not say which is which (issue #60). */}
+        <Stat
+          label={copy.summaryTargets}
+          value={summary.targeted}
+          note={copy.summaryTargetsNote.replace("{partial}", formatNumber(summary.partialTargets, lang))}
+          lang={lang}
+        />
         <Stat label={copy.summaryUncovered} value={summary.uncoveredByProgramme} tone="warn" lang={lang} />
       </div>
 
@@ -282,10 +290,7 @@ export default function Programme({ lang, navigate }) {
           <a
             className="link-button"
             href="#/principles"
-            onClick={(event) => {
-              event.preventDefault();
-              navigate?.("principles");
-            }}
+            onClick={navigate ? onLinkClick(navigate, "principles") : undefined}
           >
             ← {localeStrings(lang).principles.navLabel}
           </a>
