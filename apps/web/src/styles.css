@@ -5907,3 +5907,89 @@ a.search-result {
 a.search-result:hover .search-result__title {
   text-decoration: underline;
 }
+
+/* ------------------------------ Mini App probe (#70) ------------------------------
+   Only rendered when a Telegram bridge is present, or simulated with
+   `?tg-mock=1`. It sits above the page on purpose: the point is to see the
+   environment that the page normally cannot see. */
+.tma-probe {
+  position: fixed;
+  inset-block-end: calc(var(--tg-safe-area-inset-bottom, 0px) + 0.75rem);
+  inset-inline-start: calc(var(--tg-safe-area-inset-left, 0px) + 0.75rem);
+  z-index: 60;
+  max-width: min(22rem, calc(100vw - 1.5rem));
+  font-size: 0.78rem;
+}
+
+.tma-probe__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 32px;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--paper-0);
+  color: var(--ink-700);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+
+.tma-probe__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--synthetic);
+}
+
+.tma-probe__body {
+  margin-block-start: 0.4rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--paper-0);
+  box-shadow: var(--shadow-md);
+  color: var(--ink-700);
+}
+
+.tma-probe__rows {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+}
+
+.tma-probe__rows > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.tma-probe__rows dt {
+  color: var(--ink-500);
+}
+
+.tma-probe__rows dd {
+  margin: 0;
+  text-align: end;
+}
+
+.tma-probe__note {
+  margin: 0.55rem 0;
+  color: var(--ink-500);
+  font-size: 0.72rem;
+  line-height: 1.6;
+}
+
+.tma-probe__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+/* The layout reserves what the client draws over it. Zero outside a client, so
+   the browser build is byte-identical in appearance. */
+.app-shell {
+  padding-block-end: var(--tg-content-safe-area-inset-bottom, 0px);
+  padding-inline-start: var(--tg-safe-area-inset-left, 0px);
+  padding-inline-end: var(--tg-safe-area-inset-right, 0px);
+}

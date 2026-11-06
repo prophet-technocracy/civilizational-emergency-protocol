@@ -16,6 +16,7 @@ import { buildReferendum } from "./data/referendum.mjs";
 import { buildHmmtOverview, buildHmmtSupply, buildHmmtBacking, buildHmmtReserve, buildHmmtLedger, buildHmmtCaps, simulateHmmt } from "./data/hmmt.mjs";
 import { buildFxStatus, buildFxSensitivity } from "./data/fx.mjs";
 import { getFxService } from "./fx/service.mjs";
+import { verifyInitData, TELEGRAM_SIGNATURE_KEYS } from "./platform/telegram/initdata.mjs";
 import { evaluateAssurancePolicy, validateClaimProvenance, calculateTimelineMetrics, validateHistoricalDossierCsv, computeSafeguardProfile } from "@cep/schemas";
 import { matchesBilingualQuery, normalizeSearchText } from "@cep/localization";
 
@@ -406,6 +407,53 @@ export function globalSearch(query) {
 }
 
 /* ------------------------------------------------------------------ *
+ * Mini App platform facts (#69)
+ * ------------------------------------------------------------------ */
+function buildTelegramPlatform() {
+  return {
+    id: "telegram-mini-app",
+    documentation: "https://core.telegram.org/bots/webapps",
+    bootstrapScript: "https://telegram.org/js/telegram-web-app.js?59",
+    launchModes: [
+      { id: "main-mini-app", label: { fa: "مینی‌اپ اصلی از نمایهٔ ربات", en: "Main Mini App from the bot profile" }, initData: "full", plausibleForUs: true },
+      { id: "menu-button", label: { fa: "دکمهٔ منو", en: "Menu button" }, initData: "full", plausibleForUs: true },
+      { id: "inline-button", label: { fa: "دکمهٔ درون‌خطی", en: "Inline button" }, initData: "full", plausibleForUs: false },
+      { id: "direct-link", label: { fa: "پیوند مستقیم", en: "Direct link" }, initData: "full", plausibleForUs: false },
+      { id: "attachment-menu", label: { fa: "منوی پیوست", en: "Attachment menu" }, initData: "full", plausibleForUs: false },
+      { id: "keyboard-button", label: { fa: "دکمهٔ صفحه‌کلید", en: "Keyboard button" }, initData: "none", plausibleForUs: false },
+      { id: "inline-mode", label: { fa: "حالت درون‌خطی", en: "Inline mode" }, initData: "none", plausibleForUs: false }
+    ],
+    validation: {
+      primary: {
+        algorithm: "HMAC-SHA-256",
+        secretKey: 'HMAC-SHA-256(key="WebAppData", message=bot_token)',
+        checkString: "sorted key=value pairs joined with \n, excluding hash",
+        freshnessField: "auth_date",
+        maxAgeSeconds: 86_400
+      },
+      thirdParty: {
+        algorithm: "Ed25519",
+        signatureField: "signature",
+        checkString: "bot_id:WebAppData\n + sorted key=value pairs, excluding hash and signature",
+        publicKeys: { ...TELEGRAM_SIGNATURE_KEYS }
+      }
+    },
+    posture: {
+      storesUserIdentifiers: false,
+      thirdPartyScripts: 0,
+      tokenInRepository: false,
+      sessionEndpoint: "/api/v1/telegram/session",
+      transport: "X-Telegram-Init-Data header (never a query parameter)",
+      notes: [
+        { fa: "هیچ شناسهٔ تلگرام ذخیره نمی‌شود؛ زبان فقط برای پیش‌فرض رابط خوانده می‌شود.", en: "No Telegram identifier is stored; the language is read only as an interface default." },
+        { fa: "هیچ اسکریپت شخص ثالثی بارگذاری نمی‌شود؛ هر اسکریپتی که دادهٔ آغاز را ببیند می‌تواند آن را بررسی کند.", en: "No third-party script is loaded; anything that sees init data could validate it." },
+        { fa: "تلگرام از ۲۰۱۸ در ایران مسدود است؛ این کانال دسترسی داخلی را اثبات نمی‌کند.", en: "Telegram has been blocked in Iran since 2018; this channel proves nothing about domestic reach." }
+      ]
+    }
+  };
+}
+
+/* ------------------------------------------------------------------ *
  * Route table
  * ------------------------------------------------------------------ */
 function routeTable(params, pathname) {
@@ -634,6 +682,12 @@ function routeTable(params, pathname) {
 
     case "/api/v1/hmmt/caps":
       return { status: 200, body: envelope(buildHmmtCaps()) };
+
+    // The Mini App platform, as this project understands it, plus the posture it
+    // refuses to trade away (docs/telegram/TELEGRAM-MINI-APP.md). Static on
+    // purpose: the answer does not depend on the request.
+    case "/api/v1/telegram/platform":
+      return { status: 200, body: envelope(buildTelegramPlatform()) };
 
     case "/api/v1/accountability":
       return {
@@ -864,6 +918,49 @@ export function createServer() {
       }
       const result = proposal.results.find((item) => item.policyId === policyId);
       sendJson(response, 200, envelope({ proposal: { id: proposal.id, title: proposal.title, domain: proposal.domain, contributions: proposal.contributions }, result }));
+      return;
+    }
+
+    // /api/v1/telegram/session — validate a Mini App launch, then forget it
+    //
+    // GET with the payload in a header rather than a query string: a query
+    // string lands in logs, referrers and history, and this string is a signed
+    // statement about a person. The response deliberately does not echo the
+    // Telegram id back: nothing in this project stores an identifier for a
+    // person, and an endpoint that returns one invites a client to keep it.
+    if (pathname === "/api/v1/telegram/session") {
+      const botToken = String(process.env.CEP_TELEGRAM_BOT_TOKEN ?? "");
+      if (!botToken) {
+        sendJson(response, 501, {
+          error: "telegram_not_configured",
+          hint: "Set CEP_TELEGRAM_BOT_TOKEN in the environment. This repository ships no token and must not.",
+          validationImplemented: true
+        });
+        return;
+      }
+      const initData = request.headers["x-telegram-init-data"];
+      if (typeof initData !== "string" || initData === "") {
+        sendJson(response, 400, { error: "missing_init_data", hint: "Send the payload in the X-Telegram-Init-Data header." });
+        return;
+      }
+      const result = verifyInitData({ initData, botToken });
+      if (!result.ok) {
+        sendJson(response, result.reason === "stale" ? 400 : 401, { error: "invalid_init_data", reason: result.reason });
+        return;
+      }
+      sendJson(response, 200, envelope({
+        session: {
+          hasUser: result.data.userId !== null,
+          languageCode: result.data.languageCode,
+          startParam: result.data.startParam,
+          chatType: result.data.chatType,
+          ageSeconds: result.data.ageSeconds
+        },
+        disclosure: {
+          fa: "شناسهٔ تلگرام بازگردانده و ذخیره نمی‌شود؛ فقط زبان و معتبر بودن رمزنگاری گزارش می‌شود.",
+          en: "The Telegram identifier is neither returned nor stored; only the language and the fact that the signature verified."
+        }
+      }));
       return;
     }
 

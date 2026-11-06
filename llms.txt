@@ -88,6 +88,7 @@ error — the server is also a demonstration of refusing input, not just of serv
 | How is the interface structured? | `apps/web/src/lib/routes.js`, `docs/architecture/` |
 | What does this number mean? | `packages/domain-models`, `docs/economics/` |
 | What may this project not claim? | `AGENTS.md`, `scripts/audit/guardrails.mjs` |
+| How would this become a Telegram Mini App? | `docs/telegram/TELEGRAM-MINI-APP.md` |
 | What is unproven or unfinished? | `TASKS.md`, `agents/MASTER-TASK-BOARD.md` |
 
 ## Refusals (structural, not stylistic)
