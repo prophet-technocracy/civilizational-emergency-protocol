@@ -1,22 +1,78 @@
+import { useRef } from "react";
 import { MODULES, EPISTEMIC, t, formatNumber } from "../i18n.js";
 import { localeStrings } from "../locales/index.js";
 import { Badge } from "./ui.jsx";
 import { Icon } from "./icons.jsx";
 import { useFocusTrap } from "../lib/focus.js";
+import { hrefFor } from "../lib/routes.js";
+import { isPlainLeftClick } from "../lib/links.js";
 
 // The command palette. Extracted from App.jsx (issue #49) and given five
 // distinct states (issue #29): a prompt, a load, results, an empty answer that
 // names the query, and an outage. An API error must never read as "nothing
 // found", and a stale list must never stay on screen under a new query.
 export default function SearchOverlay({ lang, term, onTerm, state, inputRef, onClose, onPick, onRetry }) {
-  // Same trap as the drawer: Escape closes and hands focus back to whatever
-  // opened the search, and Tab cycles through the results instead of escaping
-  // into the page behind the scrim.
-  const layerRef = useFocusTrap({ active: true, onEscape: onClose, initialFocus: inputRef });
+  const listRef = useRef(null);
   const copy = localeStrings(lang).shell.search;
   const status = state?.status ?? "idle";
   const payload = state?.payload ?? null;
   const query = (state?.term ?? term).trim();
+  const results = status === "ready" && payload?.total > 0 ? payload.results : [];
+  const hasResults = results.length > 0;
+
+  // Escape clears the query first and closes second: a reader who typed a word,
+  // read the results, and wants to try another word should not lose the palette.
+  const onEscape = () => {
+    if (term) {
+      onTerm("");
+      inputRef.current?.focus();
+      return;
+    }
+    onClose();
+  };
+
+  // Same trap as the drawer: Escape closes and hands focus back to whatever
+  // opened the search, and Tab cycles through the results instead of escaping
+  // into the page behind the scrim.
+  const layerRef = useFocusTrap({ active: true, onEscape, initialFocus: inputRef });
+
+  // No role="combobox"/"listbox" here on purpose. Each result is a destination
+  // with its own href, and an option may not contain a link — claiming a listbox
+  // would either strip the link behaviour from every result or lie about the
+  // markup. The count lives in a polite live region instead, which is what a
+  // reader needs to know the palette answered.
+  const resultNodes = () => [...(listRef.current?.querySelectorAll("a.search-result") ?? [])];
+
+  // Arrows walk the palette vertically in both languages: the results are a
+  // column, so nothing here mirrors in RTL.
+  const onInputKeyDown = (event) => {
+    if (!hasResults) return;
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      resultNodes()[0]?.focus();
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      const nodes = resultNodes();
+      nodes[nodes.length - 1]?.focus();
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      onPick(results[0]);
+    }
+  };
+
+  const onListKeyDown = (event) => {
+    if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+    const nodes = resultNodes();
+    const index = nodes.indexOf(document.activeElement);
+    if (index < 0) return;
+    event.preventDefault();
+    const step = event.key === "ArrowDown" ? 1 : -1;
+    const next = nodes[index + step];
+    // Off either end the arrows return to the field they came from, so the
+    // palette never traps a reader mid-list.
+    if (next) next.focus();
+    else inputRef.current?.focus();
+  };
 
   return (
     <div className="search-layer" role="dialog" aria-modal="true" aria-label={copy.label} ref={layerRef}>
@@ -33,6 +89,8 @@ export default function SearchOverlay({ lang, term, onTerm, state, inputRef, onC
             aria-label={copy.label}
             autoComplete="off"
             aria-describedby="search-status"
+            aria-controls={hasResults ? "search-results" : undefined}
+            onKeyDown={onInputKeyDown}
           />
           <button type="button" className="icon-btn" onClick={onClose} aria-label={copy.close}>
             <Icon name="close" size={15} />
@@ -71,8 +129,8 @@ export default function SearchOverlay({ lang, term, onTerm, state, inputRef, onC
             </div>
           ) : null}
 
-          {status === "ready" && payload?.total > 0 ? (
-            <ul className="search-results">
+          {hasResults ? (
+            <ul className="search-results" id="search-results" ref={listRef} onKeyDown={onListKeyDown}>
               {payload.results.map((result) => {
                 // Not every result is a library module (principles, projects and
                 // the referendum are not), so the chip is optional: an unknown
@@ -80,7 +138,18 @@ export default function SearchOverlay({ lang, term, onTerm, state, inputRef, onC
                 const module = MODULES[result.moduleNumber - 1];
                 return (
                   <li key={`${result.module}-${result.id}`}>
-                    <button type="button" className="search-result" onClick={() => onPick(result)}>
+                    {/* A destination, so it is an anchor with a real href: the
+                        browser keeps its own behaviour (new tab, copy link) and
+                        Enter works because links activate natively. */}
+                    <a
+                      className="search-result"
+                      href={hrefFor(result.target.view, result.target.recordId)}
+                      onClick={(event) => {
+                        if (!isPlainLeftClick(event)) return;
+                        event.preventDefault();
+                        onPick(result);
+                      }}
+                    >
                       {module ? (
                         <span className="search-result__mod">
                           {formatNumber(result.moduleNumber, lang)} · {t(module.short, lang)}
@@ -91,7 +160,7 @@ export default function SearchOverlay({ lang, term, onTerm, state, inputRef, onC
                       <span className="search-result__meta">
                         {t(result.kind, lang)} · <Badge tone={EPISTEMIC[result.epistemicStatus]?.tone ?? "neutral"}>{t(EPISTEMIC[result.epistemicStatus] ?? { fa: result.epistemicStatus, en: result.epistemicStatus }, lang)}</Badge>
                       </span>
-                    </button>
+                    </a>
                   </li>
                 );
               })}

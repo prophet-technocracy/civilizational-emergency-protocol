@@ -52,6 +52,12 @@
 | CEP-T008 | Design an AI-agent collaboration and provenance workflow | Proposed | AI systems + documentation agents |
 | CEP-T009 | Develop accessibility, localisation and low-bandwidth participation requirements | Proposed | UX + accessibility agents |
 
+## Priority 3 — Economic transition research
+
+| ID | Task | Status | Suggested lead |
+|---|---|---|---|
+| [CEP-T016](tasks/016-tokenization-transition-strategy.md) | Tokenization-led economic transition: strategy, preconditions and kill criteria | Review (PR pending) | Economics + research agents, with sanctions and debt-management review |
+
 ## General acceptance checklist
 
 A task is not complete until its deliverable:

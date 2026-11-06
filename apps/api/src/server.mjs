@@ -14,6 +14,8 @@ import { buildPrinciples } from "./data/principles.mjs";
 import { buildProgramme } from "./data/programme.mjs";
 import { buildReferendum } from "./data/referendum.mjs";
 import { buildHmmtOverview, buildHmmtSupply, buildHmmtBacking, buildHmmtReserve, buildHmmtLedger, buildHmmtCaps, simulateHmmt } from "./data/hmmt.mjs";
+import { buildFxStatus, buildFxSensitivity } from "./data/fx.mjs";
+import { getFxService } from "./fx/service.mjs";
 import { evaluateAssurancePolicy, validateClaimProvenance, calculateTimelineMetrics, validateHistoricalDossierCsv, computeSafeguardProfile } from "@cep/schemas";
 import { matchesBilingualQuery, normalizeSearchText } from "@cep/localization";
 
@@ -26,6 +28,11 @@ const MAX_QUERY_LENGTH = 120;
 const EPISTEMIC_NOTICE = {
   fa: "همهٔ محتوا ساختگی، پیشنهادی یا ارجاعی است. هیچ ادعای تأییدشده‌ای دربارهٔ افراد، نهادها یا روندهای واقعی مطرح نمی‌شود.",
   en: "All content is synthetic, proposed, or referential. No verified claim about real people, institutions, or processes is made."
+};
+
+const FX_DEMO_NOTICE = {
+  fa: "نرخ ارز از یک منبع عمومی خوانده می‌شود و ممکن است کهنه، نادرست یا در دسترس نباشد؛ هر عددِ مشتق‌شده از آن به‌همان اندازه نامطمئن است و هیچ‌کدام نصیحت مالی نیست.",
+  en: "The exchange rate comes from a public source and may be stale, wrong, or unavailable; every figure derived from it is equally uncertain, and none of it is financial advice."
 };
 
 function sendJson(response, statusCode, payload, extraHeaders = {}) {
@@ -758,7 +765,7 @@ function routeTable(params, pathname) {
 }
 
 export function createServer() {
-  return createHttpServer((request, response) => {
+  return createHttpServer(async (request, response) => {
     const method = request.method ?? "GET";
     const url = new URL(request.url ?? "/", "http://local.invalid");
     const pathname = url.pathname;
@@ -857,6 +864,27 @@ export function createServer() {
       }
       const result = proposal.results.find((item) => item.policyId === policyId);
       sendJson(response, 200, envelope({ proposal: { id: proposal.id, title: proposal.title, domain: proposal.domain, contributions: proposal.contributions }, result }));
+      return;
+    }
+
+    // /api/v1/fx            — the rate in force, its provenance, and its limits
+    // /api/v1/fx/sensitivity — the ceiling at that rate and at shocked rates
+    //
+    // The rate is fetched only when CEP_FX_LIVE=1. Otherwise the committed
+    // reference is served, labelled reference: tests, CI and the guardrails
+    // script must never depend on a number that came off the internet.
+    const fxMatch = pathname.match(/^\/api\/v1\/fx(\/sensitivity)?$/);
+    if (fxMatch) {
+      const wantsSensitivity = Boolean(fxMatch[1]);
+      const service = getFxService();
+      const snapshot = service.snapshot();
+      const needsRead = snapshot.status === "reference" || snapshot.expired;
+      const settled = needsRead ? await Promise.resolve(service.update()) : snapshot;
+      const body = wantsSensitivity ? buildFxSensitivity(settled) : buildFxStatus(settled);
+      sendJson(response, 200, envelope(
+        { ...body, demoNotice: FX_DEMO_NOTICE },
+        { rateDisclosure: { status: settled.status ?? "reference", isLive: settled.live === true } }
+      ));
       return;
     }
 

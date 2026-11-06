@@ -182,9 +182,9 @@ Run these before claiming any of these areas. Each row names its own proof.
 
 | Check | How to prove it |
 | --- | --- |
-| No axe violations on any route, either theme, fa or en | `node scripts/audit/a11y.mjs` → `{}` |
-| Tab order, focus ring, skip link, escape behaviour | `node scripts/audit/keyboard.mjs` → 23/23 |
-| No horizontal overflow at 390/768/1024/1440 px | `node scripts/audit/layout.mjs` → clean |
+| No axe violations on any route in either theme | `node scripts/audit/a11y.mjs` → `{}` (Persian; English is checked by the render tests, not in a browser — #64) |
+| Tab order, focus ring, skip link, arrows and Enter in the search palette, escape behaviour | `node scripts/audit/keyboard.mjs` → 29/29 |
+| No horizontal overflow and no target under 24 px at 320/390/768/1024/1440 px, header and key dock included | `node scripts/audit/layout.mjs` → clean |
 | Every view keeps exactly one `h1`, even when its data fails | `npm test` — "every view keeps a level-one heading" |
 | A disabled control is `disabled` and `aria-disabled`, not just grey | read the component; state it in the PR |
 
