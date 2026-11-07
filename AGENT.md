@@ -73,7 +73,7 @@ scripts/audit/         guardrails.mjs (claims), a11y.mjs (axe), keyboard.mjs, la
 scripts/agent/         run.mjs (self-check), tasks.mjs (backlog CLI), docs-links.mjs
 agent/tasks.json       the machine-readable backlog
 data/synthetic/        fixtures; never replace with real personal data
-docs/                  architecture, strategy, ux, principles, security, localization, telegram
+docs/                  architecture, engineering, strategy, ux, principles, security, localization, telegram
 ```
 
 **Data flow to respect.** `packages/domain-models` computes, `apps/api` serves the result,
