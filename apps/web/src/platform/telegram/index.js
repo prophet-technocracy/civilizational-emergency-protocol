@@ -35,7 +35,60 @@ export function bootstrapTelegramMock() {
   if (!hasWindow() || !isMockRequested()) return null;
   if (window.Telegram?.WebApp) return window.Telegram.WebApp;
   const stored = window.sessionStorage?.getItem("cep.tg-mock-scheme");
-  return installMockBridge(window, { colorScheme: stored === "dark" ? "dark" : "light" });
+  const options = readMockOptions(window.location.search);
+  return installMockBridge(window, {
+    ...options,
+    colorScheme: options.colorScheme ?? (stored === "dark" ? "dark" : "light")
+  });
+}
+
+/**
+ * Read the mock from the query string, so a reviewer page can frame the same
+ * app in several launch modes without touching code:
+ *
+ *   ?tg-mock=1&tg-scheme=dark&tg-launch=keyboard&tg-insets=56,40&tg-proof=1
+ *
+ * `tg-insets` is `top,bottom` content safe area; `tg-safe` is the same for the
+ * hardware safe area; `tg-full=1` imitates a fullscreen launch (no bottom bar);
+ * `tg-probe=0` hides the probe overlay, which a framing demo needs.
+ */
+export function readMockOptions(search = hasWindow() ? window.location.search : "") {
+  let params;
+  try {
+    params = new URLSearchParams(search);
+  } catch {
+    return {};
+  }
+  const scheme = params.get("tg-scheme");
+  const launch = params.get("tg-launch");
+  const options = {};
+  if (scheme === "dark" || scheme === "light") options.colorScheme = scheme;
+  if (["menu", "keyboard", "inline", "direct", "attachment"].includes(launch)) options.launch = launch;
+  if (params.get("tg-full") === "1") options.fullscreen = true;
+  const content = readPair(params.get("tg-insets"));
+  const safe = readPair(params.get("tg-safe"));
+  if (content || safe) {
+    options.insets = {
+      safe: safe ?? { top: 0, bottom: 0, left: 0, right: 0 },
+      content: content ?? { top: 0, bottom: params.get("tg-full") === "1" ? 0 : 40, left: 0, right: 0 }
+    };
+  }
+  return options;
+}
+
+function readPair(value) {
+  if (typeof value !== "string" || !/^\d{1,3},\d{1,3}$/.test(value)) return null;
+  const [top, bottom] = value.split(",").map(Number);
+  return { top, bottom, left: 0, right: 0 };
+}
+
+/** Whether the reviewer asked for the probe to stay out of the way. */
+export function isProbeHidden(search = hasWindow() ? window.location.search : "") {
+  try {
+    return new URLSearchParams(search).get("tg-probe") === "0";
+  } catch {
+    return false;
+  }
 }
 
 /**

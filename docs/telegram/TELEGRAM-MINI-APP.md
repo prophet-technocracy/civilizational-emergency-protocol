@@ -196,8 +196,22 @@ Everything else in the documented list — `invoiceClosed`, `qrTextReceived`, `w
 | `apps/api/src/platform/telegram/initdata.mjs` | Pure: parse, HMAC validation, Ed25519 third-party validation, freshness. |
 | `apps/api` route `GET /api/v1/telegram/session` | Validates `X-Telegram-Init-Data`; `501` without a configured token, `400` for a missing header or a stale payload, `401` for a bad signature, `200` with language and *no* identifier. |
 | `apps/api` route `GET /api/v1/telegram/platform` | Static: the seven launch modes, both algorithms and their parameters, and the posture (no identifier storage, no third-party script, no token in the repository). |
+| `apps/web/public/telegram-preview.html` | A reviewer page: the real app framed twice — as it ships today at 1280 px, and at 390 px inside a simulated client — with a scenario switcher (four launch/shape combinations), a live panel reading the embedded bridge, and the change list below. Not a product surface. |
 
 **What the mock deliberately cannot do:** fake a valid signature. The mock sets `initData` to a string that the server rejects, and the probe says so — otherwise the prototype would teach us that authentication works when it has never once run.
+
+**Driving the mock from the URL.** `?tg-mock=1` alone gives a menu-button launch in the light scheme. A reviewer page (or a person) can ask for any shape without editing code:
+
+| Parameter | Effect |
+| --- | --- |
+| `tg-scheme=light\|dark` | what the client reports as `colorScheme` |
+| `tg-launch=menu\|keyboard\|inline\|direct\|attachment` | `keyboard` and `inline` deliver **no** `initData`, as the real client does |
+| `tg-insets=56,40` | content safe area, top and bottom in px |
+| `tg-safe=12,34` | hardware safe area, top and bottom in px |
+| `tg-full=1` | a fullscreen launch (Bot API 8.0), which removes the client's bottom bar |
+| `tg-probe=0` | hides the probe overlay, which a framing demo needs |
+
+**Seeing it.** `/telegram-preview.html` (dev server or build) frames the app both ways and lists what changes, sourced from this note. Every row there is either *wired* (the scaffold handles it), *gap* (untouched) or *needs a decision* (a human call) — the middle column is the work queue for a later PR, not a promise.
 
 ---
 

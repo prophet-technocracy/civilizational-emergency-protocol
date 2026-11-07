@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mini App preview — CEP · پیش‌نمایش مینی‌اپ</title>
+    <!--
+      A reviewer page, not a product surface (#69).
+
+      It frames the real application twice — once as it ships today, once inside a
+      simulated Telegram client — so the distance between the two is visible
+      instead of argued about. Both frames load the same build from this origin;
+      the right one is the same app with ?tg-mock=1, which installs a fabricated
+      bridge (apps/web/src/platform/telegram/mock.mjs).
+
+      Nothing here authenticates. The fabricated initData is deliberately invalid,
+      and the facts panel reads its values from the embedded bridge so a reviewer
+      can see what the adapter was actually given.
+    -->
+    <style>
+      :root {
+        --navy-900: #0b1726;
+        --teal-text: #0d5f63;
+        --teal-600: #0f6f74;
+        --paper-0: #ffffff;
+        --paper-1: #fbf9f5;
+        --paper-2: #f4f0e8;
+        --paper-3: #e9e3d7;
+        --ink-900: #17202a;
+        --ink-700: #364353;
+        --ink-500: #4c5a6a;
+        --ink-300: #616f7e;
+        --good: #1c7a4d;
+        --good-bg: #e3f3ea;
+        --warn: #7a5208;
+        --warn-bg: #fdf1d6;
+        --danger: #a52323;
+        --danger-bg: #fbe6e4;
+        --info: #1a5d8f;
+        --info-bg: #e4eefa;
+        --synthetic: #5b3f8f;
+        --synthetic-bg: #eee8f8;
+        --border: #d9d2c6;
+        --border-strong: #c2b9aa;
+        --radius-sm: 6px;
+        --radius-md: 10px;
+        --radius-lg: 16px;
+        --shadow-sm: 0 1px 2px rgba(15, 26, 38, 0.06);
+        --shadow-md: 0 6px 18px rgba(15, 26, 38, 0.08);
+        --shadow-lg: 0 18px 48px rgba(9, 20, 33, 0.18);
+        --font-fa: "Vazirmatn", "IRANSans", "Sahel", "Segoe UI", Tahoma, sans-serif;
+        --font-en: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+        color-scheme: light;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        background: var(--paper-2);
+        color: var(--ink-900);
+        font-family: var(--font-fa);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      [dir="ltr"] { font-family: var(--font-en); }
+
+      .page { max-width: 1320px; margin: 0 auto; padding: 28px 20px 72px; }
+
+      .masthead { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; justify-content: space-between; }
+      .masthead h1 { margin: 0 0 6px; font-size: clamp(1.35rem, 2.4vw, 1.9rem); line-height: 1.35; letter-spacing: -0.01em; }
+      .masthead p { margin: 0; max-width: 62ch; color: var(--ink-700); }
+      .masthead .en { display: block; font-family: var(--font-en); font-size: 0.86rem; color: var(--ink-500); margin-top: 2px; }
+
+      .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+      .chip {
+        display: inline-flex; align-items: center; gap: 6px;
+        border: 1px solid var(--border); border-radius: 999px;
+        padding: 3px 10px; font-size: 0.74rem; background: var(--paper-0); color: var(--ink-700);
+        white-space: nowrap;
+      }
+      .chip--synthetic { border-color: #cfc2e8; background: var(--synthetic-bg); color: var(--synthetic); }
+      .chip--good { border-color: #b7dcc7; background: var(--good-bg); color: var(--good); }
+      .chip--warn { border-color: #ecd9a5; background: var(--warn-bg); color: var(--warn); }
+      .chip--info { border-color: #bcd6ee; background: var(--info-bg); color: var(--info); }
+
+      .controls {
+        margin: 22px 0 18px; padding: 14px 16px;
+        background: var(--paper-0); border: 1px solid var(--border);
+        border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);
+        display: grid; gap: 12px;
+      }
+      .row { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
+      .row > .label { font-size: 0.8rem; color: var(--ink-500); min-width: 5.5rem; }
+      .seg { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+
+      button {
+        font: inherit; cursor: pointer;
+        background: var(--paper-1); color: var(--ink-700);
+        border: 1px solid var(--border); border-radius: 999px;
+        padding: 6px 13px; font-size: 0.82rem; min-height: 34px;
+        transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+      }
+      button:hover { background: var(--paper-2); }
+      button[aria-pressed="true"] { background: var(--navy-900); border-color: var(--navy-900); color: #fff; }
+      button:focus-visible { outline: 3px solid var(--teal-600); outline-offset: 2px; }
+
+      .stage { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 460px); gap: 24px; align-items: start; }
+      @media (max-width: 1080px) { .stage { grid-template-columns: minmax(0, 1fr); } }
+
+      .pane { background: var(--paper-0); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden; }
+      .pane__head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; padding: 12px 14px; border-block-end: 1px solid var(--border); background: var(--paper-1); }
+      .pane__head h2 { margin: 0; font-size: 0.98rem; }
+      .pane__head .en { font-family: var(--font-en); font-size: 0.76rem; color: var(--ink-500); }
+      .pane__body { padding: 16px; display: grid; justify-items: center; gap: 12px; background: var(--paper-2); }
+
+      /* ---------------------------- browser frame ---------------------------- */
+      .browser { width: 100%; max-width: 660px; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border-strong); box-shadow: var(--shadow-md); background: var(--paper-0); }
+      .browser__bar { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--paper-3); border-block-end: 1px solid var(--border-strong); }
+      .dots { display: inline-flex; gap: 5px; }
+      .dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--border-strong); display: block; }
+      .urlbar { flex: 1; display: flex; align-items: center; gap: 6px; background: var(--paper-0); border: 1px solid var(--border); border-radius: 999px; padding: 3px 10px; font-family: var(--font-en); font-size: 0.7rem; color: var(--ink-500); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .browser__viewport { width: 100%; aspect-ratio: 4 / 5; overflow: hidden; position: relative; background: var(--paper-1); }
+      .browser__viewport iframe { position: absolute; inset-block-start: 0; inset-inline-start: 0; width: 1280px; height: 1600px; border: 0; transform: scale(var(--scale)); transform-origin: top left; }
+      [dir="rtl"] .browser__viewport iframe { transform-origin: top right; }
+
+      /* ----------------------------- phone frame ----------------------------- */
+      .phone {
+        width: 390px; max-width: 100%;
+        border-radius: 34px; border: 1px solid var(--border-strong);
+        background: #0d1117; padding: 8px; box-shadow: var(--shadow-lg);
+      }
+      .phone__inner { border-radius: 27px; overflow: hidden; background: var(--paper-1); display: flex; flex-direction: column; height: 780px; }
+      .tg-head {
+        display: flex; align-items: center; gap: 8px;
+        padding: 10px 12px; font-size: 0.82rem; color: var(--ink-700);
+        background: var(--tg-head-bg, #f3f6f4); border-block-end: 1px solid rgba(0, 0, 0, 0.08);
+      }
+      .tg-head .back { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; color: var(--teal-text); }
+      .tg-head .title { flex: 1; font-weight: 600; }
+      .tg-head .more { color: var(--ink-500); letter-spacing: 1px; }
+      .phone__screen { flex: 1; min-height: 0; position: relative; background: var(--paper-1); }
+      .phone__screen iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+      .tg-foot {
+        display: flex; align-items: center; justify-content: space-between; gap: 8px;
+        padding: 8px 12px; background: var(--tg-foot-bg, #f3f6f4);
+        border-block-start: 1px solid rgba(0, 0, 0, 0.08); font-size: 0.72rem; color: var(--ink-500);
+      }
+      .tg-foot .pill { border: 1px solid currentColor; border-radius: 999px; padding: 2px 10px; color: var(--teal-text); }
+
+      .caption { font-size: 0.78rem; color: var(--ink-500); text-align: center; max-width: 46ch; }
+      .caption code { font-size: 0.74rem; }
+
+      /* ------------------------------- facts --------------------------------- */
+      .facts { margin: 18px 0 0; width: 100%; max-width: 660px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--paper-0); overflow: hidden; }
+      .facts h3 { margin: 0; padding: 10px 12px; font-size: 0.84rem; background: var(--paper-1); border-block-end: 1px solid var(--border); }
+      .facts dl { margin: 0; padding: 10px 12px; display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: 0.78rem; }
+      .facts dt { color: var(--ink-500); }
+      .facts dd { margin: 0; font-family: var(--font-en); color: var(--ink-900); overflow-wrap: anywhere; }
+      .facts dd .yes { color: var(--good); font-weight: 600; }
+      .facts dd .no { color: var(--danger); font-weight: 600; }
+
+      /* ------------------------------- table --------------------------------- */
+      .changes { margin-top: 34px; }
+      .changes h2 { margin: 0 0 4px; font-size: 1.15rem; }
+      .changes .lede { margin: 0 0 16px; color: var(--ink-700); max-width: 78ch; }
+      .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--paper-0); box-shadow: var(--shadow-sm); }
+      table { width: 100%; border-collapse: collapse; font-size: 0.84rem; min-width: 760px; }
+      thead th { text-align: start; padding: 11px 14px; background: var(--paper-1); border-block-end: 1px solid var(--border); font-size: 0.78rem; color: var(--ink-700); font-weight: 600; white-space: nowrap; }
+      tbody td { padding: 12px 14px; border-block-end: 1px solid var(--border); vertical-align: top; }
+      tbody tr:last-child td { border-block-end: 0; }
+      tbody tr:nth-child(even) { background: color-mix(in srgb, var(--paper-1) 55%, transparent); }
+      td .en { display: block; font-family: var(--font-en); font-size: 0.76rem; color: var(--ink-500); margin-top: 3px; }
+      td code { font-family: var(--font-en); font-size: 0.75rem; background: var(--paper-2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; }
+      .state { white-space: nowrap; }
+      .state .chip { font-size: 0.72rem; }
+
+      footer.notes { margin-top: 30px; display: grid; gap: 10px; max-width: 90ch; color: var(--ink-500); font-size: 0.8rem; }
+      footer.notes strong { color: var(--ink-900); }
+      a { color: var(--teal-text); }
+      a:focus-visible { outline: 3px solid var(--teal-600); outline-offset: 2px; }
+      .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+      @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="masthead">
+        <div>
+          <h1>مینی‌اپ تلگرام: چه چیزی باید تغییر کند</h1>
+          <p>
+            همین برنامه، دو بار: یک بار آن‌گونه که امروز منتشر می‌شود، و یک بار درون کلاینتی شبیه‌سازی‌شده.
+            هر دو قاب از همین سرور بارگذاری می‌شوند؛ قاب سمت چپ همان چیز همیشگی است و قاب تلفن همان
+            برنامه با <code>?tg-mock=1</code>.
+            <span class="en">The same app twice — as it ships today, and inside a simulated client. Both frames are the real build; nothing here authenticates.</span>
+          </p>
+        </div>
+        <div class="chips">
+          <span class="chip chip--synthetic">صفحهٔ بازبینی · reviewer page</span>
+          <span class="chip">بدون کلاینت واقعی · no real client</span>
+          <span class="chip">بدون شناسه · no identifiers</span>
+        </div>
+      </header>
+
+      <section class="controls" aria-label="کنترل‌های پیش‌نمایش">
+        <div class="row">
+          <span class="label" id="lbl-route">مسیر · route</span>
+          <div class="seg" role="group" aria-labelledby="lbl-route" id="route-group"></div>
+        </div>
+        <div class="row">
+          <span class="label" id="lbl-scenario">سناریو · scenario</span>
+          <div class="seg" role="group" aria-labelledby="lbl-scenario" id="scenario-group"></div>
+        </div>
+        <div class="row">
+          <span class="label">راهنما · hint</span>
+          <span class="caption" id="scenario-hint" style="text-align: start"></span>
+        </div>
+      </section>
+
+      <section class="stage">
+        <article class="pane">
+          <div class="pane__head">
+            <h2>امروز: وب‌اپ دسکتاپ <span class="en">Today — the web app, 1280&nbsp;px</span></h2>
+            <span class="chip chip--info">unchanged · بدون تغییر</span>
+          </div>
+          <div class="pane__body">
+            <div class="browser">
+              <div class="browser__bar">
+                <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="urlbar" id="web-url">localhost:5173/#/hub</span>
+              </div>
+              <div class="browser__viewport">
+                <iframe id="web-frame" title="برنامهٔ وب امروز · today's web app" loading="eager"></iframe>
+              </div>
+            </div>
+            <p class="caption">
+              نوار آدرس، تب‌ها، پانویس و کلیدهای پرش همه در مرورگر زندگی می‌کنند — هیچ‌کدام در کلاینت تلگرام وجود ندارند.
+              <span class="en">Address bar, tabs, footer and keyboard affordances all belong to the browser; none of them exist inside a client.</span>
+            </p>
+          </div>
+        </article>
+
+        <article class="pane">
+          <div class="pane__head">
+            <h2>در تلگرام: ۳۹۰ پیکسل <span class="en">Inside Telegram — 390&nbsp;px</span></h2>
+            <span class="chip chip--good">scaffold wired</span>
+          </div>
+          <div class="pane__body">
+            <div class="phone">
+              <div class="phone__inner">
+                <div class="tg-head" id="tg-head">
+                  <span class="back" aria-hidden="true">‹</span>
+                  <span class="title">CEP · <span style="font-weight: 400; color: var(--ink-500)">Civilizational OS</span></span>
+                  <span class="more" aria-hidden="true">⋯</span>
+                </div>
+                <div class="phone__screen">
+                  <iframe id="mini-frame" title="برنامه در کلاینت شبیه‌سازی‌شده · the app inside a simulated client"></iframe>
+                </div>
+                <div class="tg-foot" id="tg-foot">
+                  <span>کلاینت شبیه‌سازی‌شده · simulated client</span>
+                  <span class="pill">Expand</span>
+                </div>
+              </div>
+            </div>
+            <p class="caption" id="mini-caption"></p>
+
+            <div class="facts">
+              <h3>آنچه آداپتر واقعاً می‌بیند · what the adapter actually received</h3>
+              <dl id="facts">
+                <dt>platform</dt><dd id="f-platform">—</dd>
+                <dt>version</dt><dd id="f-version">—</dd>
+                <dt>کد رنگ کلاینت · client scheme</dt><dd id="f-scheme">—</dd>
+                <dt>تمی که نقاشی شد · theme painted</dt><dd id="f-theme">—</dd>
+                <dt>stable height</dt><dd id="f-stable">—</dd>
+                <dt>content inset (top)</dt><dd id="f-inset">—</dd>
+                <dt>initData امضاشده · signed payload</dt><dd id="f-init">—</dd>
+                <dt>start_param</dt><dd id="f-start">—</dd>
+              </dl>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="changes">
+        <h2>آنچه باید تغییر کند · what has to change</h2>
+        <p class="lede">
+          هر ردیف از سند <a href="https://github.com/prophet-technocracy/civilizational-emergency-protocol/blob/main/docs/telegram/TELEGRAM-MINI-APP.md">docs/telegram/TELEGRAM-MINI-APP.md</a> آمده است و
+          نشان می‌دهد امروز کجاست. «سیم‌کشی‌شده» یعنی اسکلت کار می‌کند؛ «شکاف» یعنی هنوز کاری نکرده‌ایم؛
+          «نیازمند تصمیم» یعنی تصمیم انسانی است، نه مهندسی.
+          <span class="en">Every row is sourced from the platform note. Wired = the scaffold handles it. Gap = untouched. Needs a decision = a human call, not an engineering one.</span>
+        </p>
+        <div class="table-wrap">
+          <table>
+            <caption class="sr-only">تغییرهای لازم برای تبدیل وب‌اپ به مینی‌اپ تلگرام</caption>
+            <thead>
+              <tr>
+                <th scope="col">موضوع</th>
+                <th scope="col">امروز چه اتفاقی می‌افتد</th>
+                <th scope="col">چه چیزی لازم است</th>
+                <th scope="col">وضعیت</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">ارتفاع نما<span class="en">viewport height</span></th>
+                <td>پوسته با <code>min-height: 100vh</code> بسته می‌شود، که در کلاینت ارتفاعِ حالت کوچک‌شده است و با باز شدن صفحه‌کلید می‌پرد.</td>
+                <td>پایین‌چسب‌ها به <code>--tg-viewport-stable-height</code> و واحدهای <code>dvh</code> تکیه کنند؛ <code>100vh</code> فقط بیرون از کلاینت.</td>
+                <td class="state"><span class="chip chip--warn">شکاف · gap</span></td>
+              </tr>
+              <tr>
+                <th scope="row">حاشیهٔ ایمن<span class="en">safe area</span></th>
+                <td>هدر کلاینت و نوار خانه روی محتوا می‌افتند؛ دکمهٔ بستن گوشهٔ بالا و دکمهٔ بازگشت بالای صفحه.</td>
+                <td>پوسته با <code>--tg-safe-area-inset-*</code> و <code>--tg-content-safe-area-inset-*</code> فاصله می‌گیرد. در این صفحه در قاب تلفن دیده می‌شود.</td>
+                <td class="state"><span class="chip chip--good">سیم‌کشی‌شده</span></td>
+              </tr>
+              <tr>
+                <th scope="row">دکمهٔ بازگشت<span class="en">back button</span></th>
+                <td>مسیرها در hash می‌مانند؛ کلاینت دکمهٔ بازگشت خودش را دارد و اگر به آن وصل نشویم، یک بار بیرون می‌اندازد.</td>
+                <td><code>useTelegramBackButton</code> روی هر مسیری جز مرکز. بیرون‌رفتن از مرکز هنوز تأیید نمی‌خواهد — تصمیم آگاهانه.</td>
+                <td class="state"><span class="chip chip--good">سیم‌کشی‌شده</span></td>
+              </tr>
+              <tr>
+                <th scope="row">پالت رنگ<span class="en">palette</span></th>
+                <td>تلگرام ۱۵ رنگ می‌فرستد و انتظار دارد رابط از آن‌ها استفاده کند.</td>
+                <td>فقط <code>colorScheme</code> انتخاب می‌کند کدام یک از دو تم حسابرسی‌شدهٔ ما رسم شود، و تنها اگر خواننده خودش انتخاب نکرده باشد؛ رنگ‌های کلاینت از پالت ما گرفته می‌شوند. هیچ مؤلفه‌ای <code>--tg-theme-*</code> نمی‌خواند.</td>
+                <td class="state"><span class="chip chip--good">سیم‌کشی‌شده</span></td>
+              </tr>
+              <tr>
+                <th scope="row">ناوبری دسکتاپ<span class="en">desktop affordances</span></th>
+                <td>هدر افقی، پانویس پنج‌خطی و نوار کلیدها برای صفحهٔ ۱۴۴۰ طراحی شده‌اند؛ در ۳۹۰ پیکسل هدر به کشو تبدیل می‌شود ولی پانویس همان است.</td>
+                <td>یک پانویس و یک نوار کلید مخصوص صفحهٔ باریک؛ یا پذیرش اینکه پانویس در مینی‌اپ حذف شود.</td>
+                <td class="state"><span class="chip chip--warn">نیازمند تصمیم</span></td>
+              </tr>
+              <tr>
+                <th scope="row">پیوندهای بیرونی<span class="en">external links</span></th>
+                <td>پیوندها با تب جدید یا همان پنجره باز می‌شوند؛ داخل کلاینت تب جدید وجود ندارد و رفتار مبهم است.</td>
+                <td>همهٔ پیوندهای بیرونی از <code>Telegram.WebApp.openLink</code> و فقط با حرکت کاربر عبور کنند.</td>
+                <td class="state"><span class="chip chip--warn">شکاف · gap</span></td>
+              </tr>
+              <tr>
+                <th scope="row">ورود با پیوند<span class="en">deep link</span></th>
+                <td>مسیر از hash خوانده می‌شود؛ نشانیِ آغاز را ما تعیین نمی‌کنیم.</td>
+                <td><code>start_param</code> با الگوی سخت‌گیرانه به مسیر نگاشت شود (تابع <code>readStartParamRoute</code> آماده است، هیچ‌کس مصرفش نمی‌کند).</td>
+                <td class="state"><span class="chip chip--warn">شکاف · gap</span></td>
+              </tr>
+              <tr>
+                <th scope="row">حافظه<span class="en">storage</span></th>
+                <td>زبان و تم در <code>localStorage</code> همان دستگاه می‌مانند.</td>
+                <td>پذیرش اینکه انتخاب خواننده با تغییر دستگاه از دست می‌رود — ذخیرهٔ شناسه ممنوع است. CloudStorage فقط برای تنظیمات، اگر لازم شد.</td>
+                <td class="state"><span class="chip chip--warn">نیازمند تصمیم</span></td>
+              </tr>
+              <tr>
+                <th scope="row">پرداخت<span class="en">payments</span></th>
+                <td>هیچ پرداختی وجود ندارد و نباید وجود داشته باشد تا دروازهٔ فاز صفر باز شود.</td>
+                <td>ستاره یا TON فقط پس از تصمیم انسانی دربارهٔ #66؛ هیچ‌کدام در این اسکلت نیست.</td>
+                <td class="state"><span class="chip chip--synthetic">نیازمند تصمیم</span></td>
+              </tr>
+              <tr>
+                <th scope="row">دسترسی<span class="en">reach</span></th>
+                <td>این برنامه در مرورگر باز می‌شود و به تلگرام وابسته نیست.</td>
+                <td>تلگرام از ۲۰۱۸ در ایران مسدود است؛ این کانال دیاسپورا و VPN را پوشش می‌دهد، نه دسترسی داخلی. این را باید در متن به خواننده گفت.</td>
+                <td class="state"><span class="chip chip--warn">مستند شده</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <footer class="notes">
+        <p>
+          <strong>چه چیزی واقعی است:</strong> هر دو قاب همین بیلد است؛ آداپتر، حاشیه‌های ایمن، تم و دکمهٔ بازگشت
+          واقعاً اجرا می‌شوند. <strong>چه چیزی واقعی نیست:</strong> امضا. <code>initData</code> ساختگی است و سرور آن را رد می‌کند؛
+          هیچ درخواستی به <code>/api/v1/telegram/session</code> فرستاده نمی‌شود، چون توکنی وجود ندارد.
+        </p>
+        <p>
+          سند کامل: <a href="https://github.com/prophet-technocracy/civilizational-emergency-protocol/blob/main/docs/telegram/TELEGRAM-MINI-APP.md">docs/telegram/TELEGRAM-MINI-APP.md</a> ·
+          کاوشگر محیط: <a href="./?tg-mock=1">?tg-mock=1</a> ·
+          واقعیت‌های سرور: <a href="api/v1/telegram/platform">/api/v1/telegram/platform</a>
+        </p>
+        <p class="en" style="font-family: var(--font-en)">
+          No real Telegram client, bot token or device was used to build this page. Platform behaviour is
+          documentation-derived (Wayback snapshot, 2026-01-01) and marked as such in §11 of the note.
+        </p>
+      </footer>
+    </main>
+
+    <script>
+      const ROUTES = [
+        { id: "hub", label: "مرکز · Hub" },
+        { id: "levels", label: "سطوح · Levels" },
+        { id: "bank", label: "بانک · Bank" },
+        { id: "principles", label: "اصول · Principles" },
+        { id: "programme", label: "برنامه · Programme" }
+      ];
+
+      // Each scenario is a query string the mock understands (index.js:
+      // readMockOptions). Two of them deliver no initData at all — the point.
+      const SCENARIOS = [
+        {
+          id: "menu-light",
+          label: "منوی ربات · light",
+          query: "?tg-mock=1&tg-probe=0&tg-scheme=light&tg-launch=menu&tg-insets=56,40",
+          hint: "پیوند رسمی: کلاینت روشن، initData کامل (اما امضای ساختگی)، هدر ۵۶ و نوار ۴۰ پیکسل روی محتوا.",
+          scheme: "light"
+        },
+        {
+          id: "menu-dark",
+          label: "منوی ربات · dark",
+          query: "?tg-mock=1&tg-probe=0&tg-scheme=dark&tg-launch=menu&tg-insets=56,40",
+          hint: "همان پیوند، کلاینت تاریک. تم فقط وقتی از کلاینت می‌آید که خواننده انتخاب نکرده باشد.",
+          scheme: "dark"
+        },
+        {
+          id: "keyboard",
+          label: "دکمهٔ صفحه‌کلید · no initData",
+          query: "?tg-mock=1&tg-probe=0&tg-scheme=light&tg-launch=keyboard&tg-insets=0,0",
+          hint: "یکی از دو حالت اجرایی که هیچ دادهٔ امضاشده‌ای ندارند. حاشیهٔ ایمن صفر است و «فعال» بودن از platform می‌آید.",
+          scheme: "light"
+        },
+        {
+          id: "fullscreen",
+          label: "تمام‌صفحه · fullscreen",
+          query: "?tg-mock=1&tg-probe=0&tg-scheme=dark&tg-launch=menu&tg-full=1&tg-safe=12,34&tg-insets=0,0",
+          hint: "اجرای تمام‌صفحه (Bot API 8.0): نوار پایین کلاینت حذف می‌شود و حاشیهٔ سخت‌افزاری می‌ماند.",
+          scheme: "dark"
+        }
+      ];
+
+      const state = { route: "hub", scenario: SCENARIOS[0] };
+
+      const webFrame = document.getElementById("web-frame");
+      const miniFrame = document.getElementById("mini-frame");
+      const webUrl = document.getElementById("web-url");
+      const miniCaption = document.getElementById("mini-caption");
+      const hint = document.getElementById("scenario-hint");
+      const tgHead = document.getElementById("tg-head");
+      const tgFoot = document.getElementById("tg-foot");
+
+      // The desktop frame is 1280 px wide, scaled to fit its column. The scale
+      // is recomputed on resize so the iframe keeps its real layout width and a
+      // reviewer still sees the desktop composition.
+      const viewport = document.querySelector(".browser__viewport");
+      function fitBrowser() {
+        const width = viewport.clientWidth || 640;
+        viewport.style.setProperty("--scale", String(width / 1280));
+      }
+      window.addEventListener("resize", fitBrowser);
+
+      function renderControls() {
+        const routeGroup = document.getElementById("route-group");
+        const scenarioGroup = document.getElementById("scenario-group");
+        routeGroup.textContent = "";
+        scenarioGroup.textContent = "";
+
+        for (const route of ROUTES) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.textContent = route.label;
+          button.setAttribute("aria-pressed", String(route.id === state.route));
+          button.addEventListener("click", () => {
+            state.route = route.id;
+            renderControls();
+            navigate();
+          });
+          routeGroup.append(button);
+        }
+
+        for (const scenario of SCENARIOS) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.textContent = scenario.label;
+          button.setAttribute("aria-pressed", String(scenario.id === state.scenario.id));
+          button.addEventListener("click", () => {
+            state.scenario = scenario;
+            renderControls();
+            navigate();
+          });
+          scenarioGroup.append(button);
+        }
+
+        hint.textContent = state.scenario.hint;
+      }
+
+      function navigate() {
+        const hash = `#/${state.route}`;
+        // Changing only the hash navigates the frame in place: the app listens
+        // to hashchange, so no reload and no lost state.
+        webFrame.src = `./${hash}`;
+        miniFrame.src = `./${state.scenario.query}${hash}`;
+        webUrl.textContent = `localhost:5173/${hash}`;
+        miniCaption.textContent = state.scenario.id === "keyboard"
+          ? "بدون initData: کلاینت باز است، امضا نیست. هیچ مؤلفه‌ای نباید وجود آن را فرض کند."
+          : "همان برنامه، در قابی که کلاینت برایش می‌سازد: هدر و نوار پایین از محتوا می‌دزدند.";
+        // The fake client chrome follows the scenario's colour scheme, the way a
+        // real client would paint its own bars around the page.
+        const dark = state.scenario.scheme === "dark";
+        tgHead.style.setProperty("--tg-head-bg", dark ? "#17222e" : "#f3f6f4");
+        tgFoot.style.setProperty("--tg-foot-bg", dark ? "#101a24" : "#f3f6f4");
+        tgHead.style.color = dark ? "#dbe6f0" : "";
+        tgFoot.style.color = dark ? "#9fb0c0" : "";
+        tgFoot.style.display = state.scenario.id === "fullscreen" ? "none" : "flex";
+      }
+
+      // ------------------------ live facts from the frame ---------------------
+      // Same origin, so the parent can read the embedded bridge directly. This
+      // is a reviewer convenience, not an API the app depends on.
+      function readFacts() {
+        let app = null;
+        let doc = null;
+        try {
+          app = miniFrame.contentWindow?.Telegram?.WebApp ?? null;
+          doc = miniFrame.contentDocument;
+        } catch {
+          app = null;
+        }
+        if (!app) return false;
+
+        const text = (id, value) => { document.getElementById(id).textContent = value; };
+        const html = (id, value) => { document.getElementById(id).innerHTML = value; };
+        text("f-platform", app.platform || "(empty)");
+        text("f-version", app.version || "(empty)");
+        text("f-scheme", app.colorScheme || "(empty)");
+        text("f-theme", doc?.documentElement?.getAttribute("data-theme") || "(unknown)");
+        text("f-stable", `${app.viewportStableHeight}px`);
+        text("f-inset", `${app.contentSafeAreaInset?.top ?? 0}px / ${app.safeAreaInset?.top ?? 0}px safe`);
+        const hasInit = typeof app.initData === "string" && app.initData.length > 0;
+        html("f-init", hasInit
+          ? `<span class="yes">present</span> — signature is fabricated, the server would reject it`
+          : `<span class="no">absent</span> — this launch mode carries none`);
+        text("f-start", app.initDataUnsafe?.start_param ?? "(none)");
+        return true;
+      }
+
+      let poll = null;
+      miniFrame.addEventListener("load", () => {
+        clearInterval(poll);
+        let tries = 0;
+        poll = setInterval(() => {
+          tries += 1;
+          if (readFacts() || tries > 40) clearInterval(poll);
+        }, 100);
+      });
+      // A hash-only navigation does not fire `load`; refresh the facts anyway.
+      setInterval(() => { if (state.route) readFacts(); }, 1500);
+
+      fitBrowser();
+      renderControls();
+      navigate();
+    </script>
+  </body>
+</html>
