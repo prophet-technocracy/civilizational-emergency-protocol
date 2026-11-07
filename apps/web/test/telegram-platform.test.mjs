@@ -17,6 +17,7 @@ import {
   themeForScheme
 } from "../src/platform/telegram/context.mjs";
 import { installTelegramBridge, setBackButton } from "../src/platform/telegram/bridge.mjs";
+import { isProbeHidden, readMockOptions } from "../src/platform/telegram/index.js";
 import { createMockWebApp, MOCK_MARKER } from "../src/platform/telegram/mock.mjs";
 
 /* -------------------------------- detection ------------------------------- */
@@ -224,4 +225,38 @@ test("the mock is honest about not being signed", () => {
   assert.equal(app.initData, MOCK_MARKER);
   assert.match(app.initData, /hash=not-a-real-signature/);
   assert.equal(app.__mock.listenerCount("backButtonClicked"), 0);
+});
+
+/* ------------------------- the mock's query string ------------------------ */
+
+test("a reviewer can put the mock into any launch mode from the URL alone", () => {
+  const keyboard = readMockOptions("?tg-mock=1&tg-launch=keyboard&tg-scheme=dark&tg-insets=0,0");
+  assert.equal(keyboard.launch, "keyboard");
+  assert.equal(keyboard.colorScheme, "dark");
+  assert.deepEqual(keyboard.insets.content, { top: 0, bottom: 0, left: 0, right: 0 });
+
+  const full = readMockOptions("?tg-mock=1&tg-full=1&tg-safe=12,34&tg-insets=56,40");
+  assert.equal(full.fullscreen, true);
+  assert.deepEqual(full.insets.safe, { top: 12, bottom: 34, left: 0, right: 0 });
+});
+
+test("nonsense in the query string is ignored rather than trusted", () => {
+  const options = readMockOptions("?tg-scheme=chartreuse&tg-launch=teleport&tg-insets=9999,abc&tg-full=yes");
+  assert.equal(options.colorScheme, undefined);
+  assert.equal(options.launch, undefined);
+  assert.equal(options.fullscreen, undefined);
+  assert.equal(options.insets, undefined);
+});
+
+test("the keyboard launch mode really has no signed payload", () => {
+  const app = createMockWebApp({ launch: "keyboard" });
+  assert.equal(app.initData, "");
+  assert.equal(readTelegramContext(app).hasInitData, false);
+  assert.equal(readTelegramContext(app).active, true, "no signature is not the same as no client");
+});
+
+test("the probe can be kept out of the way for a framing demo", () => {
+  assert.equal(isProbeHidden("?tg-mock=1&tg-probe=0"), true);
+  assert.equal(isProbeHidden("?tg-mock=1"), false);
+  assert.equal(isProbeHidden(""), false);
 });

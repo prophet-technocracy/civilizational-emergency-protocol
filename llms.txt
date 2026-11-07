@@ -89,6 +89,7 @@ error — the server is also a demonstration of refusing input, not just of serv
 | What does this number mean? | `packages/domain-models`, `docs/economics/` |
 | What may this project not claim? | `AGENTS.md`, `scripts/audit/guardrails.mjs` |
 | How would this become a Telegram Mini App? | `docs/telegram/TELEGRAM-MINI-APP.md` |
+| What does the master engineering specification require, and what is missing? | `docs/engineering/MASTER-SPEC.md`, `docs/engineering/MASTER-SPEC-ASSESSMENT.md` |
 | What is unproven or unfinished? | `TASKS.md`, `agents/MASTER-TASK-BOARD.md` |
 
 ## Refusals (structural, not stylistic)

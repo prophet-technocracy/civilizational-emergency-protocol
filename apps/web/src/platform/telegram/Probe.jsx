@@ -12,11 +12,15 @@
 import { useState } from "react";
 import { UI } from "../../i18n.js";
 import { readStartParamRoute } from "./context.mjs";
+import { isProbeHidden } from "./index.js";
 
 export default function TmaProbe({ context, lang }) {
   const [open, setOpen] = useState(false);
   const copy = UI[lang].telegram;
   if (!context?.active) return null;
+  // A demo that frames the app inside a simulated client does not want a lab
+  // overlay on top of the thing it is showing.
+  if (isProbeHidden()) return null;
 
   const mocked = context.mocked;
   const mock = mocked && typeof window !== "undefined" ? window.Telegram?.WebApp?.__mock : null;

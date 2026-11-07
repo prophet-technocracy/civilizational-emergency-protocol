@@ -52,12 +52,17 @@ const THEMES = {
  * @param {"light"|"dark"} [options.colorScheme]
  * @param {string} [options.platform]
  * @param {string} [options.version]
- * @param {object} [options.insets] content safe-area insets, in px
+ * @param {object} [options.insets] safe-area insets, in px (`{safe, content}`)
+ * @param {"menu"|"keyboard"|"inline"|"direct"|"attachment"} [options.launch]
+ *   which of the seven launch modes to imitate; two of them carry no `initData`
+ * @param {boolean} [options.fullscreen]
  */
 export function createMockWebApp({
   colorScheme = "light",
   platform = "android",
   version = "8.0",
+  launch = "menu",
+  fullscreen = false,
   insets = { safe: { top: 0, bottom: 0, left: 0, right: 0 }, content: { top: 56, bottom: 40, left: 0, right: 0 } }
 } = {}) {
   const listeners = new Map();
@@ -78,7 +83,7 @@ export function createMockWebApp({
     viewportHeight: 780,
     viewportStableHeight: 700,
     isExpanded: false,
-    isFullscreen: false,
+    isFullscreen: Boolean(fullscreen),
     isActive: true,
     isClosingConfirmationEnabled: false,
     isVerticalSwipesEnabled: true,
@@ -222,6 +227,14 @@ export function createMockWebApp({
       }
     }
   };
+
+  // The two launch modes opened from a keyboard button or an inline query
+  // deliver no signed data at all. Reproducing that here is the point of the
+  // mock: a layout that assumes `initData` exists breaks in exactly those modes.
+  if (launch === "keyboard" || launch === "inline") {
+    app.initData = "";
+    app.initDataUnsafe = { chat_type: "private", chat_instance: "mock-chat-instance" };
+  }
 
   return app;
 }
